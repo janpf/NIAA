@@ -1,2 +1,1 @@
-# NIAA
-Neural Image Aesthetic Assessment
+# Neural Image Aesthetic Assessment
