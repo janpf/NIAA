@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: execute
+spec:
+  template:
+    spec:
+      containers:
+        - name: execute
+          image: janpf/niaa:latest
+          imagePullPolicy: "Always"
+          env:
+            - name: Test
+              value: "Test12"
+          resources:
+            limits:
+              nvidia.com/gpu: "1"
+              cpu: "4"
+              memory: "2Gi"
+            requests:
+              nvidia.com/gpu: "1"
+              cpu: "4"
+              memory: "2Gi"
+            command: ["python3", "-c", "print('Hello World')"]
+      restartPolicy: "Never"
