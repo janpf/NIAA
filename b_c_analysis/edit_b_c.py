@@ -22,9 +22,9 @@ def change_contrast(im, contra):
     enhanced_im = enhancer.enhance(contra)
     return enhanced_im
 
-for b in np.arange(0, 2.1, .2):
-    for c in np.arange(0, 2.1, .2):
-        print(f"creating c={c:.1f} and b={b:.1f}")
+for b in np.arange(0, 3.1, .2):
+    for c in np.arange(0, 3.1, .2):
+        print(f"creating b={b:.1f} and c={c:.1f}")
         changed = change_contrast(im, c)
         changed = change_brightness(changed, b)
-        changed.save(Path(args.out) / f"c{c:.1f}_b{b:.1f}.png")
+        changed.save(Path(args.out) / f"b{b:.1f}_c{c:.1f}.png")

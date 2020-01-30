@@ -41,7 +41,7 @@ model.eval()
 
 test_transform = transforms.Compose([
     transforms.Scale(256),
-    transforms.RandomCrop(224),
+    transforms.CenterCrop(224),
     transforms.ToTensor()
     ])
 
@@ -49,7 +49,6 @@ df = pd.read_csv(args.csv, header=None, delimiter=" ")
 
 
 def annotate_image(img):
-    print(f"Annotating: {img}")
     im = Image.open(img)
     imt = test_transform(im)
     imt = imt.unsqueeze(dim=0)
@@ -68,7 +67,7 @@ def annotate_image(img):
     try:
         int(Path(img).stem)
     except:
-        print(Path(img).stem + ' mean: %.3f | std: %.3f' % (mean, std))
+        print(Path(img).stem + ', mean: %.3f, std: %.3f' % (mean, std))
         return
 
     gt = df[df[1] == int(Path(img).stem)].to_numpy()[:, 2:12].reshape(10, 1)

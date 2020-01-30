@@ -1,13 +1,13 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: annotate
+  name: annotate-folder
 spec:
   template:
     spec:
       restartPolicy: "Never"
       containers:
-        - name: annotate
+        - name: annotate-folder
           image: janpf/niaa:latest
           imagePullPolicy: "Always"
           env:
