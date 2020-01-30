@@ -29,13 +29,13 @@ spec:
               name: scratch
           command:
             - python3
-            - /workspace/annotate_single.py
+            - /workspace/annotate_image.py
             - --model
             - /scratch/pretrained.pkl
             - --csv
             - /scratch/AVA/AVA.txt
-            - --image
-            - /scratch/AVA/images/244422.jpg
+            - --imageFolder
+            - /scratch/changed
             - --out
             - /scratch/out
             - --vis
