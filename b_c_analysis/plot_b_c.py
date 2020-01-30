@@ -23,3 +23,6 @@ ax.set_zlabel("m")
 
 ax.view_init(30, 260)
 plt.savefig("b_c.png")
+
+ax.view_init(30, 190)
+plt.savefig("c_b.png")
