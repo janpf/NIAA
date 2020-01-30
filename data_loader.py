@@ -6,6 +6,7 @@ from PIL import Image
 import torch
 from torch.utils import data
 
+
 class AVADataset(data.Dataset):
     """AVA dataset
 
@@ -16,7 +17,7 @@ class AVADataset(data.Dataset):
     """
 
     def __init__(self, csv_file, root_dir, transform=None):
-        self.annotations = pd.read_csv(csv_file, delimiter=" ") # TODO rearrange according to expected csv
+        self.annotations = pd.read_csv(csv_file, delimiter=" ")  # TODO rearrange according to expected csv
         self.root_dir = root_dir
         self.transform = transform
 
@@ -24,13 +25,13 @@ class AVADataset(data.Dataset):
         return len(self.annotations)
 
     def __getitem__(self, idx):
-        img_name = os.path.join(self.root_dir, str(self.annotations.iloc[idx, 0]) + '.jpg')
+        img_name = os.path.join(self.root_dir, str(self.annotations.iloc[idx, 0]) + ".jpg")
         image = Image.open(img_name)
         annotations = self.annotations.iloc[idx, 1:].as_matrix()
-        annotations = annotations.astype('float').reshape(-1, 1)
-        sample = {'img_id': img_name, 'image': image, 'annotations': annotations}
+        annotations = annotations.astype("float").reshape(-1, 1)
+        sample = {"img_id": img_name, "image": image, "annotations": annotations}
 
         if self.transform:
-            sample['image'] = self.transform(sample['image'])
+            sample["image"] = self.transform(sample["image"])
 
         return sample
