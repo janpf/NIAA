@@ -1,14 +1,15 @@
 import argparse
 import os
-import numpy as np
+from pathlib import Path
+
 import matplotlib.pyplot as plt
+import numpy as np
 from PIL import Image
+
 import pandas as pd
 import torch
 import torchvision.models as models
 import torchvision.transforms as transforms
-from pathlib import Path
-
 from model import *
 
 parser = argparse.ArgumentParser()
