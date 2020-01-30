@@ -10,6 +10,9 @@ spec:
         - name: annotate
           image: janpf/niaa:latest
           imagePullPolicy: "Always"
+          env:
+            - name: HOME
+              value: "/tmp"
           resources:
             limits:
               nvidia.com/gpu: "1"
@@ -24,15 +27,18 @@ spec:
               name: code
             - mountPath: /scratch
               name: scratch
-            - mountPath: /ava
-              name: ava
           command:
             - python3
             - /workspace/annotate_single.py
-            - --model /scratch/pretrained.pkl
-            - --csv /ava/AVA.txt
-            - --image /ava/images/639780.jpg
-            - --out /scratch/out
+            - --model
+            - /scratch/pretrained.pkl
+            - --csv
+            - /scratch/AVA/AVA.txt
+            - --image
+            - /scratch/AVA/images/244422.jpg
+            - --out
+            - /scratch/out
+            - --vis
       volumes:
         - name: code
           cephfs:
@@ -48,13 +54,5 @@ spec:
               - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
             user: studpfister
             path: "/scratch/stud/pfister/NIAA"
-            secretRef:
-              name: studpfister-secret
-        - name: ava
-          cephfs:
-            monitors:
-              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
-            user: studpfister
-            path: "/home/stud/fischer/thesis/Datasets/AVA_dataset"
             secretRef:
               name: studpfister-secret

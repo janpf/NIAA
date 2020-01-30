@@ -44,7 +44,7 @@ test_transform = transforms.Compose([
     transforms.ToTensor()
     ])
 
-df = pd.read_csv(args.csv, header=None)
+df = pd.read_csv(args.csv, header=None, delimiter=" ")
 mean, std = 0.0, 0.0
 
 im = Image.open(img)
@@ -61,15 +61,16 @@ for j, e in enumerate(out, 1):
 for k, e in enumerate(out, 1):
     std += (e * (k - mean) ** 2) ** (0.5)
 
-gt = df[df[0] == int(Path(img).stem)].to_numpy()[:, 1:].reshape(10, 1)
+gt = df[df[1] == int(Path(img).stem)].to_numpy()[:, 2:12].reshape(10, 1)
+gt = np.exp(gt)/sum(np.exp(gt)) # softmax # TODO stimmt das so?
 gt_mean = 0.0
 for l, e in enumerate(gt, 1):
     gt_mean += l * e
 
-print(img.split('.')[0] + ' mean: %.3f | std: %.3f | GT: %.3f' % (mean, std, gt_mean))
+print(Path(img).stem + ' mean: %.3f | std: %.3f | GT: %.3f' % (mean, std, gt_mean))
 
 if args.vis:
     plt.imshow(im)
     plt.axis('off')
     plt.title('%.3f (%.3f)' % (mean, gt_mean))
-    plt.savefig(Path(args.out) / Path(img).stem / '_predicted.png')
+    plt.savefig(Path(args.out) / str((Path(img).stem) + '_predicted.png'))
