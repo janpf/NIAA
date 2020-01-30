@@ -41,7 +41,7 @@ spec:
             user: studpfister
             path: "/home/stud/pfister/eclipse-workspace/NIAA"
             secretRef:
-              name: ceph-secret
+              name: studpfister-secret
         - name: scratch
           cephfs:
             monitors:
@@ -49,7 +49,7 @@ spec:
             user: studpfister
             path: "/scratch/stud/pfister/NIAA"
             secretRef:
-              name: ceph-secret
+              name: studpfister-secret
         - name: ava
           cephfs:
             monitors:
@@ -57,4 +57,4 @@ spec:
             user: studpfister
             path: "/home/stud/fischer/thesis/Datasets/AVA_dataset"
             secretRef:
-              name: ceph-secret
+              name: studpfister-secret
