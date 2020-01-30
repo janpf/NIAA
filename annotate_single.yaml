@@ -1,18 +1,15 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: execute
+  name: annotate
 spec:
   template:
     spec:
       restartPolicy: "Never"
       containers:
-        - name: execute
+        - name: annotate
           image: janpf/niaa:latest
           imagePullPolicy: "Always"
-          env:
-            - name: Test
-              value: "Test12"
           resources:
             limits:
               nvidia.com/gpu: "1"
@@ -29,7 +26,13 @@ spec:
               name: scratch
             - mountPath: /ava
               name: ava
-          command: ["python3", "-c", "print('Hello World')"]
+          command:
+            - python3
+            - /workspace/annotate_single.py
+            - --model /scratch/pretrained.pkl
+            - --csv /ava/AVA.txt
+            - --image /ava/images/639780.jpg
+            - --out /scratch/out
       volumes:
         - name: code
           cephfs:
