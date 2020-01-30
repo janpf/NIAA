@@ -27,7 +27,7 @@ spec:
               name: scratch
           command:
             - python3
-            - /workspace/edit_b_c.py
+            - /workspace/b_c_analysis/edit_b_c.py
             - --image
             - /scratch/AVA/images/244422.jpg
             - --out
