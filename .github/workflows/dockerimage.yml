@@ -10,7 +10,7 @@ on:
 
 jobs:
 
-  build_core:
+  build_pytorch:
     runs-on: ubuntu-latest
 
     steps:
