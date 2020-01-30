@@ -12,12 +12,12 @@ from pathlib import Path
 from model import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--model', type=str, help='path to pretrained model')
-parser.add_argument('--csv', type=str, help='csv file')
-parser.add_argument('--image', type=str, help='path to a single image')
-parser.add_argument('--out', type=str, help='dest for images with predicted score')
-parser.add_argument('--workers', type=int, default=4, help='number of workers')
-parser.add_argument('--vis', action='store_true', help='visualization')
+parser.add_argument("--model", type=str, help="path to pretrained model")
+parser.add_argument("--csv", type=str, help="csv file")
+parser.add_argument("--image", type=str, help="path to a single image")
+parser.add_argument("--out", type=str, help="dest for images with predicted score")
+parser.add_argument("--workers", type=int, default=4, help="number of workers")
+parser.add_argument("--vis", action="store_true", help="visualization")
 args = parser.parse_args()
 img = args.image
 
@@ -29,7 +29,7 @@ model = NIMA(base_model)
 
 try:
     model.load_state_dict(torch.load(args.model))
-    print('successfully loaded model')
+    print("successfully loaded model")
 except:
     raise
 
@@ -62,15 +62,15 @@ for k, e in enumerate(out, 1):
     std += (e * (k - mean) ** 2) ** (0.5)
 
 gt = df[df[1] == int(Path(img).stem)].to_numpy()[:, 2:12].reshape(10, 1)
-gt = np.exp(gt)/sum(np.exp(gt)) # softmax # TODO stimmt das so?
+gt = np.exp(gt) / sum(np.exp(gt))  # softmax # TODO stimmt das so?
 gt_mean = 0.0
 for l, e in enumerate(gt, 1):
     gt_mean += l * e
 
-print(Path(img).stem + ' mean: %.3f | std: %.3f | GT: %.3f' % (mean, std, gt_mean))
+print(f"{Path(img).stem} mean: {mean:.3f} | std: {std:.3f} | GT: {gt_mean:.3f}")
 
 if args.vis:
     plt.imshow(im)
-    plt.axis('off')
-    plt.title('%.3f (%.3f)' % (mean, gt_mean))
-    plt.savefig(Path(args.out) / str((Path(img).stem) + '_predicted.png'))
+    plt.axis("off")
+    plt.title(f"{mean:.3f} ({gt_mean:.3f})")
+    plt.savefig(Path(args.out) / f"{Path(img).stem}_predicted.png")
