@@ -15,10 +15,11 @@ for row in csv.reader(open(args.csv)):
 data = data[1:]
 
 fig = plt.figure()
-ax = plt.axes(projection='3d')
-ax.plot_trisurf([val[0] for val in data], [val[1] for val in data], [val[2] for val in data], cmap=plt.cm.CMRmap)
-ax.set_xlabel('b')
-ax.set_ylabel('c')
-ax.set_zlabel('m')
+ax = plt.axes(projection="3d")
+ax.plot_trisurf([val[0] for val in data], [val[1] for val in data], [val[2] for val in data])  # , cmap=plt.cm.CMRmap
+ax.set_xlabel("b")
+ax.set_ylabel("c")
+ax.set_zlabel("m")
 
-plt.savefig("bla.png")
+ax.view_init(30, 260)
+plt.savefig("b_c.png")
