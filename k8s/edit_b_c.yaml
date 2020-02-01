@@ -27,11 +27,11 @@ spec:
               name: scratch
           command:
             - python3
-            - /workspace/b_c_analysis/edit_b_c.py
+            - /workspace/edit_analysis/edit_b_c.py
             - --image
             - /scratch/AVA/images/244422.jpg
             - --out
-            - /scratch/changed
+            - /scratch/AVA/changed/b_c
       volumes:
         - name: code
           cephfs:
