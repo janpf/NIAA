@@ -18,27 +18,28 @@ parser.add_argument("--out", type=str, help="dest for edited images")
 args = parser.parse_args()
 
 
-# brightness
-# exposure
-# contrast
-# warmth
-# saturation
-# vibrance
-# hue
+# brightness – One value for all channels, or tuple of three values from -1.0 to 1.0. Use exposure for better result.
+# exposure – One value for all channels, or tuple of three values from -5.0 to 5.0.
+# contrast – One value for all channels, or tuple of three values from -1.0 to 5.0.
+# warmth – One value from -1.0 to 1.0.
+# saturation – One value for all channels, or tuple of three values from -1.0 to 5.0.
+# vibrance – One value for all channels, or tuple of three values from -1.0 to 5.0.
+# hue – One value from 0 to 1.0.
 # l_contrast
 
 
 def edit_image(img_path):
     if args.parameter == "l_contrast":
         img = img_as_float(img_path)
-        img_adapteq = exposure.equalize_adapthist(img, clip_limit=0.03)
-        io.imsave(Path(args.out) / args.parameter / f"{Path(args.image).stem}_{args.parameter}_{args.change}_.jpg", img_adapteq)
+        clip_limit = 0.03
+        img_adapteq = exposure.equalize_adapthist(img, clip_limit=clip_limit)
+        io.imsave(Path(args.out) / args.parameter / f"{Path(args.image).stem}_{args.parameter}_{clip_limit}_.jpg", img_adapteq)
 
     else:
         for change in np.arange(args.min_range, args.max_range + 0.001, args.step):
             img = Image.open(img_path)
             img_filter = lut.rgb_color_enhance(16, **{args.parameter: change})  # does this work?
-            img.filter(img_filter).save(Path(args.out) / args.parameter / f"{Path(args.image).stem}_{args.parameter}_{args.change}_.jpg")
+            img.filter(img_filter).save(Path(args.out) / args.parameter / f"{Path(args.image).stem}_{args.parameter}_{change}_.jpg")
 
 
 if args.imageFolder:
