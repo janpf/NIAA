@@ -38,7 +38,7 @@ def edit_image(img_path):
     else:
         img = Image.open(img_path)
         for change in np.arange(args.min_range, args.max_range + (args.step / 2), args.step):
-            img_filter = lut.rgb_color_enhance(16, **{args.parameter: change})  # does this work?
+            img_filter = lut.rgb_color_enhance(16, **{args.parameter: change})
             img.filter(img_filter).save(Path(args.out) / args.parameter / f"{Path(args.image).stem}_{args.parameter}_{change:.1f}_.jpg")
 
 
