@@ -2,5 +2,7 @@ matplotlib
 numpy
 pandas
 Pillow
+pillow-lut
+scikit-image
 torch
 torchvision
