@@ -3,7 +3,7 @@ from pathlib import Path
 
 import numpy as np
 
-from skimage import img_as_float, exposure, io
+from skimage import exposure, io
 from PIL import Image
 import pillow_lut as lut
 
@@ -29,19 +29,20 @@ args = parser.parse_args()
 
 
 def edit_image(img_path):
-    if args.parameter == "l_contrast":
-        img = img_as_float(img_path)
+    if args.parameter == "lcontrast":
+        img = io.imread(img_path)
         clip_limit = 0.03
         img_adapteq = exposure.equalize_adapthist(img, clip_limit=clip_limit)
-        io.imsave(Path(args.out) / args.parameter / f"{Path(args.image).stem}_{args.parameter}_{clip_limit}_.jpg", img_adapteq)
+        io.imsave(Path(args.out) / args.parameter / f"{Path(args.image).stem}_{args.parameter}_{clip_limit:.3f}_.jpg", img_adapteq)  # Lossy conversion from float64 to uint8. Range [0, 1]. Convert image to uint8 prior to saving to suppress this warning.
 
     else:
-        for change in np.arange(args.min_range, args.max_range + 0.001, args.step):
-            img = Image.open(img_path)
+        img = Image.open(img_path)
+        for change in np.arange(args.min_range, args.max_range + (args.step / 2), args.step):
             img_filter = lut.rgb_color_enhance(16, **{args.parameter: change})  # does this work?
-            img.filter(img_filter).save(Path(args.out) / args.parameter / f"{Path(args.image).stem}_{args.parameter}_{change}_.jpg")
+            img.filter(img_filter).save(Path(args.out) / args.parameter / f"{Path(args.image).stem}_{args.parameter}_{change:.1f}_.jpg")
 
 
+(Path(args.out) / args.parameter).mkdir(parents=True, exist_ok=True)
 if args.imageFolder:
     for img in Path(args.imageFolder).iterdir():
         edit_image(str(img))

@@ -12,18 +12,21 @@ args = parser.parse_args()
 im = Image.open(args.image)
 im.save(Path(args.out) / "orig.png")
 
+
 def change_brightness(im, bright):
     enhancer = ImageEnhance.Brightness(im)
     enhanced_im = enhancer.enhance(bright)
     return enhanced_im
+
 
 def change_contrast(im, contra):
     enhancer = ImageEnhance.Contrast(im)
     enhanced_im = enhancer.enhance(contra)
     return enhanced_im
 
-for b in np.arange(0, 3.1, .2):
-    for c in np.arange(0, 3.1, .2):
+
+for b in np.arange(0, 3.1, 0.2):
+    for c in np.arange(0, 3.1, 0.2):
         print(f"creating b={b:.1f} and c={c:.1f}")
         changed = change_contrast(im, c)
         changed = change_brightness(changed, b)
