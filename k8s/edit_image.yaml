@@ -30,7 +30,7 @@ spec:
             - /workspace/edit_analysis/edit_image.py
             - --image
             - /scratch/AVA/images/244422.jpg
-            - -- parameter
+            - --parameter
             - brightness
             - --out
             - /scratch/AVA/changed/
