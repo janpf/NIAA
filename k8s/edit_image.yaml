@@ -1,0 +1,53 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: edit-images
+spec:
+  template:
+    spec:
+      restartPolicy: "Never"
+      containers:
+        - name: edit-images
+          image: janpf/niaa:latest
+          imagePullPolicy: "Always"
+          env:
+            - name: HOME
+              value: "/tmp"
+          resources:
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+            requests:
+              cpu: "1"
+              memory: "2Gi"
+          volumeMounts:
+            - mountPath: /workspace
+              name: code
+            - mountPath: /scratch
+              name: scratch
+          command:
+            - python3
+            - /workspace/edit_analysis/edit_image.py
+            - --image
+            - /scratch/AVA/images/244422.jpg
+            - -- parameter
+            - brightness
+            - --out
+            - /scratch/AVA/changed/
+      volumes:
+        - name: code
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studpfister
+            path: "/home/stud/pfister/eclipse-workspace/NIAA"
+            secretRef:
+              name: studpfister-secret
+        - name: scratch
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studpfister
+            path: "/scratch/stud/pfister/NIAA"
+            secretRef:
+              name: studpfister-secret
