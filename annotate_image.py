@@ -85,7 +85,7 @@ def annotate_image(img):
         plt.savefig(Path(args.out) / f"{Path(img).stem}.png")
 
 
-if args.imageFolder:
+if args.imageFolder: # TODO batchprocessing
     for img in Path(args.imageFolder).iterdir():
         annotate_image(str(img))
 elif args.image:

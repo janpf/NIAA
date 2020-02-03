@@ -35,7 +35,7 @@ spec:
             - --csv
             - /scratch/AVA/AVA.txt
             - --imageFolder
-            - /scratch/changed
+            - /scratch/AVA/changed/warmth
             - --out
             - /scratch/out
             - --vis
