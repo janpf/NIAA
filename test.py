@@ -11,12 +11,12 @@ import torchvision.transforms as transforms
 from model import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--model', type=str, help='path to pretrained model')
-parser.add_argument('--test_csv', type=str, help='test csv file')
-parser.add_argument('--test_images', type=str, help='path to folder containing images')
-parser.add_argument('--out', type=str, help='dest for images with predicted score')
-parser.add_argument('--workers', type=int, default=4, help='number of workers')
-parser.add_argument('--vis', action='store_true', help='visualization')
+parser.add_argument("--model", type=str, help="path to pretrained model")
+parser.add_argument("--test_csv", type=str, help="test csv file")
+parser.add_argument("--test_images", type=str, help="path to folder containing images")
+parser.add_argument("--out", type=str, help="dest for images with predicted score")
+parser.add_argument("--workers", type=int, default=4, help="number of workers")
+parser.add_argument("--vis", action="store_true", help="visualization")
 args = parser.parse_args()
 
 if not os.path.exists(args.out):
@@ -27,7 +27,7 @@ model = NIMA(base_model)
 
 try:
     model.load_state_dict(torch.load(args.model))
-    print('successfully loaded model')
+    print("successfully loaded model")
 except:
     raise
 
@@ -36,13 +36,13 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 
 model.eval()
-
+# fmt: off
 test_transform = transforms.Compose([
     transforms.Scale(256),
     transforms.RandomCrop(224),
     transforms.ToTensor()
     ])
-
+# fmt: on
 
 test_imgs = [f for f in os.listdir(args.test_images)]
 
@@ -61,14 +61,14 @@ for i, img in enumerate(test_imgs):
         mean += j * e
     for k, e in enumerate(out, 1):
         std += (e * (k - mean) ** 2) ** (0.5)
-    gt = test_df[test_df[0] == int(img.split('.')[0])].to_numpy()[:, 1:].reshape(10, 1)
+    gt = test_df[test_df[0] == int(img.split(".")[0])].to_numpy()[:, 1:].reshape(10, 1)
     gt_mean = 0.0
     for l, e in enumerate(gt, 1):
         gt_mean += l * e
-    print(img.split('.')[0] + ' mean: %.3f | std: %.3f | GT: %.3f' % (mean, std, gt_mean))
+    print(img.split(".")[0] + " mean: %.3f | std: %.3f | GT: %.3f" % (mean, std, gt_mean))
     if args.vis:
         plt.imshow(im)
-        plt.axis('off')
-        plt.title('%.3f (%.3f)' % (mean, gt_mean))
-        plt.savefig(os.path.join(args.out, img.split('.')[0] + '_predicted.png'))
+        plt.axis("off")
+        plt.title("%.3f (%.3f)" % (mean, gt_mean))
+        plt.savefig(os.path.join(args.out, img.split(".")[0] + "_predicted.png"))
     mean, std = 0.0, 0.0

@@ -38,18 +38,20 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 model = model.to(device)
 model.eval()
-
+# fmt: off
 test_transform = transforms.Compose([
     transforms.Scale(256),
     transforms.CenterCrop(224),
     transforms.ToTensor()
     ])
+# fmt: on
 
 df = pd.read_csv(args.csv, header=None, delimiter=" ")
 
 if args.out and args.imageFolder:
-    csv_file = open(Path(args.out) / f"{Path(args.imageFolder).parts[-1]}.csv",'w')
+    csv_file = open(Path(args.out) / f"{Path(args.imageFolder).parts[-1]}.csv", "w")
     print("change, mean, std", file=csv_file)
+
 
 def annotate_image(img):
     im = Image.open(img)
@@ -70,9 +72,9 @@ def annotate_image(img):
     try:
         int(Path(img).stem)
     except:
-        print(Path(img).stem + ', mean: %.3f, std: %.3f' % (mean, std))
+        print(Path(img).stem + ", mean: %.3f, std: %.3f" % (mean, std))
         if args.out and args.imageFolder:
-            print(Path(img).stem.split("_")[-1] + ', %.3f, %.3f' % (mean, std), file=csv_file) # beautiful
+            print(Path(img).stem.split("_")[-1] + ", %.3f, %.3f" % (mean, std), file=csv_file)  # beautiful
         return
 
     gt = df[df[1] == int(Path(img).stem)].to_numpy()[:, 2:12].reshape(10, 1)
@@ -81,16 +83,16 @@ def annotate_image(img):
     for l, e in enumerate(gt, 1):
         gt_mean += l * e
 
-    print(Path(img).stem + ' mean: %.3f | std: %.3f | GT: %.3f' % (mean, std, gt_mean))
+    print(Path(img).stem + " mean: %.3f | std: %.3f | GT: %.3f" % (mean, std, gt_mean))
 
     if args.vis:
         plt.imshow(im)
         plt.axis("off")
-        plt.title('%.3f (%.3f)' % (mean, gt_mean))
+        plt.title("%.3f (%.3f)" % (mean, gt_mean))
         plt.savefig(Path(args.out) / f"{Path(img).stem}.png")
 
 
-if args.imageFolder: # TODO batchprocessing
+if args.imageFolder:  # TODO batchprocessing
     for img in Path(args.imageFolder).iterdir():
         annotate_image(str(img))
 elif args.image:

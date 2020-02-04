@@ -8,10 +8,12 @@ class NIMA(nn.Module):
     def __init__(self, base_model, num_classes=10):
         super(NIMA, self).__init__()
         self.features = base_model.features
+        # fmt: off
         self.classifier = nn.Sequential(
             nn.Dropout(p=0.75),
             nn.Linear(in_features=25088, out_features=num_classes),
             nn.Softmax())
+        # fmt: on
 
     def forward(self, x):
         out = self.features(x)
