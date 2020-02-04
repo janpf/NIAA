@@ -17,12 +17,12 @@ parser.add_argument("--model", type=str, help="path to pretrained model")
 parser.add_argument("--csv", type=str, help="csv file")
 parser.add_argument("--image", type=str, help="path to a single image")
 parser.add_argument("--imageFolder", type=str, help="path to a folder of images (if this is supplied '--image' is ignored)")
-parser.add_argument("--out", type=str, help="dest for images with predicted score")
+parser.add_argument("--out", type=str, help="dest for images with predicted score (and/or csv)")
 parser.add_argument("--workers", type=int, default=4, help="number of workers")
 parser.add_argument("--vis", action="store_true", help="visualization")
 args = parser.parse_args()
 
-if not os.path.exists(args.out):
+if args.out and not os.path.exists(args.out):
     os.makedirs(args.out)
 
 base_model = models.vgg16(pretrained=True)
@@ -47,6 +47,9 @@ test_transform = transforms.Compose([
 
 df = pd.read_csv(args.csv, header=None, delimiter=" ")
 
+if args.out and args.imageFolder:
+    csv_file = open(Path(args.out) / f"{Path(args.imageFolder).parts[-1]}.csv",'w')
+    print("change, mean, std", file=csv_file)
 
 def annotate_image(img):
     im = Image.open(img)
@@ -68,6 +71,8 @@ def annotate_image(img):
         int(Path(img).stem)
     except:
         print(Path(img).stem + ', mean: %.3f, std: %.3f' % (mean, std))
+        if args.out and args.imageFolder:
+            print(Path(img).stem.split("_")[-1] + ', %.3f, %.3f' % (mean, std), file=csv_file) # beautiful
         return
 
     gt = df[df[1] == int(Path(img).stem)].to_numpy()[:, 2:12].reshape(10, 1)

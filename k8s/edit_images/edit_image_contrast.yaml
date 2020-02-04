@@ -29,7 +29,7 @@ spec:
             - python3
             - /workspace/edit_analysis/edit_image.py
             - --image
-            - /scratch/AVA/images/244422.jpg
+            - /scratch/AVA/images/442284.jpg
             - --parameter
             - contrast
             - --max_range

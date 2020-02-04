@@ -17,11 +17,11 @@ spec:
             limits:
               nvidia.com/gpu: "1"
               cpu: "4"
-              memory: "2Gi"
+              memory: "4Gi"
             requests:
               nvidia.com/gpu: "1"
               cpu: "4"
-              memory: "2Gi"
+              memory: "4Gi"
           volumeMounts:
             - mountPath: /workspace
               name: code
@@ -37,8 +37,7 @@ spec:
             - --imageFolder
             - /scratch/AVA/changed/warmth
             - --out
-            - /scratch/out
-            - --vis
+            - /workspace/edit_analysis/data
       volumes:
         - name: code
           cephfs:

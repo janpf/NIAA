@@ -29,7 +29,7 @@ spec:
             - python3
             - /workspace/edit_analysis/edit_b_c.py
             - --image
-            - /scratch/AVA/images/244422.jpg
+            - /scratch/AVA/images/442284.jpg
             - --out
             - /scratch/AVA/changed/b_c
       volumes:
