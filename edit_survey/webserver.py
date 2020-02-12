@@ -1,11 +1,11 @@
-from flask import Flask
+from flask import Flask, render_template
 
 app = Flask(__name__)
 
 
 @app.route("/")
 def hello():
-    return "Hello World!"
+    return render_template("index.html")
 
 
 @app.route("/poll")
@@ -14,7 +14,7 @@ def poll():
 
 
 @app.route("/img/")
-def poll():
+def img():
     return "not yet implemented"
 
 
