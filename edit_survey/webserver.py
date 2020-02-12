@@ -2,15 +2,15 @@ import argparse
 import random
 from io import BytesIO
 from pathlib import Path
+import math
 
-import numpy as np
 import pillow_lut as lut
 from flask import Flask, abort, render_template, request
 from flask.helpers import send_file
 from PIL import Image
 from skimage import exposure, io
 
-app = Flask(__name__)
+app = Flask(__name__)  # TODO logging
 
 
 parser = argparse.ArgumentParser()
@@ -43,18 +43,31 @@ def edit_and_serve_image(img_path, changes):  # TODO be able to apply lcontrast 
     return send_file(img_io, mimetype="image/jpeg")
 
 
-def serve_pil_image(pil_img):
-    img_io = BytesIO()
-    pil_img.save(img_io, "JPEG", quality=70)
-    img_io.seek(0)
-    return send_file(img_io, mimetype="image/jpeg")
+def random_parameters():
+    modes = ["single"]  # how many parametes to change at once
+    parameters = {"brightness": [-1, 1], "exposure": [-5, 5], "contrast": [-1, 5], "warmth": [-1, 1], "saturation": [-1, 5], "vibrance": [-1, 5]}  # TODO hue and lcontrast
+    if random.choice(modes) == "single":
+        pos_neg = random.choice(["positiv", "negative", "interval"])  # in order to not match a positive change with a negative one
+        change = random.choice(list(parameters.keys()))
+        N = 1
+        if pos_neg == "positive":
+            changeVal = (0, round(random.uniform(0, parameters[change][1]), N))
+        elif pos_neg == "negative":
+            changeVal = (0, round(random.uniform(parameters[change][0], 0), N))
+        else:
+            changeVal = (round(random.uniform(parameters[change][0], parameters[change][1]), N), round(random.uniform(parameters[change][0], parameters[change][1]), N))
+            while not math.copysign(1, changeVal[0]) == math.copysign(1, changeVal[1]):  # make sure to not compare an image to another one, which has been edited in the other "direction"
+                changeVal = (changeVal[0], round(random.uniform(parameters[change][0], parameters[change][1]), N))
+    return change, changeVal
 
 
 @app.route("/")
 def survey():
     img = random.choice(imgs)
     img = f"/img/{img}"
-    return render_template("index.html", leftImage=img, rightImage=img)
+    edits = random_parameters()
+    print(edits)
+    return render_template("index.html", leftImage=f"{img}?{edits[0]}={edits[1][0]}", rightImage=f"{img}?{edits[0]}={edits[1][1]}")
 
 
 @app.route("/poll")
@@ -73,7 +86,7 @@ def img(image):
     # saturation – One value for all channels, or tuple of three values from -1.0 to 5.0.
     # vibrance – One value for all channels, or tuple of three values from -1.0 to 5.0.
     # hue – One value from 0 to 1.0.
-    # l_contrast
+    # lcontrast
     changes = {}
     changes["brightness"] = request.args.get("brightness", default=0, type=float)
     changes["exposure"] = request.args.get("exposure", default=0, type=float)
