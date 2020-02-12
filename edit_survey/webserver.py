@@ -8,5 +8,15 @@ def hello():
     return "Hello World!"
 
 
+@app.route("/poll")
+def poll():
+    return "not yet implemented"
+
+
+@app.route("/img/")
+def poll():
+    return "not yet implemented"
+
+
 if __name__ == "__main__":
     app.run()

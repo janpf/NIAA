@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Image Aesthetic Assessment</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <style>
+        body {
+            width: 90%;
+            max-width: 1200px;
+            margin: 2em auto;
+            font: .9em/1.2 Arial, Helvetica, sans-serif;
+        }
+
+        .maingrid {
+            box-sizing: border-box;
+            display: grid;
+            grid-template-columns: 1fr 50px 1fr;
+            grid-auto-rows: minmax(100px, auto);
+            grid-gap: 20px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .logo {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .headline {
+            grid-column: 2 / 4;
+            grid-row: 1;
+        }
+
+        .welcome {
+            grid-column: 1 / 4;
+            grid-row: 2;
+            line-height: 1.5;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .left {
+            grid-column: 1;
+            grid-row: 3;
+        }
+
+        .right {
+            grid-column: 3;
+            grid-row: 3;
+        }
+
+        .lower {
+            grid-row: 4;
+        }
+
+        .bottom {
+            grid-column: 1 / 4;
+            grid-row: 5;
+        }
+
+        .maingrid>div,
+        .maingrid>img {
+            border-radius: 5px;
+            padding: 10px;
+            /*
+            background-color: rgb(207, 232, 220);
+            border: 2px solid rgb(79, 185, 227);
+            */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="maingrid">
+        <img class="logo" height="100px"
+            src="https://www.uni-wuerzburg.de/fileadmin/uniwue/Presse/Pressemitteilungen/2015/1007THE-ranking.jpg">
+        <h1 class="headline">Image Aesthetic Assessment</h1>
+        <div class="welcome">Servus,bitte mal das, wo ästhetischer anklicken. kthxbai.</div>
+
+        <div id="left" class="left">
+            <center>
+                <img style="width: 100%;" src="Schrottbilder/NICHT_OEFFNEN_sagt-Abramson.png">
+            </center>
+        </div>
+        <div class="right">
+            <center>
+                <img style="width: 100%;" src="Schrottbilder/NICHT_OEFFNEN_sagt-Abramson.png">
+            </center>
+        </div>
+
+        <div class="left lower">
+            <button type="button" class="btn btn-outline-secondary btn-lg btn-block">can't decide /
+                unsure</button>
+        </div>
+        <div class="right lower">
+            <button type="button" class="btn btn-outline-secondary btn-lg btn-block">something's wrong</button>
+        </div>
+        <!--
+        <div class="bottom">footer</div>
+        -->
+    </div>
+
+</body>
+
+</html>
