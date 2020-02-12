@@ -76,7 +76,7 @@ def survey():
     rightChanges = changes[1]
     print(f"{parameter}:{changes}")
     hashval = hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}")
-    return render_template("index.html", leftImage=f"{img}?{parameter}={leftChanges}&l&hash={hashval}", rightImage=f"{img}?{parameter}={rightChanges}&r&hash={hashval}", parameter=parameter, leftChanges=leftChanges, rightChanges=rightChanges, hash=hashval)
+    return render_template("index.html", leftImage=f"{img}?{parameter}={leftChanges}&l&hash={hashval}", rightImage=f"{img}?{parameter}={rightChanges}&r&hash={hashval}", img=img, parameter=parameter, leftChanges=leftChanges, rightChanges=rightChanges, hash=hashval)
 
 
 @app.route("/poll", methods=["POST"])
