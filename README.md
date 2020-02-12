@@ -1,7 +1,7 @@
 # Neural Image Aesthetic Assessment
 
 ## docker image
-A built and up to date docker image can be found [here](https://hub.docker.com/r/janpf/niaa)
+a built and up to date docker image can be found [here](https://hub.docker.com/r/janpf/niaa)
 
 `yaml`-files for deployment in Kubernetes are [here](k8s)
 
