@@ -70,7 +70,7 @@ def survey():
     return render_template("index.html", leftImage=f"{img}?{edits[0]}={edits[1][0]}", rightImage=f"{img}?{edits[0]}={edits[1][1]}")
 
 
-@app.route("/poll")
+@app.route("/poll", methods=["POST"])
 def poll():
     return "not yet implemented"
 

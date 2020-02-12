@@ -82,21 +82,46 @@
 
         <div id="left" class="left">
             <center>
-                <img style="width: 100%;" src="{{ leftImage }}">
+                <form style="width: 100%; height: 100%;" action="/poll" method="post">
+                    <input type="text" name="hash" value="{{ hash }}">
+                    <input type="text" name="leftChanges" value="{{ leftChanges }}">
+                    <input type="text" name="rightChanges" value="{{ rightChanges }}">
+                    <input type="text" name="chosen" value="leftImage">
+                    <input type="image" src="{{ leftImage }}" style="width: 100%; height: 100%;">
+                </form>
             </center>
         </div>
         <div class="right">
             <center>
-                <img style="width: 100%;" src="{{ rightImage }}">
+                <form style="width: 100%; height: 100%;" action="/poll" method="post">
+                    <input type="text" name="hash" value="{{ hash }}">
+                    <input type="text" name="leftChanges" value="{{ leftChanges }}">
+                    <input type="text" name="rightChanges" value="{{ rightChanges }}">
+                    <input type="text" name="chosen" value="rightImage">
+                    <input type="image" src="{{ rightImage }}" style="width: 100%; height: 100%;">
+                </form>
             </center>
         </div>
 
         <div class="left lower">
-            <button type="button" class="btn btn-outline-secondary btn-lg btn-block">can't decide /
-                unsure</button>
+            <form style="width: 100%; height: 100%;" action="/poll" method="post">
+                <input type="text" name="hash" value="{{ hash }}">
+                <input type="text" name="leftChanges" value="{{ leftChanges }}">
+                <input type="text" name="rightChanges" value="{{ rightChanges }}">
+                <input type="text" name="chosen" value="unsure">
+                <button type="submit" class="btn btn-outline-secondary btn-lg btn-block">can't decide /
+                    unsure</button>
+            </form>
         </div>
         <div class="right lower">
-            <button type="button" class="btn btn-outline-secondary btn-lg btn-block">something's wrong</button>
+            <form style="width: 100%; height: 100%;" action="/poll" method="post">
+                <input type="text" name="hash" value="{{ hash }}">
+                <input type="text" name="leftChanges" value="{{ leftChanges }}">
+                <input type="text" name="rightChanges" value="{{ rightChanges }}">
+                <input type="text" name="chosen" value="error">
+                <button type="submit" class="btn btn-outline-secondary btn-lg btn-block">something's wrong</button>
+            </form>
+
         </div>
         <!--
         <div class="bottom">footer</div>
