@@ -40,7 +40,7 @@ def edit_and_serve_image(img_path, changes):  # TODO be able to apply lcontrast 
         img = Image.open(img_path)
         changes.pop("lcontrast")
         img_filter = lut.rgb_color_enhance(16, **changes)
-        img.filter(img_filter).save(img_io, "JPEG", quality=70)
+        img.filter(img_filter).save(img_io, "JPEG", quality=70)  # TODO png support
 
     img_io.seek(0)
     return send_file(img_io, mimetype="image/jpeg")
