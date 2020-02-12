@@ -1,12 +1,13 @@
 import argparse
+import math
 import random
 from io import BytesIO
 from pathlib import Path
-import math
+from random import shuffle
 
 import pillow_lut as lut
-from flask import Flask, abort, render_template, request
-from flask.helpers import send_file
+from flask import Flask, abort, redirect, render_template, request
+from flask.helpers import send_file, url_for
 from PIL import Image
 from skimage import exposure, io
 
@@ -16,12 +17,14 @@ app = Flask(__name__)  # TODO logging
 parser = argparse.ArgumentParser()
 parser.add_argument("--imageFile", type=str, help="every line a file name", default="/scratch/stud/pfister/NIAA/pexels/train.txt")
 parser.add_argument("--imageFolder", type=str, help="path to a folder of images", default="/scratch/stud/pfister/NIAA/pexels/images")
-parser.add_argument("--out", type=str, help="dir to log to", default="/scratch/stud/pfister/NIAA/pexels/survey.log")
+parser.add_argument("--out", type=str, help="dir to log to", default="/scratch/stud/pfister/NIAA/pexels/logs")
 args = parser.parse_args()
 
 with open(args.imageFile, "r") as imgFile:
     imgs = [img.strip() for img in imgFile.readlines()]
     imgsSet = set(imgs)
+
+poll_log = open(Path(args.out) / "poll.log", "a", buffering=1)
 
 
 def edit_and_serve_image(img_path, changes):  # TODO be able to apply lcontrast in addition to other parameter changes
@@ -66,18 +69,26 @@ def survey():
     img = random.choice(imgs)
     img = f"/img/{img}"
     edits = random_parameters()
-    print(edits)
-    return render_template("index.html", leftImage=f"{img}?{edits[0]}={edits[1][0]}", rightImage=f"{img}?{edits[0]}={edits[1][1]}")
+    parameter = edits[0]
+    changes = list(edits[1])
+    shuffle(changes)
+    leftChanges = changes[0]
+    rightChanges = changes[1]
+    print(f"{parameter}:{changes}")
+    hashval = hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}")
+    return render_template("index.html", leftImage=f"{img}?{parameter}={leftChanges}&l&hash={hashval}", rightImage=f"{img}?{parameter}={rightChanges}&r&hash={hashval}", parameter=parameter, leftChanges=leftChanges, rightChanges=rightChanges, hash=hashval)
 
 
 @app.route("/poll", methods=["POST"])
 def poll():
-    return "not yet implemented"
+    print(request.form.to_dict())
+    print(request.form.to_dict(), file=poll_log)
+    return redirect("/#left")
 
 
 @app.route("/img/<image>")
 def img(image):
-    print(f"{Path(args.imageFolder) / image} requested")
+    # print(f"{Path(args.imageFolder) / image} requested")
 
     # brightness – One value for all channels, or tuple of three values from -1.0 to 1.0. Use exposure for better result.
     # exposure – One value for all channels, or tuple of three values from -5.0 to 5.0.
@@ -102,5 +113,13 @@ def img(image):
     return edit_and_serve_image(Path(args.imageFolder) / image, changes)
 
 
+@app.before_request
+def log_request_info():
+    app.logger.debug("Body: %s", request.get_data())
+
+
 if __name__ == "__main__":
+    import logging
+
+    logging.basicConfig(filename=Path(args.out) / "debug.log", level=logging.DEBUG)
     app.run()
