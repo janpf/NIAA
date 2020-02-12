@@ -11,7 +11,7 @@ from flask.helpers import send_file, url_for
 from PIL import Image
 from skimage import exposure, io
 
-app = Flask(__name__)  # TODO logging
+app = Flask(__name__)
 
 
 parser = argparse.ArgumentParser()
@@ -27,7 +27,7 @@ with open(args.imageFile, "r") as imgFile:
 poll_log = open(Path(args.out) / "poll.log", "a", buffering=1)
 
 
-def edit_and_serve_image(img_path, changes):  # TODO be able to apply lcontrast in addition to other parameter changes
+def edit_and_serve_image(img_path, changes):  # FIXME be able to apply lcontrast in addition to other parameter changes
     img_io = BytesIO()
 
     if changes["lcontrast"] != 0:
@@ -35,20 +35,20 @@ def edit_and_serve_image(img_path, changes):  # TODO be able to apply lcontrast 
         clip_limit = 0.03
         img_adapteq = exposure.equalize_adapthist(img, clip_limit=clip_limit)
         io.imsave(img_io, img_adapteq)  # Lossy conversion from float64 to uint8. Range [0, 1]. Convert image to uint8 prior to saving to suppress this warning.
-
+        # FIXME throwing errors
     else:
         img = Image.open(img_path)
         changes.pop("lcontrast")
         img_filter = lut.rgb_color_enhance(16, **changes)
-        img.filter(img_filter).save(img_io, "JPEG", quality=70)  # TODO png support
+        img.filter(img_filter).save(img_io, "JPEG", quality=70)  # FIXME png support
 
     img_io.seek(0)
     return send_file(img_io, mimetype="image/jpeg")
 
 
 def random_parameters():
-    modes = ["single"]  # how many parametes to change at once
-    parameters = {"brightness": [-1, 1], "exposure": [-5, 5], "contrast": [-1, 5], "warmth": [-1, 1], "saturation": [-1, 5], "vibrance": [-1, 5]}  # TODO hue and lcontrast
+    modes = ["single"]  # FIXME how many parametes to change at once
+    parameters = {"brightness": [-1, 1], "exposure": [-5, 5], "contrast": [-1, 5], "warmth": [-1, 1], "saturation": [-1, 5], "vibrance": [-1, 5]}  # TODO hue[0,1] and lcontrast
     if random.choice(modes) == "single":
         pos_neg = random.choice(["positiv", "negative", "interval"])  # in order to not match a positive change with a negative one
         change = random.choice(list(parameters.keys()))
@@ -89,16 +89,7 @@ def poll():
 @app.route("/img/<image>")
 def img(image):
     # print(f"{Path(args.imageFolder) / image} requested")
-
-    # brightness – One value for all channels, or tuple of three values from -1.0 to 1.0. Use exposure for better result.
-    # exposure – One value for all channels, or tuple of three values from -5.0 to 5.0.
-    # contrast – One value for all channels, or tuple of three values from -1.0 to 5.0.
-    # warmth – One value from -1.0 to 1.0.
-    # saturation – One value for all channels, or tuple of three values from -1.0 to 5.0.
-    # vibrance – One value for all channels, or tuple of three values from -1.0 to 5.0.
-    # hue – One value from 0 to 1.0.
-    # lcontrast
-    changes = {}
+    changes = {}  # TODO geht bestimmt cleaner # list comprehension
     changes["brightness"] = request.args.get("brightness", default=0, type=float)
     changes["exposure"] = request.args.get("exposure", default=0, type=float)
     changes["contrast"] = request.args.get("contrast", default=0, type=float)
