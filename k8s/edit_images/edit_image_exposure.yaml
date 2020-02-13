@@ -8,7 +8,7 @@ spec:
       restartPolicy: "Never"
       containers:
         - name: edit-images-exposure
-          image: janpf/niaa:latest
+          image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
             - name: HOME
