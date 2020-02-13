@@ -1,9 +1,12 @@
+
 flask
 matplotlib
 numpy
+opencv-python-headless
 pandas
 Pillow
 pillow-lut
-scikit-image
+scikit-image # will likely be fixed, when https://github.com/scikit-image/scikit-image/pull/2761 merged. most likely here: https://github.com/scikit-image/scikit-image/milestone/15
+#git+https://github.com/scikit-image/scikit-image.git@refs/pull/2761/merge doesn't build :(
 torch
 torchvision

@@ -6,7 +6,7 @@ from io import BytesIO
 from pathlib import Path
 from random import shuffle
 from typing import Dict, Tuple
-
+import numpy as np
 import pillow_lut as lut
 from flask import Flask, abort, redirect, render_template, request
 from flask.helpers import send_file, url_for
@@ -29,16 +29,15 @@ poll_log = open(Path(args.out) / "poll.log", "a", buffering=1)
 
 def edit_and_serve_image(img_path: str, changes: Dict[str, float]):  # FIXME be able to apply lcontrast in addition to other parameter changes
     img_io = BytesIO()
-
     if "lcontrast" in changes:
         img = io.imread(img_path)
-        img_adapteq = exposure.equalize_adapthist(img, clip_limit=changes["lcontrast"])
-        io.imsave(img_io, img_adapteq)  # Lossy conversion from float64 to uint8. Range [0, 1]. Convert image to uint8 prior to saving to suppress this warning. # FIXME throwing errors
+        img = exposure.equalize_adapthist(img, clip_limit=changes["lcontrast"])
+        io.imsave(img_io, img, plugin="pil", format_str="JPEG", quality=70)
     else:
         img = Image.open(img_path)
         if "lcontrast" in changes:
             del changes["lcontrast"]
-        img.filter(lut.rgb_color_enhance(16, **changes)).save(img_io, "JPEG", quality=70)  # FIXME png support
+        img.convert("RGB").filter(lut.rgb_color_enhance(16, **changes)).save(img_io, "JPEG", quality=70)
 
     img_io.seek(0)
     return send_file(img_io, mimetype="image/jpeg")
