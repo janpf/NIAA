@@ -6,12 +6,12 @@ from io import BytesIO
 from pathlib import Path
 from random import shuffle
 from typing import Dict, Tuple
-import numpy as np
+
+import cv2
 import pillow_lut as lut
 from flask import Flask, abort, redirect, render_template, request
 from flask.helpers import send_file, url_for
 from PIL import Image
-from skimage import exposure, io
 
 app = Flask(__name__)
 
@@ -28,15 +28,25 @@ poll_log = open(Path(args.out) / "poll.log", "a", buffering=1)
 
 
 def edit_and_serve_image(img_path: str, changes: Dict[str, float]):  # FIXME be able to apply lcontrast in addition to other parameter changes
-    img_io = BytesIO()
     if "lcontrast" in changes:
-        img = io.imread(img_path)
-        img = exposure.equalize_adapthist(img, clip_limit=changes["lcontrast"])
-        io.imsave(img_io, img, plugin="pil", format_str="JPEG", quality=70)
+
+        img = cv2.imread(str(img_path))
+        img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+        lab_planes = cv2.split(img_lab)
+
+        clahe = cv2.createCLAHE(clipLimit=changes["lcontrast"], tileGridSize=(8, 8))
+        cl = clahe.apply(lab_planes[0])
+
+        limg = cv2.merge(lab_planes)
+        img = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
+        _, buffer = cv2.imencode(".jpeg", img)
+        img_io = BytesIO(buffer)
+
     else:
         img = Image.open(img_path)
         if "lcontrast" in changes:
             del changes["lcontrast"]
+        img_io = BytesIO()
         img.convert("RGB").filter(lut.rgb_color_enhance(16, **changes)).save(img_io, "JPEG", quality=70)
 
     img_io.seek(0)
@@ -44,7 +54,7 @@ def edit_and_serve_image(img_path: str, changes: Dict[str, float]):  # FIXME be 
 
 
 def random_parameters() -> Tuple[str, Tuple[float, float]]:
-    parameters = {"brightness": [-1, 1], "exposure": [-5, 5], "contrast": [-1, 5], "warmth": [-1, 1], "saturation": [-1, 5], "vibrance": [-1, 5]}  # TODO hue[0,1] and lcontrast
+    parameters = {"brightness": [-1, 1], "exposure": [-5, 5], "contrast": [-1, 5], "warmth": [-1, 1], "saturation": [-1, 5], "vibrance": [-1, 5], "lcontrast": [0.1, 40]}  # TODO hue[0,1] and lcontrast
     if random.choice(["single"]) == "single":  # how many parameters to change at once
         pos_neg = random.choice(["positiv", "negative", "interval"])  # in order to not match a positive change with a negative one
         change = random.choice(list(parameters.keys()))
