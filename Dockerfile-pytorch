@@ -1,0 +1,4 @@
+FROM pytorch/pytorch:latest
+
+COPY ./requirements-pytorch.txt /workspace/
+RUN pip install -r /workspace/requirements-pytorch.txt
