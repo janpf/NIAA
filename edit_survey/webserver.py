@@ -1,9 +1,11 @@
 import argparse
+import logging
 import math
 import random
 from io import BytesIO
 from pathlib import Path
 from random import shuffle
+from typing import Dict, Tuple
 
 import pillow_lut as lut
 from flask import Flask, abort, redirect, render_template, request
@@ -12,7 +14,6 @@ from PIL import Image
 from skimage import exposure, io
 
 app = Flask(__name__)
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--imageFile", type=str, help="every line a file name", default="/scratch/stud/pfister/NIAA/pexels/train.txt")
@@ -23,33 +24,29 @@ args = parser.parse_args()
 with open(args.imageFile, "r") as imgFile:
     imgs = [img.strip() for img in imgFile.readlines()]
     imgsSet = set(imgs)
-
 poll_log = open(Path(args.out) / "poll.log", "a", buffering=1)
 
 
-def edit_and_serve_image(img_path, changes):  # FIXME be able to apply lcontrast in addition to other parameter changes
+def edit_and_serve_image(img_path: str, changes: Dict[str, float]):  # FIXME be able to apply lcontrast in addition to other parameter changes
     img_io = BytesIO()
 
-    if changes["lcontrast"] != 0:
+    if "lcontrast" in changes:
         img = io.imread(img_path)
-        clip_limit = 0.03
-        img_adapteq = exposure.equalize_adapthist(img, clip_limit=clip_limit)
-        io.imsave(img_io, img_adapteq)  # Lossy conversion from float64 to uint8. Range [0, 1]. Convert image to uint8 prior to saving to suppress this warning.
-        # FIXME throwing errors
+        img_adapteq = exposure.equalize_adapthist(img, clip_limit=changes["lcontrast"])
+        io.imsave(img_io, img_adapteq)  # Lossy conversion from float64 to uint8. Range [0, 1]. Convert image to uint8 prior to saving to suppress this warning. # FIXME throwing errors
     else:
         img = Image.open(img_path)
-        changes.pop("lcontrast")
-        img_filter = lut.rgb_color_enhance(16, **changes)
-        img.filter(img_filter).save(img_io, "JPEG", quality=70)  # FIXME png support
+        if "lcontrast" in changes:
+            del changes["lcontrast"]
+        img.filter(lut.rgb_color_enhance(16, **changes)).save(img_io, "JPEG", quality=70)  # FIXME png support
 
     img_io.seek(0)
     return send_file(img_io, mimetype="image/jpeg")
 
 
-def random_parameters():
-    modes = ["single"]  # FIXME how many parametes to change at once
+def random_parameters() -> Tuple[str, Tuple[float, float]]:
     parameters = {"brightness": [-1, 1], "exposure": [-5, 5], "contrast": [-1, 5], "warmth": [-1, 1], "saturation": [-1, 5], "vibrance": [-1, 5]}  # TODO hue[0,1] and lcontrast
-    if random.choice(modes) == "single":
+    if random.choice(["single"]) == "single":  # how many parameters to change at once
         pos_neg = random.choice(["positiv", "negative", "interval"])  # in order to not match a positive change with a negative one
         change = random.choice(list(parameters.keys()))
         N = 1
@@ -66,14 +63,11 @@ def random_parameters():
 
 @app.route("/")
 def survey():
-    img = random.choice(imgs)
-    img = f"/img/{img}"
+    img = f"/img/{random.choice(imgs)}"
     edits = random_parameters()
-    parameter = edits[0]
-    changes = list(edits[1])
+    parameter, changes = edits[0], list(edits[1])
     shuffle(changes)
-    leftChanges = changes[0]
-    rightChanges = changes[1]
+    leftChanges, rightChanges = changes
     print(f"{parameter}:{changes}")
     hashval = hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}")
     return render_template("index.html", leftImage=f"{img}?{parameter}={leftChanges}&l&hash={hashval}", rightImage=f"{img}?{parameter}={rightChanges}&r&hash={hashval}", img=img, parameter=parameter, leftChanges=leftChanges, rightChanges=rightChanges, hash=hashval)
@@ -87,17 +81,9 @@ def poll():
 
 
 @app.route("/img/<image>")
-def img(image):
-    # print(f"{Path(args.imageFolder) / image} requested")
-    changes = {}  # TODO geht bestimmt cleaner # list comprehension
-    changes["brightness"] = request.args.get("brightness", default=0, type=float)
-    changes["exposure"] = request.args.get("exposure", default=0, type=float)
-    changes["contrast"] = request.args.get("contrast", default=0, type=float)
-    changes["warmth"] = request.args.get("warmth", default=0, type=float)
-    changes["saturation"] = request.args.get("saturation", default=0, type=float)
-    changes["vibrance"] = request.args.get("vibrance", default=0, type=float)
-    changes["hue"] = request.args.get("hue", default=0, type=float)
-    changes["lcontrast"] = request.args.get("lcontrast", default=0, type=float)
+def img(image: str):
+    changes: Dict[str, float] = request.args.to_dict()
+    changes = {k: float(v) for (k, v) in changes.items() if not k in ["r", "l", "hash"]}
 
     if not image in imgsSet:
         abort(404)
@@ -110,7 +96,6 @@ def log_request_info():
 
 
 if __name__ == "__main__":
-    import logging
-
     logging.basicConfig(filename=Path(args.out) / "debug.log", level=logging.DEBUG)
+
     app.run()
