@@ -32,11 +32,11 @@ def edit_and_serve_image(img_path: str, changes: Dict[str, float]):
     if "lcontrast" in changes:
         img = cv2.imread(str(img_path))
         img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
-        lab_planes = cv2.split(img_lab)
+        l, a, b = cv2.split(img_lab)
 
-        cl = cv2.createCLAHE(clipLimit=changes["lcontrast"], tileGridSize=(8, 8)).apply(lab_planes[0])
+        cl = cv2.createCLAHE(clipLimit=changes["lcontrast"], tileGridSize=(8, 8)).apply(l)
 
-        limg = cv2.merge(lab_planes)
+        limg = cv2.merge((cl, a, b))
         img = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
         _, buffer = cv2.imencode(".jpeg", img)
         img_io = BytesIO(buffer)
