@@ -1,4 +1,5 @@
 FROM tiangolo/meinheld-gunicorn-flask:latest
+# would've used nginx, but... https://github.com/tiangolo/meinheld-gunicorn-flask-docker#alternatives
 
 ENV MODULE_NAME=webserver
 
