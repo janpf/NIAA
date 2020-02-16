@@ -53,7 +53,7 @@ def edit_and_serve_image(img_path: str, changes: Dict[str, float]):
 
 
 def random_parameters() -> Tuple[str, Tuple[float, float]]:
-    parameters = {"brightness": [-1, 1], "exposure": [-5, 5], "contrast": [-1, 5], "warmth": [-1, 1], "saturation": [-1, 5], "vibrance": [-1, 5], "lcontrast": [0.1, 40]}  # TODO hue[0,1]
+    parameters = {"brightness": [-1, 1], "exposure": [-5, 5], "contrast": [-1, 5], "warmth": [-1, 1], "saturation": [-1, 5], "vibrance": [-1, 5], "lcontrast": [0.1, 40]}  # TODO hue[0,1]?
     if random.choice(["single"]) == "single":  # how many parameters to change at once # TODO add ability to change multiple parameters at once
         change = random.choice(list(parameters.keys()))
         if change == "lcontrast":

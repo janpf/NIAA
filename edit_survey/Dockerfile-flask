@@ -1,8 +1,8 @@
-FROM tiangolo/meinheld-gunicorn-flask:python3.7
+FROM tiangolo/meinheld-gunicorn-flask:latest
 
 ENV MODULE_NAME=webserver
 
 COPY ./requirements-flask.txt /app
 RUN pip install -r /app/requirements-flask.txt
 
-COPY ./edit_survey /app
+COPY . /app

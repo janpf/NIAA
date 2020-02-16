@@ -6,38 +6,35 @@ on:
       - master
 
 jobs:
-
   build_pytorch:
     runs-on: ubuntu-latest
 
     steps:
-    - name: docker login
-      run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
+      - name: docker login
+        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
-    - name: checkout project
-      uses: actions/checkout@v1
+      - name: checkout project
+        uses: actions/checkout@v1
 
+      - name: build pytorch image
+        run: docker build . --file Dockerfile-pytorch --tag janpf/niaa:pytorch-latest
 
-    - name: build pytorch image
-      run: docker build . --file Dockerfile-pytorch --tag janpf/niaa:pytorch-latest
-
-    - name: docker push
-      run: docker push janpf/niaa:pytorch-latest
-
+      - name: docker push
+        run: docker push janpf/niaa:pytorch-latest
 
   build_flask:
     runs-on: ubuntu-latest
 
     steps:
-    - name: docker login
-      run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
+      - name: docker login
+        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
-    - name: checkout project
-      uses: actions/checkout@v1
+      - name: checkout project
+        uses: actions/checkout@v1
 
+      - name: build flask image
+        working-directory: edit_survey
+        run: docker build . --file Dockerfile-flask --tag janpf/niaa:flask-latest
 
-    - name: build flask image
-      run: docker build . --file Dockerfile-flask --tag janpf/niaa:flask-latest
-
-    - name: docker push
-      run: docker push janpf/niaa:flask-latest
+      - name: docker push
+        run: docker push janpf/niaa:flask-latest
