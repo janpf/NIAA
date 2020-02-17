@@ -106,6 +106,7 @@ def load_app(imgFile="/data/imgs.txt", imageFolder="/data/images", out="/data/lo
     app.logger.setLevel(logging.DEBUG)
 
     app.config["imageFolder"] = imageFolder
+    app.config["TEMPLATES_AUTO_RELOAD"] = True
     with open(imgFile, "r") as f:
         app.imgs = [img.strip() for img in f.readlines()]
         app.imgsSet = set(app.imgs)
@@ -121,4 +122,4 @@ if __name__ == "__main__":
 
     load_app(args.imageFile, args.imageFolder, args.out)
 
-    app.run()
+    app.run(debug=True)

@@ -6,142 +6,134 @@
     <title>Image Aesthetic Assessment</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
         integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-    <script type="module" src="https://unpkg.com/img-comparison-slider@latest/dist/component/component.esm.js"></script>
-    <script nomodule="" src="https://unpkg.com/img-comparison-slider@latest/dist/component/component.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/img-comparison-slider@latest/dist/collection/styles/initial.css">
-
+    <link rel="stylesheet" href="https://unpkg.com/beerslider/dist/BeerSlider.css">
     <style>
         body {
-            width: 90%;
-            max-width: 1500px;
+            width: 70%;
+            max-width: 1300px;
             margin: 2em auto;
             font: .9em/1.2 Arial, Helvetica, sans-serif;
+            display: grid;
+            grid-template-columns: 1fr 50px 1fr;
+            grid-auto-rows: minmax(100px, auto);
+            grid-gap: 30px;
+            /* center all the things */
+            justify-content: center;
+            justify-items: center;
+            align-items: center;
+            text-align: center;
+
         }
 
-        .maingrid {
-            box-sizing: border-box;
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            grid-auto-rows: minmax(100px, auto);
-            grid-gap: 50px;
-            justify-content: center;
-            align-items: start;
-            text-align: center;
+        form {
+            width: 100%;
+            height: 100%;
+        }
+
+        form>input {
+            width: 100%;
+            height: auto;
+        }
+
+        form>input[type=image] {
+            height: 40vh;
+            width: auto;
         }
 
         .headline {
-            grid-column: 1 / 4;
             grid-row: 1;
         }
 
         .welcome {
-            grid-column: 1 / 4;
             grid-row: 2;
             line-height: 1.5;
             display: inline-block;
             vertical-align: middle;
         }
 
-        .maingrid img,
-        .maingrid form,
-        .maingrid input {
-            width: 100%;
-            height: auto;
+        .wide {
+            grid-column: 1 / -1;
         }
 
-        .center,
-        .big-img {
-            box-sizing: border-box;
-            display: grid;
-            grid-template-columns: 1fr;
-            grid-auto-rows: minmax(30px, auto);
-            grid-gap: 20px;
-            justify-content: center;
-            align-items: start;
-            text-align: center;
-        }
-
-        .big-img>input {
-            grid-row: 1;
-        }
-
-        .big-img>button {
-            grid-row: 2;
+        #comparison {
+            grid-row: 3;
+            height: 40vh;
+            width: 30vw;
         }
 
         .left {
+            grid-row: 4;
             grid-column: 1;
-            grid-row: 3;
-        }
-
-        .center {
-            grid-column: 2;
-            grid-row: 3;
         }
 
         .right {
+            grid-row: 4;
             grid-column: 3;
-            grid-row: 3;
+        }
+
+        .lower {
+            grid-row: 5;
         }
     </style>
 </head>
 
 <body>
-    <div class="maingrid">
-        <h1 class="headline">Image Aesthetic Assessment</h1>
-        <div class="welcome">Servus,bitte mal das, wo ästhetischer anklicken. kthxbai.</div>
-        <div class="center">
-            <img-comparison-slider id="comparison">
-                <img slot="after" src="{{ leftImage }}">
-                <img slot="before" src="{{ rightImage }}">
-            </img-comparison-slider>
+    <h1 class="headline wide">Image Aesthetic Assessment</h1>
+    <div class="welcome wide">Servus,bitte mal das, wo ästhetischer anklicken. kthxbai.</div>
 
-            <form class="unsure" action="/poll" method="post">
-                <input type="hidden" name="hash" value="{{ hash }}">
-                <input type="hidden" name="img" value="{{ img }}">
-                <input type="hidden" name="parameter" value="{{ parameter }}">
-                <input type="hidden" name="leftChanges" value="{{ leftChanges }}">
-                <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
-                <input type="hidden" name="chosen" value="unsure">
-                <button type="submit" class="btn btn-outline-secondary btn-lg btn-block">🤷 can't decide /
-                    unsure</button>
-            </form>
-
-            <form class="error" action="/poll" method="post">
-                <input type="hidden" name="hash" value="{{ hash }}">
-                <input type="hidden" name="img" value="{{ img }}">
-                <input type="hidden" name="parameter" value="{{ parameter }}">
-                <input type="hidden" name="leftChanges" value="{{ leftChanges }}">
-                <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
-                <input type="hidden" name="chosen" value="error">
-                <button type="submit" class="btn btn-outline-secondary btn-lg btn-block">something's wrong</button>
-            </form>
+    <div id="comparison" class="wide">
+        <div id="slider" class="beer-slider">
+            <img src="{{ rightImage }}">
+            <div class="beer-reveal">
+                <img src="{{ leftImage }}">
+            </div>
         </div>
-        <form class="big-img left" action="/poll" method="post">
-            <input type="hidden" name="hash" value="{{ hash }}">
-            <input type="hidden" name="img" value="{{ img }}">
-            <input type="hidden" name="parameter" value="{{ parameter }}">
-            <input type="hidden" name="leftChanges" value="{{ leftChanges }}">
-            <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
-            <input type="hidden" name="chosen" value="leftImage">
-            <input type="image" src="{{ leftImage }}">
-            <button type="submit" class="btn btn-outline-secondary btn-lg btn-block">left</button>
-        </form>
-
-        <form class="big-img right" action="/poll" method="post">
-            <input type="hidden" name="hash" value="{{ hash }}">
-            <input type="hidden" name="img" value="{{ img }}">
-            <input type="hidden" name="parameter" value="{{ parameter }}">
-            <input type="hidden" name="leftChanges" value="{{ leftChanges }}">
-            <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
-            <input type="hidden" name="chosen" value="rightImage">
-            <input type="image" src="{{ rightImage }}">
-            <button type="submit" class="btn btn-outline-secondary btn-lg btn-block">right</button>
-        </form>
-
-    </div>
     </div>
 
+
+    <form class="left" action="/poll" method="post">
+        <input type="hidden" name="hash" value="{{ hash }}">
+        <input type="hidden" name="img" value="{{ img }}">
+        <input type="hidden" name="parameter" value="{{ parameter }}">
+        <input type="hidden" name="leftChanges" value="{{ leftChanges }}">
+        <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
+        <input type="hidden" name="chosen" value="leftImage">
+        <input type="image" src="{{ leftImage }}">
+    </form>
+    <form class="right" action="/poll" method="post">
+        <input type="hidden" name="hash" value="{{ hash }}">
+        <input type="hidden" name="img" value="{{ img }}">
+        <input type="hidden" name="parameter" value="{{ parameter }}">
+        <input type="hidden" name="leftChanges" value="{{ leftChanges }}">
+        <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
+        <input type="hidden" name="chosen" value="rightImage">
+        <input type="image" src="{{ rightImage }}">
+    </form>
+
+
+    <form class="left lower" action="/poll" method="post">
+        <input type="hidden" name="hash" value="{{ hash }}">
+        <input type="hidden" name="img" value="{{ img }}">
+        <input type="hidden" name="parameter" value="{{ parameter }}">
+        <input type="hidden" name="leftChanges" value="{{ leftChanges }}">
+        <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
+        <input type="hidden" name="chosen" value="unsure">
+        <button type="submit" class="btn btn-outline-secondary btn-lg btn-block">🤷 can't decide /
+            unsure</button>
+    </form>
+    <form class="right lower" action="/poll" method="post">
+        <input type="hidden" name="hash" value="{{ hash }}">
+        <input type="hidden" name="img" value="{{ img }}">
+        <input type="hidden" name="parameter" value="{{ parameter }}">
+        <input type="hidden" name="leftChanges" value="{{ leftChanges }}">
+        <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
+        <input type="hidden" name="chosen" value="error">
+        <button type="submit" class="btn btn-outline-secondary btn-lg btn-block">something's wrong</button>
+    </form>
+    <script src="https://unpkg.com/beerslider/dist/BeerSlider.js"></script>
+    <script>
+        new BeerSlider(document.getElementById('slider'));
+    </script>
 </body>
 
 </html>
