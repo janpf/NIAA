@@ -43,26 +43,25 @@ def edit_and_serve_image(img_path: str, changes: Dict[str, float]):
 
 def random_parameters() -> Tuple[str, Tuple[float, float]]:
     parameters = {"brightness": [-1, 1], "exposure": [-5, 5], "contrast": [-1, 5], "warmth": [-1, 1], "saturation": [-1, 5], "vibrance": [-1, 5], "lcontrast": [0.1, 40]}  # TODO hue[0,1]?
-    if random.choice(["single"]) == "single":  # how many parameters to change at once # TODO add ability to change multiple parameters at once
-        change = random.choice(list(parameters.keys()))
-        if change == "lcontrast":
-            pos_neg = random.choice(["positiv", "interval"])
-            lcontrast_vals = [round(val, 1) for val in list(np.arange(0.1, 1, 0.1)) + list(range(1, 10)) + list(range(10, 41, 5))]  # [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40]
-            if pos_neg == "positive":
-                changeVal = (0, random.choice(lcontrast_vals))
-            else:
-                changeVal = (random.choice(lcontrast_vals), random.choice(lcontrast_vals))
+    change = random.choice(list(parameters.keys()))
+    if change == "lcontrast":
+        pos_neg = random.choice(["positiv", "interval"])
+        lcontrast_vals = [round(val, 1) for val in list(np.arange(0.1, 1, 0.1)) + list(range(1, 10)) + list(range(10, 41, 5))]  # [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40]
+        if pos_neg == "positive":
+            changeVal = (0, random.choice(lcontrast_vals))
         else:
-            pos_neg = random.choice(["positiv", "negative", "interval"])  # in order to not match a positive change with a negative one
-            N = 1
-            if pos_neg == "positive":
-                changeVal = (0, round(random.uniform(0, parameters[change][1]), N))
-            elif pos_neg == "negative":
-                changeVal = (0, round(random.uniform(parameters[change][0], 0), N))
-            else:
-                changeVal = (round(random.uniform(parameters[change][0], parameters[change][1]), N), round(random.uniform(parameters[change][0], parameters[change][1]), N))
-                while not math.copysign(1, changeVal[0]) == math.copysign(1, changeVal[1]):  # make sure to not compare an image to another one, which has been edited in the other "direction"
-                    changeVal = (changeVal[0], round(random.uniform(parameters[change][0], parameters[change][1]), N))
+            changeVal = (random.choice(lcontrast_vals), random.choice(lcontrast_vals))
+    else:
+        pos_neg = random.choice(["positiv", "negative", "interval"])  # in order to not match a positive change with a negative one
+        N = 1
+        if pos_neg == "positive":
+            changeVal = (0, round(random.uniform(0, parameters[change][1]), N))
+        elif pos_neg == "negative":
+            changeVal = (0, round(random.uniform(parameters[change][0], 0), N))
+        else:
+            changeVal = (round(random.uniform(parameters[change][0], parameters[change][1]), N), round(random.uniform(parameters[change][0], parameters[change][1]), N))
+            while not math.copysign(1, changeVal[0]) == math.copysign(1, changeVal[1]):  # make sure to not compare an image to another one, which has been edited in the other "direction"
+                changeVal = (changeVal[0], round(random.uniform(parameters[change][0], parameters[change][1]), N))
     return change, changeVal
 
 
