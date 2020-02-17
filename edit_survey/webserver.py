@@ -100,7 +100,7 @@ def log_request_info():
     app.logger.debug("Body: %s", request.get_data())
 
 
-def load_app(imgFile):  # for gunicorn # TODO https://github.com/benoitc/gunicorn/issues/135
+def load_app(imgFile):  # for gunicorn # https://github.com/benoitc/gunicorn/issues/135
     with open(imgFile, "r") as f:
         app.imgs = [img.strip() for img in f.readlines()]
         app.imgsSet = set(app.imgs)
