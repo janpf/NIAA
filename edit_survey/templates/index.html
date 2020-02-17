@@ -36,7 +36,7 @@
         }
 
         form>input[type=image] {
-            height: 30vh;
+            height: 50vh;
             width: auto;
         }
 
@@ -55,27 +55,6 @@
             grid-column: 1 / -1;
         }
 
-        #compareImg {
-            max-height: 100%;
-            max-width: 100%;
-            height: auto;
-            width: auto;
-        }
-
-        .comparison {
-            grid-row: 3;
-            position: relative;
-            height: 40vh;
-            width: auto;
-        }
-
-        #overlay {
-            position: absolute;
-            bottom: 5%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
         .left {
             grid-row: 4;
             grid-column: 1;
@@ -90,32 +69,13 @@
             grid-row: 5;
         }
     </style>
-    <script>
-        function changeImage() {
-            var image = document.getElementById('compareImg');
-            if (image.dataset.side.match("left")) {
-                image.src = "{{ rightImage | safe }}";
-                image.dataset.side = "right";
-                document.getElementById("overlay").innerHTML = "right";
-            } else {
-                image.src = "{{ leftImage | safe }}";
-                image.dataset.side = "left";
-                document.getElementById("overlay").innerHTML = "left";
-            }
-        }
-    </script>
 </head>
 
 <body>
     <h1 class="headline wide">Image Aesthetic Assessment</h1>
     <div class="welcome wide">Servus,bitte mal das, wo ästhetischer anklicken. kthxbai.</div>
 
-    <div class="comparison wide">
-        <img id="compareImg" onclick="changeImage()" data-side="left" src="{{ leftImage }}">
-        <div id="overlay" onclick="changeImage()" class="badge badge-secondary">left (click here to change)</div>
-    </div>
-
-    <form class="left" action="/poll" method="post">
+    <form id="left" class="left" action="/poll" method="post">
         <input type="hidden" name="hash" value="{{ hash }}">
         <input type="hidden" name="img" value="{{ img }}">
         <input type="hidden" name="parameter" value="{{ parameter }}">
