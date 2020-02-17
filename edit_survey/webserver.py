@@ -16,17 +16,6 @@ from PIL import Image
 
 app = Flask(__name__)
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--imageFile", type=str, help="every line a file name", default="/scratch/stud/pfister/NIAA/pexels/train.txt")
-parser.add_argument("--imageFolder", type=str, help="path to a folder of images", default="/scratch/stud/pfister/NIAA/pexels/images")
-parser.add_argument("--out", type=str, help="dir to log to", default="/scratch/stud/pfister/NIAA/pexels/logs")
-args = parser.parse_args()
-
-with open(args.imageFile, "r") as imgFile:
-    imgs = [img.strip() for img in imgFile.readlines()]
-    imgsSet = set(imgs)
-poll_log = open(Path(args.out) / "poll.log", "a", buffering=1)
-
 
 def edit_and_serve_image(img_path: str, changes: Dict[str, float]):
     if "lcontrast" in changes:
@@ -79,7 +68,7 @@ def random_parameters() -> Tuple[str, Tuple[float, float]]:
 
 @app.route("/")
 def survey():
-    img = f"/img/{random.choice(imgs)}"
+    img = f"/img/{random.choice(app.imgs)}"
     edits = random_parameters()
     parameter, changes = edits[0], list(edits[1])
     shuffle(changes)
@@ -92,7 +81,7 @@ def survey():
 @app.route("/poll", methods=["POST"])
 def poll():
     print(request.form.to_dict())
-    print(request.form.to_dict(), file=poll_log)
+    app.logger.info(request.form.to_dict())
     return redirect("/#left")
 
 
@@ -101,9 +90,9 @@ def img(image: str):
     changes: Dict[str, float] = request.args.to_dict()
     changes = {k: float(v) for (k, v) in changes.items() if not k in ["r", "l", "hash"]}
 
-    if not image in imgsSet:
+    if not image in app.imgsSet:
         abort(404)
-    return edit_and_serve_image(Path(args.imageFolder) / image, changes)
+    return edit_and_serve_image(Path(app.config.get("imageFolder")) / image, changes)
 
 
 @app.before_request
@@ -111,7 +100,25 @@ def log_request_info():
     app.logger.debug("Body: %s", request.get_data())
 
 
+def load_app(imgFile):  # for gunicorn # TODO https://github.com/benoitc/gunicorn/issues/135
+    with open(imgFile, "r") as f:
+        app.imgs = [img.strip() for img in f.readlines()]
+        app.imgsSet = set(app.imgs)
+    return app
+
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--imageFile", type=str, help="every line a file name", default="/scratch/stud/pfister/NIAA/pexels/train.txt")
+    parser.add_argument("--imageFolder", type=str, help="path to a folder of images", default="/scratch/stud/pfister/NIAA/pexels/images")
+    args = parser.parse_args()
+
+    load_app(args.imageFile)
+    app.config["imageFolder"] = args.imageFolder
+
     logging.basicConfig(filename=Path(args.out) / "debug.log", level=logging.DEBUG)
+    gunicorn_error_logger = logging.getLogger("gunicorn.error")
+    app.logger.handlers.extend(gunicorn_error_logger.handlers)
+    app.logger.setLevel(logging.DEBUG)
 
     app.run()

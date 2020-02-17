@@ -1,7 +1,7 @@
 FROM tiangolo/meinheld-gunicorn-flask:latest
 # would've used nginx, but... https://github.com/tiangolo/meinheld-gunicorn-flask-docker#alternatives
 
-ENV MODULE_NAME=webserver
+ENV APP_MODULE=webserver:load_app()
 
 COPY ./requirements-flask.txt /app
 RUN pip install -r /app/requirements-flask.txt
