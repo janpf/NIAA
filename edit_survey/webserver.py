@@ -81,7 +81,7 @@ def survey():
 @app.route("/poll", methods=["POST"])
 def poll():
     print(request.form.to_dict())
-    app.logger.info(request.form.to_dict())
+    app.logger.info(f"submit: {request.form.to_dict()}")
     return redirect("/#left")
 
 
@@ -100,7 +100,13 @@ def log_request_info():
     app.logger.debug("Body: %s", request.get_data())
 
 
-def load_app(imgFile):  # for gunicorn # https://github.com/benoitc/gunicorn/issues/135
+def load_app(imgFile="/data/imgs.txt", imageFolder="/data/images", out="/data/logs"):  # for gunicorn # https://github.com/benoitc/gunicorn/issues/135
+    logging.basicConfig(filename=Path(out) / "flask.log", level=logging.DEBUG)
+    gunicorn_error_logger = logging.getLogger("gunicorn.error")
+    app.logger.handlers.extend(gunicorn_error_logger.handlers)
+    app.logger.setLevel(logging.DEBUG)
+
+    app.config["imageFolder"] = imageFolder
     with open(imgFile, "r") as f:
         app.imgs = [img.strip() for img in f.readlines()]
         app.imgsSet = set(app.imgs)
@@ -111,14 +117,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--imageFile", type=str, help="every line a file name", default="/scratch/stud/pfister/NIAA/pexels/train.txt")
     parser.add_argument("--imageFolder", type=str, help="path to a folder of images", default="/scratch/stud/pfister/NIAA/pexels/images")
+    parser.add_argument("--out", type=str, help="path to log to", default="/scratch/stud/pfister/NIAA/pexels/logs")
     args = parser.parse_args()
 
-    load_app(args.imageFile)
-    app.config["imageFolder"] = args.imageFolder
-
-    logging.basicConfig(filename=Path(args.out) / "debug.log", level=logging.DEBUG)
-    gunicorn_error_logger = logging.getLogger("gunicorn.error")
-    app.logger.handlers.extend(gunicorn_error_logger.handlers)
-    app.logger.setLevel(logging.DEBUG)
+    load_app(args.imageFile, args.imageFolder, args.out)
 
     app.run()
