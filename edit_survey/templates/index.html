@@ -6,8 +6,36 @@
     <title>Image Aesthetic Assessment</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
         integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://unpkg.com/beerslider/dist/BeerSlider.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <style>
+        #overlay {
+            display: none;
+        }
+
+        @media only screen and (max-width: 1279px) {
+            #overlay {
+                display: block;
+                position: fixed;
+
+                top: 0;
+                left: 0;
+                height: 100%;
+                width: 100%;
+                height: 100vh;
+                width: 100vw;
+                margin: 0;
+
+                overflow: auto;
+                z-index: 1000;
+                overflow: hidden;
+                background-color: white;
+            }
+
+            body *:not(.mobile) {
+                display: none;
+            }
+        }
+
         body {
             width: 70%;
             max-width: 1300px;
@@ -69,9 +97,32 @@
             grid-row: 5;
         }
     </style>
+
 </head>
 
 <body>
+    <div id="overlay" class="jumbotron jumbotron-fluid mobile">
+        <div class="container mobile" style="width: 100%; height: 100%;">
+            <h1 class="display-4 mobile" style="width: 100%;">
+                Vielen Dank für die Teilnahme an meiner Umfrage/Studie</h1>
+            <p id="nah" class="lead mobile" style="width: 100%;">
+                Leider muss ich dich bitten auf einen Desktopbrowser zu wechseln, oder zumindest ein Gerät mit einem
+                großen Bildschirm zu verwenden
+            </p>
+            <img class="mobile" src="https://discordemoji.com/assets/emoji/ppHop.gif" />
+            <button type="button" onclick="switchDesktop(this)" class="btn btn-lg btn-info mobile">
+                Ok, mach ich!
+            </button>
+            <img class="mobile" src="https://discordemoji.com/assets/emoji/ppHop.gif" />
+            <script>
+                function switchDesktop(btn) {
+                    btn.innerText = "Danke!";
+                    $(btn).removeClass("btn-info");
+                    $(btn).addClass("btn-success");
+                }
+            </script>
+        </div>
+    </div>
     <h1 class="headline wide">Image Aesthetic Assessment</h1>
     <div class="welcome wide">Servus,bitte mal das, wo ästhetischer anklicken. kthxbai.</div>
 
@@ -112,8 +163,21 @@
         <input type="hidden" name="leftChanges" value="{{ leftChanges }}">
         <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
         <input type="hidden" name="chosen" value="error">
-        <button type="submit" class="btn btn-outline-secondary btn-lg btn-block">something's wrong</button>
+        <button id="errorbtn" type="submit" class="btn btn-outline-secondary btn-lg btn-block">
+            something's wrong </button>
     </form>
+    <script>
+        $("#errorbtn").hover(
+            function () {
+                $(this).removeClass("btn-outline-secondary");
+                $(this).addClass("btn-outline-danger");
+            },
+            function () {
+                $(this).removeClass("btn-outline-danger");
+                $(this).addClass("btn-outline-secondary");
+            }
+        );
+    </script>
 </body>
 
 </html>
