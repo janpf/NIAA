@@ -82,7 +82,7 @@ def survey():
 def poll():
     print(request.form.to_dict())
     app.logger.info(f"submit: {request.form.to_dict()}")
-    return redirect("/#left")
+    return redirect("/#comparison")
 
 
 @app.route("/img/<image>")
