@@ -123,46 +123,93 @@
     <div class="welcome wide">Servus,bitte mal das, wo ästhetischer anklicken. kthxbai.</div>
 
     <form id="left" class="left" action="/poll" method="post">
-        <input type="hidden" name="hash" value="{{ hash }}">
         <input type="hidden" name="img" value="{{ img }}">
         <input type="hidden" name="parameter" value="{{ parameter }}">
         <input type="hidden" name="leftChanges" value="{{ leftChanges }}">
         <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
         <input type="hidden" name="chosen" value="leftImage">
-        <input type="image" src="{{ leftImage }}">
+        <input type="image" src="{{ leftImage }}" onsubmit="DoSubmit();">
+
+        <input type="hidden" name="hash" value="{{ hash }}">
+        <input type="hidden" name="screenWidth" value="js-disabled?">
+        <input type="hidden" name="screenHeight" value="js-disabled?">
+        <input type="hidden" name="windowWidth" value="js-disabled?">
+        <input type="hidden" name="windowHeight" value="js-disabled?">
+        <input type="hidden" name="colorDepth" value="js-disabled?">
     </form>
     <form class="right" action="/poll" method="post">
-        <input type="hidden" name="hash" value="{{ hash }}">
         <input type="hidden" name="img" value="{{ img }}">
         <input type="hidden" name="parameter" value="{{ parameter }}">
         <input type="hidden" name="leftChanges" value="{{ leftChanges }}">
         <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
         <input type="hidden" name="chosen" value="rightImage">
-        <input type="image" src="{{ rightImage }}">
+        <input type="image" src="{{ rightImage }}" onsubmit="DoSubmit();">
+
+        <input type="hidden" name="hash" value="{{ hash }}">
+        <input type="hidden" name="screenWidth" value="js-disabled?">
+        <input type="hidden" name="screenHeight" value="js-disabled?">
+        <input type="hidden" name="windowWidth" value="js-disabled?">
+        <input type="hidden" name="windowHeight" value="js-disabled?">
+        <input type="hidden" name="colorDepth" value="js-disabled?">
     </form>
 
 
     <form class="left lower" action="/poll" method="post">
-        <input type="hidden" name="hash" value="{{ hash }}">
         <input type="hidden" name="img" value="{{ img }}">
         <input type="hidden" name="parameter" value="{{ parameter }}">
         <input type="hidden" name="leftChanges" value="{{ leftChanges }}">
         <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
         <input type="hidden" name="chosen" value="unsure">
-        <button type="submit" class="btn btn-outline-secondary btn-lg btn-block">🤷 can't decide /
-            unsure</button>
+        <button type="submit" class="btn btn-outline-secondary btn-lg btn-block" onsubmit="DoSubmit();">
+            🤷 can't decide / unsure
+        </button>
+
+        <input type="hidden" name="hash" value="{{ hash }}">
+        <input type="hidden" name="screenWidth" value="js-disabled?">
+        <input type="hidden" name="screenHeight" value="js-disabled?">
+        <input type="hidden" name="windowWidth" value="js-disabled?">
+        <input type="hidden" name="windowHeight" value="js-disabled?">
+        <input type="hidden" name="colorDepth" value="js-disabled?">
     </form>
     <form class="right lower" action="/poll" method="post">
-        <input type="hidden" name="hash" value="{{ hash }}">
         <input type="hidden" name="img" value="{{ img }}">
         <input type="hidden" name="parameter" value="{{ parameter }}">
         <input type="hidden" name="leftChanges" value="{{ leftChanges }}">
         <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
         <input type="hidden" name="chosen" value="error">
-        <button id="errorbtn" type="submit" class="btn btn-outline-secondary btn-lg btn-block">
-            something's wrong </button>
+        <button id="errorbtn" type="submit" class="btn btn-outline-secondary btn-lg btn-block" onsubmit="DoSubmit();">
+            something's wrong
+        </button>
+
+        <input type="hidden" name="hash" value="{{ hash }}">
+        <input type="hidden" name="screenWidth" value="js-disabled?">
+        <input type="hidden" name="screenHeight" value="js-disabled?">
+        <input type="hidden" name="windowWidth" value="js-disabled?">
+        <input type="hidden" name="windowHeight" value="js-disabled?">
+        <input type="hidden" name="colorDepth" value="js-disabled?">
     </form>
     <script>
+
+        function DoSubmit() {
+            $("input[name='screenWidth']").each(function (index, data) {
+                $(this).val(window.screen.width);
+            });
+            $("input[name='screenHeight']").each(function (index, data) {
+                $(this).val(window.screen.height);
+            });
+
+            $("input[name='windowWidth']").each(function (index, data) {
+                $(this).val($(window).width());
+            });
+            $("input[name='windowHeight']").each(function (index, data) {
+                $(this).val($(window).height());
+            });
+
+            $("input[name='colorDepth']").each(function (index, data) {
+                $(this).val(screen.colorDepth);
+            });
+            return true;
+        }
         $("#errorbtn").hover(
             function () {
                 $(this).removeClass("btn-outline-secondary");
