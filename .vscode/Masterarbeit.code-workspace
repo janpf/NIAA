@@ -18,5 +18,12 @@
 		}
 	],
 	"remoteAuthority": "ssh-remote+vingilot",
-	"settings": {}
+	"settings": {
+		"logViewer.watch": [
+			{
+				"title": "Survey",
+				"pattern": "/scratch/stud/pfister/NIAA/pexels/logs/*.log"
+			}
+		]
+	}
 }
