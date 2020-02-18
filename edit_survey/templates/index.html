@@ -190,21 +190,21 @@
     </form>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            $("input[name='screenWidth']").each(function (index, data) {
+            $("input[name='screenWidth']").each((index, data) => {
                 $(this).val(window.screen.width);
             });
-            $("input[name='screenHeight']").each(function (index, data) {
+            $("input[name='screenHeight']").each((index, data) => {
                 $(this).val(window.screen.height);
             });
 
-            $("input[name='windowWidth']").each(function (index, data) {
+            $("input[name='windowWidth']").each((index, data) => {
                 $(this).val($(window).width());
             });
-            $("input[name='windowHeight']").each(function (index, data) {
+            $("input[name='windowHeight']").each((index, data) => {
                 $(this).val($(window).height());
             });
 
-            $("input[name='colorDepth']").each(function (index, data) {
+            $("input[name='colorDepth']").each((index, data) => {
                 $(this).val(screen.colorDepth);
             });
         });
