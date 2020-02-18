@@ -97,6 +97,7 @@ def img(image: str):
 @app.before_request
 def log_request_info():
     app.logger.debug("Body: %s", request.get_data())
+    # app.logger.debug("Headers: %s", request.headers)
 
 
 def load_app(imgFile="/data/imgs.txt", imageFolder="/data/images", out="/data/logs"):  # for gunicorn # https://github.com/benoitc/gunicorn/issues/135
