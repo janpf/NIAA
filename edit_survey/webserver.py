@@ -6,11 +6,12 @@ from io import BytesIO
 from pathlib import Path
 from random import shuffle
 from typing import Dict, Tuple
+import secrets
 
 import cv2
 import numpy as np
 import pillow_lut as lut
-from flask import Flask, abort, redirect, render_template, request
+from flask import Flask, abort, redirect, render_template, request, session
 from flask.helpers import send_file, url_for
 from PIL import Image
 
@@ -74,7 +75,18 @@ def survey():
     leftChanges, rightChanges = changes
     print(f"{parameter}:{changes}")
     hashval = hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}")
-    return render_template("index.html", leftImage=f"{img}?{parameter}={leftChanges}&l&hash={hashval}", rightImage=f"{img}?{parameter}={rightChanges}&r&hash={hashval}", img=img, parameter=parameter, leftChanges=leftChanges, rightChanges=rightChanges, hash=hashval)
+    # fmt: off
+    return render_template(
+        "index.html",
+        leftImage=f"{img}?{parameter}={leftChanges}&l&hash={hashval}",
+        rightImage=f"{img}?{parameter}={rightChanges}&r&hash={hashval}",
+        img=img, parameter=parameter,
+        leftChanges=leftChanges,
+        rightChanges=rightChanges,
+        hash=hashval, username=session["name"],
+        count=session["count"]
+    )
+    # fmt: on
 
 
 @app.route("/poll", methods=["POST"])
@@ -94,10 +106,44 @@ def img(image: str):
     return edit_and_serve_image(Path(app.config.get("imageFolder")) / image, changes)
 
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if session.get("authorized", False):
+        return redirect(url_for("survey"))
+
+    if not session.get("id", None):
+        session["id"] = secrets.token_hex(nbytes=16)
+
+    if not session.get("name", None):
+        session["name"] = f"Anon#{secrets.token_hex(nbytes=4)}"
+
+    if not session.get("count", None):
+        session["count"] = 0
+
+    if request.method == "POST":
+        data = request.form.to_dict()
+        if data["username"]:
+            session["name"] = data["username"]
+
+        if data["password"] == "lala":
+            session["authorized"] = True
+            return redirect(url_for("survey"))
+
+    return render_template("login.html", username=session["name"])
+
+
+@app.route("/logout", methods=["GET", "POST"])
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
 @app.before_request
 def log_request_info():
     app.logger.debug("Body: %s", request.get_data())
     # app.logger.debug("Headers: %s", request.headers)
+    if not session.get("authorized", False) and request.endpoint != "login":
+        return redirect(url_for("login"))
 
 
 def load_app(imgFile="/data/imgs.txt", imageFolder="/data/images", out="/data/logs"):  # for gunicorn # https://github.com/benoitc/gunicorn/issues/135
@@ -108,6 +154,9 @@ def load_app(imgFile="/data/imgs.txt", imageFolder="/data/images", out="/data/lo
 
     app.config["imageFolder"] = imageFolder
     app.config["TEMPLATES_AUTO_RELOAD"] = True
+
+    app.secret_key = "secr3t"  # TODO
+
     with open(imgFile, "r") as f:
         app.imgs = [img.strip() for img in f.readlines()]
         app.imgsSet = set(app.imgs)
