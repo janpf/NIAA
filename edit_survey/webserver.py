@@ -93,6 +93,7 @@ def survey():
 def poll():
     print(request.form.to_dict())
     app.logger.info(f"submit: {request.form.to_dict()}")
+    session["count"] += 1
     return redirect("/#left")
 
 
@@ -141,7 +142,8 @@ def logout():
 @app.before_request
 def log_request_info():
     app.logger.debug("Body: %s", request.get_data())
-    # app.logger.debug("Headers: %s", request.headers)
+    app.logger.debug("Headers: %s", request.headers)
+    app.logger.debug("Session: %s", session)
     if not session.get("authorized", False) and request.endpoint != "login":
         return redirect(url_for("login"))
 

@@ -107,7 +107,7 @@
     <div id="overlay" class="jumbotron jumbotron-fluid mobile">
         <div class="container mobile" style="width: 100%; height: 100%;">
             <h1 class="display-4 mobile" style="width: 100%;">
-                Vielen Dank für die Teilnahme an meiner Umfrage/Studie</h1>
+                Vielen Dank für die Teilnahme an meiner Studie</h1>
             <p id="nah" class="lead mobile" style="width: 100%;">
                 Leider muss ich dich bitten auf einen Desktopbrowser zu wechseln, oder zumindest ein Gerät mit einem
                 großen Bildschirm zu verwenden
@@ -134,12 +134,19 @@
         <p>
             Ich möchte Sie bitten im Folgenden jeweils das Bild anzuklicken, welches Ihnen ästhetischer erscheint. <br>
             BLA vong wegen, welches professioneller bearbeitet aussieht <br>
-            Sie müssen sich hierbei nicht zu einer Meinung zwingen. Sich nicht entscheiden zu können ist auch ein
-            Ergebnis!
+            Sie müssen und sollen sich hierbei nicht zu einer Meinung zwingen. <br>
+            Für uneindeutige Entscheidungen steht ein extra Button unter den Bildern bereit.
         </p>
         <p>
-
+            Die Datenerhebungserklärung befindet sich am Ende der Seite.
         </p>
+        <p>
+            Es gibt <i>keine</i> Bearbeitungslimits, weder eine Obergrenze, noch eine Untergrenze.<br>
+            Wenden Sie soviel Zeit auf, wie Sie für diese Studie entbehren können und möchten. <br>
+            Sie können auch mehrmals vorbei gucken. Es werden immer neue Bilder bereitstehen 😉
+        </p>
+        {% if count != 0 %}<p>Sie haben bereits <b>{{ count }}</b> {% if count == 1 %} Bild{% else %} Bilder {% endif %}
+            bearbeitet! Vielen Dank!</b></p>{% endif %}
     </div>
 
     <form id="left" class="left" action="/poll" method="post">
@@ -209,22 +216,22 @@
         <input type="hidden" name="colorDepth" value="js-disabled?">
     </form>
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            $("input[name='screenWidth']").each((index, data) => {
+        $(document).ready(function () {
+            $("input[name='screenWidth']").each(function (index, data) {
                 $(this).val(window.screen.width);
             });
-            $("input[name='screenHeight']").each((index, data) => {
+            $("input[name='screenHeight']").each(function (index, data) {
                 $(this).val(window.screen.height);
             });
 
-            $("input[name='windowWidth']").each((index, data) => {
+            $("input[name='windowWidth']").each(function (index, data) {
                 $(this).val($(window).width());
             });
-            $("input[name='windowHeight']").each((index, data) => {
+            $("input[name='windowHeight']").each(function (index, data) {
                 $(this).val($(window).height());
             });
 
-            $("input[name='colorDepth']").each((index, data) => {
+            $("input[name='colorDepth']").each(function (index, data) {
                 $(this).val(screen.colorDepth);
             });
         });
