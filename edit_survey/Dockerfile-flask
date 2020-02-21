@@ -1,8 +1,8 @@
 FROM tiangolo/meinheld-gunicorn-flask:latest
 # would've used nginx, but... https://github.com/tiangolo/meinheld-gunicorn-flask-docker#alternatives
 
-RUN apt update
-RUN apt install python3-gi python3-gi-cairo gegl
+RUN apt-get update
+RUN apt-get install -y python3-gi python3-gi-cairo gegl
 
 ENV APP_MODULE=webserver:load_app()
 
