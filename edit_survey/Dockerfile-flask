@@ -4,7 +4,6 @@ RUN apt-get update
 RUN apt-get install -y python3-gi python3-gi-cairo gegl
 
 COPY ./requirements-flask.txt /app
-WORKDIR /app
 RUN pip install -r /app/requirements-flask.txt
 
 COPY . /app
