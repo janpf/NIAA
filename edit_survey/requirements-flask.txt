@@ -1,4 +1,5 @@
 flask
+gunicorn
 numpy
 opencv-python-headless
 Pillow

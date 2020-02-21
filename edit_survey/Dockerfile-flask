@@ -1,12 +1,12 @@
-FROM tiangolo/meinheld-gunicorn-flask:latest
-# would've used nginx, but... https://github.com/tiangolo/meinheld-gunicorn-flask-docker#alternatives
+FROM python:latest
 
 RUN apt-get update
 RUN apt-get install -y python3-gi python3-gi-cairo gegl
 
-#ENV APP_MODULE=webserver:load_app()
-
 COPY ./requirements-flask.txt /app
+WORKDIR /app
 RUN pip install -r /app/requirements-flask.txt
 
 COPY . /app
+
+CMD ["gunicorn", "-b", "0.0.0.0:8000", "webserver:app"]
