@@ -5,7 +5,7 @@ RUN apt-get install -y python3 python3-pip python3-gi python3-gi-cairo gobject-i
 
 COPY ./requirements-flask.txt /app/requirements-flask.txt
 WORKDIR /app
-RUN pip install -r requirements-flask.txt
+RUN pip3 install -r requirements-flask.txt
 
 COPY . /app
 
