@@ -2,7 +2,7 @@ FROM python:latest
 
 RUN apt-get update
 #RUN apt-get install -y python3-gi python3-gi-cairo gegl
-RUN apt-get install -y python3-gi python3-gi-cairo gobject-introspection libgirepository1.0-dev gcc libcairo2-dev pkg-config python3-dev
+RUN apt-get install -y python3-gi python3-gi-cairo gobject-introspection libgirepository1.0-dev gcc libcairo2-dev pkg-config python3-dev gegl
 
 COPY ./requirements-flask.txt /app/requirements-flask.txt
 WORKDIR /app
