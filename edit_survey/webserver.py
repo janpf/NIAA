@@ -149,7 +149,7 @@ def log_request_info():
 
 
 def load_app(imgFile="/data/imgs.txt", imageFolder="/data/images", out="/data/logs"):  # for gunicorn # https://github.com/benoitc/gunicorn/issues/135
-    logging.basicConfig(filename=Path(out) / "flask.log", level=logging.DEBUG)
+    logging.basicConfig(filename=Path(out) / "flask.log", level=logging.DEBUG)  # TODO separate log files
     gunicorn_error_logger = logging.getLogger("gunicorn.error")
     app.logger.handlers.extend(gunicorn_error_logger.handlers)
     app.logger.setLevel(logging.DEBUG)
