@@ -99,6 +99,12 @@
         .lower {
             grid-row: 5;
         }
+
+        .datalogging {
+            grid-column: 1 / -1;
+            grid-row: 6;
+            text-align: left;
+        }
     </style>
 
 </head>
@@ -215,6 +221,15 @@
         <input type="hidden" name="windowHeight" value="js-disabled?">
         <input type="hidden" name="colorDepth" value="js-disabled?">
     </form>
+    <div class="datalogging">
+        <h4>Welche Daten werden erhoben und gespeichert?</h4>
+        <h5>Essentiell (Kern der Studie und wird weiterverarbeiter):</h5>
+        <p>🖼️ Bilderauswahl und Eingaben (selbstverständlich)</p>
+        <p>🖥️ Bildschirmdaten (um sicherzustellen, dass die Bilder korrekt angezeigt werden)</p>
+        <p>🌐 Browserversion (um Unterschiede zwischen den Betriebssystemen und Browsern zu filtern)</p>
+        <h5>Metadaten, welche gespeichert, aber nicht untersucht werden:</h5>
+        <p>🔗 IP-Adresse</p>
+    </div>
     <script>
         $(document).ready(function () {
             $("input[name='screenWidth']").each(function (index, data) {

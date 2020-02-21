@@ -83,7 +83,8 @@ def survey():
         img=img, parameter=parameter,
         leftChanges=leftChanges,
         rightChanges=rightChanges,
-        hash=hashval, username=session["name"],
+        hash=hashval,
+        username=session["name"],
         count=session["count"]
     )
     # fmt: on
