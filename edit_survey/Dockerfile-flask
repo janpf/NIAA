@@ -1,9 +1,7 @@
 FROM ubuntu:rolling
 
-RUN add-apt-repository ppa:ubuntu/gegl
-
 RUN apt-get update
-RUN apt-get install -y python3-dev python3-pip python3-gi gegl
+RUN apt-get install -y python3-dev python3-pip python3-gi libcairo2-dev gegl
 COPY ./requirements-flask.txt /app/requirements-flask.txt
 WORKDIR /app
 RUN pip3 install -r requirements-flask.txt
