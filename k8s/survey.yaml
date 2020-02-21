@@ -1,0 +1,44 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: survey
+spec:
+  template:
+    spec:
+      restartPolicy: "Never"
+      containers:
+        - name: survey
+          image: janpf/niaa:flask-latest
+          imagePullPolicy: "Always"
+          env:
+            - name: HOME
+              value: "/tmp"
+          resources:
+            limits:
+              cpu: "4"
+              memory: "4Gi"
+            requests:
+              cpu: "4"
+              memory: "4Gi"
+          volumeMounts:
+            - mountPath: /workspace
+              name: code
+            - mountPath: /data
+              name: scratch
+      volumes:
+        - name: code
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studpfister
+            path: "/home/stud/pfister/eclipse-workspace/NIAA/edit_survey"
+            secretRef:
+              name: studpfister-secret
+        - name: scratch
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studpfister
+            path: "/scratch/stud/pfister/NIAA/pexels"
+            secretRef:
+              name: studpfister-secret
