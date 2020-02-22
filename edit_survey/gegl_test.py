@@ -1,15 +1,6 @@
 import subprocess
+import tempfile
 
-graph = Gegl.Node()
-gegl_img = graph.create_child('gegl:load')
-gegl_img.set_property('path', '/data/442284.jpg')
-
-colorfilter = graph.create_child('gegl:shadows-highlights-correction')
-colorfilter.set_property('shadows', 100)
-gegl_img.link(colorfilter)
-
-sink = graph.create_child('gegl:jpg-save')
-sink.set_property('path', '/data/output.jpg')
-colorfilter.link(sink)
-
-sink.process()
+with tempfile.NamedTemporaryFile() as tmp:
+    print("created temporary directory", tmp)
+    # subprocess.call(["gegl", "-i", "/data/442284.jpg", "-o", tmp, ])
