@@ -20,7 +20,7 @@ app = Flask(__name__)
 formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
 
 
-def random_parameters() -> Tuple[str, Tuple[float, float]]:  # TODO FIXME
+def random_parameters() -> Tuple[str, Tuple[float, float]]:
 
     change = random.choice(list(parameter_range.keys()))
 

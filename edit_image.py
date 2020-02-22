@@ -30,7 +30,7 @@ def edited_image(img_path: str, change: str, value: float) -> Image:
         elif "temperature" == change:  # [1000, 6500, 12000]
             subprocess.run(["gegl", str(img_path), "-o", out.name, "--", "color-temperature", f"intended-temperature={value}"])
 
-        elif "hue" == change:  # [-180, 0, 180]
+        elif "hue" == change:  # [-180, 0, 180] # TODO FIXME hue broken, no idea, why
             subprocess.run(["gegl", str(img_path), "-o", "-", "--", "hue-chroma", f"{change}={value}"])
 
         elif "saturation" == change:  # [0, 1, 2]
@@ -39,7 +39,7 @@ def edited_image(img_path: str, change: str, value: float) -> Image:
         elif "brightness" == change or "contrast" == change:  # [0, 1, 2]
             subprocess.run(["gegl", str(img_path), "-o", out.name, "--", "brightness-contrast", f"{change}={value}"])
 
-        elif "shadows" == change or "highlights" == change:  # [-100, 0, 100]
+        elif "shadows" == change or "highlights" == change:  # [-100, 0, 100] # TODO FIXME shadows broken, no idea why
             subprocess.run(["gegl", str(img_path), "-o", out.name, "--", "shadows-highlights", f"{change}={value}"])
 
         return Image.open(str(out.name))
