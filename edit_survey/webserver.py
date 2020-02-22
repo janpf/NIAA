@@ -2,11 +2,13 @@ import argparse
 import logging
 import math
 import random
+import secrets
+import subprocess
+import tempfile
 from io import BytesIO
 from pathlib import Path
 from random import shuffle
 from typing import Dict, Tuple
-import secrets
 
 import cv2
 import numpy as np
@@ -30,8 +32,13 @@ def edit_and_serve_image(img_path: str, changes: Dict[str, float]):
         img = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
         _, buffer = cv2.imencode(".jpeg", img)
         img_io = BytesIO(buffer)
+    elif "shadows" in changes or "highlights" in changes:
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as tmp:
+            print("created temporary directory", tmp.name)
+            subprocess.run(["gegl", "-i", "/data/442284.jpg", "-o", tmp.name, "--", "shadows-highlights", " ".join("{!s}={!r}".format(key, val) for (key, val) in changes.items())])
+            return send_file(tmp.name, mimetype="image/jpeg")
 
-    else:
+    else:  # TODO move to gegl as well
         img = Image.open(img_path)
         if "lcontrast" in changes:
             del changes["lcontrast"]
@@ -44,7 +51,7 @@ def edit_and_serve_image(img_path: str, changes: Dict[str, float]):
 
 def random_parameters() -> Tuple[str, Tuple[float, float]]:
     parameters = {"brightness": [-1, 1], "exposure": [-5, 5], "contrast": [-1, 5], "warmth": [-1, 1], "saturation": [-1, 5], "vibrance": [-1, 5], "hue": [0, 1], "lcontrast": [0.1, 40]}  # possible parameters and their ranges
-    change = random.choice(list(parameters.keys()))
+    change = random.choice(list(parameters.keys()))  # TODO add highlights and shadows
 
     if change == "lcontrast":
         pos_neg = random.choice(["positiv", "interval"])

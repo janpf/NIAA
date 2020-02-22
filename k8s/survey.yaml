@@ -5,11 +5,13 @@ metadata:
 spec:
   template:
     spec:
-      restartPolicy: "Never"
+      restartPolicy: "OnFailure"
       containers:
         - name: survey
           image: janpf/niaa:flask-latest
           imagePullPolicy: "Always"
+          ports:
+            - containerPort: 5000
           env:
             - name: HOME
               value: "/tmp"
@@ -21,7 +23,7 @@ spec:
               cpu: "4"
               memory: "4Gi"
           volumeMounts:
-            - mountPath: /workspace
+            - mountPath: /app
               name: code
             - mountPath: /data
               name: scratch
@@ -31,7 +33,7 @@ spec:
             monitors:
               - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
             user: studpfister
-            path: "/home/stud/pfister/eclipse-workspace/NIAA"
+            path: "/home/stud/pfister/eclipse-workspace/NIAA/edit_survey"
             secretRef:
               name: studpfister-secret
         - name: scratch
