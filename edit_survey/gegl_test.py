@@ -1,9 +1,4 @@
-import os
-import gi
-
-gi.require_version('Gegl', '0.4')
-from gi.repository import Gegl
-Gegl.init()
+import subprocess
 
 graph = Gegl.Node()
 gegl_img = graph.create_child('gegl:load')
