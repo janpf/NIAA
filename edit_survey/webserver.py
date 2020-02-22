@@ -5,6 +5,7 @@ import random
 import secrets
 import subprocess
 import tempfile
+from io import BytesIO
 from pathlib import Path
 from random import shuffle
 from typing import Dict, Tuple
@@ -12,15 +13,16 @@ from typing import Dict, Tuple
 import numpy as np
 from flask import Flask, abort, redirect, render_template, request, session
 from flask.helpers import send_file, url_for
-from ..edit_image import edited_image
+
+from edit_image import edited_image, parameter_range
 
 app = Flask(__name__)
 formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
 
 
 def random_parameters() -> Tuple[str, Tuple[float, float]]:  # TODO FIXME
-    parameters = {"brightness": [-1, 1], "exposure": [-5, 5], "contrast": [-1, 5], "warmth": [-1, 1], "saturation": [-1, 5], "vibrance": [-1, 5], "hue": [0, 1], "lcontrast": [0.1, 40]}  # possible parameters and their ranges
-    change = random.choice(list(parameters.keys()))
+
+    change = random.choice(list(parameter_range.keys()))
 
     if change == "lcontrast":
         pos_neg = random.choice(["positiv", "interval"])
@@ -30,23 +32,34 @@ def random_parameters() -> Tuple[str, Tuple[float, float]]:  # TODO FIXME
         else:
             changeVal = (random.choice(lcontrast_vals), random.choice(lcontrast_vals))
 
-    else:
+    elif change == "hue":
         pos_neg = random.choice(["positiv", "negative", "interval"])  # in order to not match a positive change with a negative one
-        N = 1
+
         if pos_neg == "positive":
-            if change == "hue":
-                changeVal = (0, random.choice([0.05, 0.1, 0.15]))
-            else:
-                changeVal = (0, round(random.uniform(0, parameters[change][1]), N))
+            changeVal = (0, random.choice(np.arange(1, 11, 1)))  # TODO check
         elif pos_neg == "negative":
-            if change == "hue":
-                changeVal = (0, random.choice([0.85, 0.9, 0.95]))
-            else:
-                changeVal = (0, round(random.uniform(parameters[change][0], 0), N))
+            changeVal = (0, random.choice(np.arange(-10, 0, 1)))  # TODO check
         else:
-            changeVal = (round(random.uniform(parameters[change][0], parameters[change][1]), N), round(random.uniform(parameters[change][0], parameters[change][1]), N))
+            hue_space = random.choice(list(np.arange(-10, 0, 1)) + list(np.arange(1, 11, 1)))
+            changeVal = (hue_space, hue_space)
             while not math.copysign(1, changeVal[0]) == math.copysign(1, changeVal[1]):  # make sure to not compare an image to another one, which has been edited in the other "direction"
-                changeVal = (changeVal[0], round(random.uniform(parameters[change][0], parameters[change][1]), N))
+                changeVal = (changeVal[0], hue_space)
+
+    else:
+        pos_neg = random.choice(["positiv", "negative", "interval"])
+        if pos_neg == "positive":
+            changeVal = (parameter_range[change]["default"], random.choice(np.linspace(parameter_range[change]["default"], parameter_range[change]["max"], 10)))
+        elif pos_neg == "negative":
+            changeVal = (parameter_range[change]["default"], random.choice(np.linspace(parameter_range[change]["min"], parameter_range[change]["default"], 10)))
+        else:
+            changeVal = (random.choice(np.linspace(parameter_range[change]["min"], parameter_range[change]["max"], 20)), random.choice(np.linspace(parameter_range[change]["min"], parameter_range[change]["max"], 20)))
+            #fmt:off
+            while (changeVal[0] < parameter_range[change]["default"] and changeVal[1] > parameter_range[change]["default"]
+                    ) or (
+                   changeVal[0] > parameter_range[change]["default"] and changeVal[1] < parameter_range[change]["default"]):
+            #fmt:on # make sure to not compare an image to another one, which has been edited in the other "direction
+                changeVal = (changeVal[0], random.choice(np.linspace(parameter_range[change]["min"], parameter_range[change]["max"], 20)))
+        changeVal = (round(changeVal[0], 1), round(changeVal[1], 1))
     return change, changeVal
 
 
@@ -57,7 +70,8 @@ def survey():
     parameter, changes = edits[0], list(edits[1])
     shuffle(changes)
     leftChanges, rightChanges = changes
-    print(f"{parameter}:{changes}")
+    logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{parameter}:{changes}")
+    # print(f"{parameter}:{changes}")
     hashval = hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}")
     # fmt: off
     return render_template(
@@ -82,7 +96,7 @@ def poll():
     return redirect("/#left")
 
 
-@app.route("/img/<image>")
+@app.route("/img/<image>")  # XXX naming is a minefield in here
 def img(image: str):
     changes: Dict[str, float] = request.args.to_dict()
     changes = {k: float(v) for (k, v) in changes.items() if not k in ["r", "l", "hash"]}
@@ -92,9 +106,14 @@ def img(image: str):
     if len(changes) != 1:
         abort(500)
 
+    image_file = Path(app.config.get("imageFolder")) / image
     change, value = changes.popitem()
-    with edited_image(image, change, value) as img:
-        return send_file(img)
+    img = edited_image(str(image_file), change, value)
+    file_object = BytesIO()
+    img.save(file_object, "JPEG")
+    file_object.seek(0)
+
+    return send_file(file_object, mimetype="image/jpeg")  # XXX Don't like this
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -146,7 +165,6 @@ def setup_logger(name, log_file, level=logging.INFO):
     logger = logging.getLogger(name)
     logger.setLevel(level)
     logger.addHandler(handler)
-
     return logger
 
 
@@ -157,6 +175,7 @@ def load_app(imgFile="/data/train.txt", imageFolder="/data/images", out="/data/l
     app.logger.handlers.extend(logging.getLogger("gunicorn.warning").handlers)
     app.logger.setLevel(logging.DEBUG)
 
+    setup_logger("compares", Path(out) / "compares.log")
     setup_logger("forms", Path(out) / "forms.log")
     setup_logger("requests", Path(out) / "requests.log")
 
