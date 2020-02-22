@@ -3,10 +3,10 @@ FROM python:3.7
 RUN apt-get update
 RUN apt-get install -y gegl
 
-COPY ./requirements-flask.txt /app/requirements-flask.txt
+COPY ./edit_survey/requirements-flask.txt /app/edit_survey/requirements-flask.txt
 WORKDIR /app
-RUN pip install -r requirements-flask.txt
+RUN pip install -r ./edit_survey/requirements-flask.txt
 
 COPY . /app
 
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "webserver:load_app()"]
+CMD ["gunicorn", "-b", "0.0.0.0:5000", "edit_survey.webserver:load_app()"]

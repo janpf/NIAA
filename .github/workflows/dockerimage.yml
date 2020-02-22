@@ -33,8 +33,7 @@ jobs:
         uses: actions/checkout@v1
 
       - name: build flask image
-        working-directory: edit_survey
-        run: docker build . --file Dockerfile-flask --tag janpf/niaa:flask-latest
+        run: docker build . --file ./edit_survey/Dockerfile-flask --tag janpf/niaa:flask-latest
 
       - name: docker push
         run: docker push janpf/niaa:flask-latest
