@@ -1,11 +1,18 @@
-apiVersion: batch/v1
-kind: Job
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: survey
 spec:
+  selector:
+    matchLabels:
+      app: survey
+  replicas: 1
   template:
+    metadata:
+      labels:
+        app: survey
     spec:
-      restartPolicy: "OnFailure"
+      restartPolicy: "Always"
       containers:
         - name: survey
           image: janpf/niaa:flask-latest
@@ -23,7 +30,7 @@ spec:
               cpu: "4"
               memory: "4Gi"
           volumeMounts:
-            - mountPath: /workspace
+            - mountPath: /app
               name: code
             - mountPath: /data
               name: scratch
@@ -33,7 +40,7 @@ spec:
             monitors:
               - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
             user: studpfister
-            path: "/home/stud/pfister/eclipse-workspace/NIAA"
+            path: "/home/stud/pfister/eclipse-workspace/NIAA/edit_survey"
             secretRef:
               name: studpfister-secret
         - name: scratch

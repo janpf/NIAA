@@ -15,11 +15,12 @@ from flask.helpers import send_file, url_for
 from ..edit_image import edited_image
 
 app = Flask(__name__)
+formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
 
 
-def random_parameters() -> Tuple[str, Tuple[float, float]]:
+def random_parameters() -> Tuple[str, Tuple[float, float]]:  # TODO FIXME
     parameters = {"brightness": [-1, 1], "exposure": [-5, 5], "contrast": [-1, 5], "warmth": [-1, 1], "saturation": [-1, 5], "vibrance": [-1, 5], "hue": [0, 1], "lcontrast": [0.1, 40]}  # possible parameters and their ranges
-    change = random.choice(list(parameters.keys()))  # TODO add highlights and shadows
+    change = random.choice(list(parameters.keys()))
 
     if change == "lcontrast":
         pos_neg = random.choice(["positiv", "interval"])
@@ -76,7 +77,7 @@ def survey():
 @app.route("/poll", methods=["POST"])
 def poll():
     print(request.form.to_dict())
-    app.logger.info(f"submit: {request.form.to_dict()}")
+    logging.getLogger("forms").info(f"submit: {request.form.to_dict()}")
     session["count"] += 1
     return redirect("/#left")
 
@@ -88,6 +89,8 @@ def img(image: str):
 
     if not image in app.imgsSet:
         abort(404)
+    if len(changes) != 1:
+        abort(500)
 
     change, value = changes.popitem()
     with edited_image(image, change, value) as img:
@@ -128,18 +131,34 @@ def logout():
 
 @app.before_request
 def log_request_info():
-    app.logger.debug("Body: %s", request.get_data())
-    app.logger.debug("Headers: %s", request.headers)
-    app.logger.debug("Session: %s", session)
+    rlogger = logging.getLogger("requests")
+    rlogger.info("Body: %s", request.get_data())
+    rlogger.info("Headers: %s", request.headers)
+    rlogger.info("Session: %s", session)
     if not session.get("authorized", False) and request.endpoint != "login":
         return redirect(url_for("login"))
 
 
+def setup_logger(name, log_file, level=logging.INFO):
+    handler = logging.FileHandler(log_file)
+    handler.setFormatter(formatter)
+
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+
+    return logger
+
+
 def load_app(imgFile="/data/train.txt", imageFolder="/data/images", out="/data/logs"):  # for gunicorn # https://github.com/benoitc/gunicorn/issues/135
-    logging.basicConfig(filename=Path(out) / "flask.log", level=logging.DEBUG)  # TODO separate log files
-    gunicorn_error_logger = logging.getLogger("gunicorn.error")
-    app.logger.handlers.extend(gunicorn_error_logger.handlers)
+
+    logging.basicConfig(filename=Path(out) / "flask.log", level=logging.DEBUG)
+    app.logger.handlers.extend(logging.getLogger("gunicorn.error").handlers)
+    app.logger.handlers.extend(logging.getLogger("gunicorn.warning").handlers)
     app.logger.setLevel(logging.DEBUG)
+
+    setup_logger("forms", Path(out) / "forms.log")
+    setup_logger("requests", Path(out) / "requests.log")
 
     app.config["imageFolder"] = imageFolder
     app.config["TEMPLATES_AUTO_RELOAD"] = True

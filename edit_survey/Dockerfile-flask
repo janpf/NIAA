@@ -5,7 +5,7 @@ RUN apt-get install -y gegl
 
 COPY ./requirements-flask.txt /app/requirements-flask.txt
 WORKDIR /app
-RUN pip3 install -r requirements-flask.txt
+RUN pip install -r requirements-flask.txt
 
 COPY . /app
 
