@@ -5,48 +5,16 @@ import random
 import secrets
 import subprocess
 import tempfile
-from io import BytesIO
 from pathlib import Path
 from random import shuffle
 from typing import Dict, Tuple
 
-import cv2
 import numpy as np
-import pillow_lut as lut
 from flask import Flask, abort, redirect, render_template, request, session
 from flask.helpers import send_file, url_for
-from PIL import Image
+from ..edit_image import edited_image
 
 app = Flask(__name__)
-
-
-def edit_and_serve_image(img_path: str, changes: Dict[str, float]):
-    if "lcontrast" in changes:
-        img = cv2.imread(str(img_path))
-        img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
-        l, a, b = cv2.split(img_lab)
-
-        cl = cv2.createCLAHE(clipLimit=changes["lcontrast"], tileGridSize=(8, 8)).apply(l)
-
-        limg = cv2.merge((cl, a, b))
-        img = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
-        _, buffer = cv2.imencode(".jpeg", img)
-        img_io = BytesIO(buffer)
-    elif "shadows" in changes or "highlights" in changes:
-        with tempfile.NamedTemporaryFile(suffix=".jpg") as tmp:
-            print("created temporary directory", tmp.name)
-            subprocess.run(["gegl", "-i", "/data/442284.jpg", "-o", tmp.name, "--", "shadows-highlights", " ".join("{!s}={!r}".format(key, val) for (key, val) in changes.items())])
-            return send_file(tmp.name, mimetype="image/jpeg")
-
-    else:  # TODO move to gegl as well
-        img = Image.open(img_path)
-        if "lcontrast" in changes:
-            del changes["lcontrast"]
-        img_io = BytesIO()
-        img.convert("RGB").filter(lut.rgb_color_enhance(16, **changes)).save(img_io, "JPEG", quality=70)
-
-    img_io.seek(0)
-    return send_file(img_io, mimetype="image/jpeg")
 
 
 def random_parameters() -> Tuple[str, Tuple[float, float]]:
@@ -120,7 +88,10 @@ def img(image: str):
 
     if not image in app.imgsSet:
         abort(404)
-    return edit_and_serve_image(Path(app.config.get("imageFolder")) / image, changes)
+
+    change, value = changes.popitem()
+    with edited_image(image, change, value) as img:
+        return send_file(img)
 
 
 @app.route("/login", methods=["GET", "POST"])
