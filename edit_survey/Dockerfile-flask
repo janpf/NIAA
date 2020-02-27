@@ -1,7 +1,7 @@
 FROM python:3.7
 
 RUN apt-get update
-RUN apt-get install -y gegl gir1.2-gegl-0.4 python3-gi
+RUN apt-get install -y gegl gir1.2-gegl-0.4 python3-gi python3-gi-cairo
 
 COPY ./edit_survey/requirements-flask.txt /app/edit_survey/
 WORKDIR /app

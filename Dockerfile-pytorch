@@ -5,4 +5,4 @@ RUN apt-get install -y gegl
 
 COPY ./requirements-pytorch.txt /workspace/
 WORKDIR /workspace
-RUN pip install -r /requirements-pytorch.txt
+RUN pip install -r ./requirements-pytorch.txt
