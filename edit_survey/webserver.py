@@ -3,7 +3,6 @@ import logging
 import math
 import random
 import secrets
-import subprocess
 import tempfile
 from io import BytesIO
 from pathlib import Path

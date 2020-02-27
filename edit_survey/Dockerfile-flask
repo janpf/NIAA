@@ -9,4 +9,4 @@ RUN pip install -r ./edit_survey/requirements-flask.txt
 
 COPY . /app
 
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "edit_survey.webserver:load_app()"]
+CMD ["gunicorn", "-w", "12", "-b", "0.0.0.0:5000", "edit_survey.webserver:load_app()"]
