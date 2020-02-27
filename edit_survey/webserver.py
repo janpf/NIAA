@@ -14,7 +14,7 @@ import numpy as np
 from flask import Flask, abort, redirect, render_template, request, session
 from flask.helpers import send_file, url_for
 
-from edit_image import edited_image, parameter_range
+from edit_image import edit_image, parameter_range
 
 app = Flask(__name__)
 formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
@@ -108,12 +108,13 @@ def img(image: str):
 
     image_file = Path(app.config.get("imageFolder")) / image
     change, value = changes.popitem()
-    img = edited_image(str(image_file), change, value)
+
+    img = edit_image(str(image_file), change, value)
     file_object = BytesIO()
     img.save(file_object, "JPEG")
     file_object.seek(0)
 
-    return send_file(file_object, mimetype="image/jpeg")  # XXX Don't like this
+    return send_file(file_object, mimetype="image/jpeg")
 
 
 @app.route("/login", methods=["GET", "POST"])

@@ -1,20 +1,21 @@
-import contextlib
-import os
-import shutil
+import collections
 import tempfile
+from contextlib import redirect_stdout
 from pathlib import Path
 from typing import Dict, Tuple
-from PIL import Image
-import cv2
-import collections
-import gi
 
+import cv2
+from PIL import Image
+
+import numpy as np
+import gi
 gi.require_version('Gegl', '0.4')
 from gi.repository import Gegl
 
-def edited_image(img_path: str, change: str, value: float) -> Image:  # TODO https://lazka.github.io/pgi-docs/#Gegl-0.4/classes/Config.html#Gegl.Config AAAAAAAAAAAAAAAAAAAAAAAA
-    Gegl.init()
-    Gegl.config().props.application_license = "GPL3" #  this is essential
+Gegl.init()
+Gegl.config().props.application_license = "GPL3" #  this is essential
+
+def edit_image(img_path: str, change: str, value: float) -> Image:
 
     if "lcontrast" == change:  # CLAHE
         img = cv2.imread(img_path)
@@ -57,13 +58,12 @@ def edited_image(img_path: str, change: str, value: float) -> Image:  # TODO htt
 
     gegl_img.link(colorfilter)
 
-    sink = graph.create_child('gegl:jpg-save')
-
-
     with tempfile.NamedTemporaryFile(suffix=".jpg") as out:
+        sink = graph.create_child('gegl:jpg-save') #  potential for sink = graph.create_child('gegl:npy-save')
         sink.set_property('path', out.name)
         colorfilter.link(sink)
         sink.process()
+        # TODO FIXME unref den graph. der leaked wahrscheinlich memory wie crazy
         return Image.open(out.name)
 
 
@@ -118,4 +118,4 @@ if __name__ == "__main__":
     #outfile = Path(args.out) / args.parameter / f"{Path(args.image).stem}_{args.parameter}_{args.value}.jpg"
 
     #print(outfile)
-    edited_image(img_path=args.image, change=args.parameter, value=args.value).save(args.out)
+    edit_image(img_path=args.image, change=args.parameter, value=args.value).save(args.out)
