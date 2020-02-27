@@ -20,7 +20,7 @@ app = Flask(__name__)
 formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
 
 
-def random_parameters() -> Tuple[str, Tuple[float, float]]:
+def random_parameters() -> Tuple[str, Tuple[float, float]]: # TODO verteilungen gefallen mir nicht so # TODO bessere hunderter runden
 
     change = random.choice(list(parameter_range.keys()))
 
@@ -70,7 +70,7 @@ def survey():
     parameter, changes = edits[0], list(edits[1])
     shuffle(changes)
     leftChanges, rightChanges = changes
-    logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{parameter}:{changes}")
+    logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{parameter}:{changes}") # TODO log hash and cookies
     # print(f"{parameter}:{changes}")
     hashval = hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}")
     # fmt: off
@@ -91,7 +91,7 @@ def survey():
 @app.route("/poll", methods=["POST"])
 def poll():
     print(request.form.to_dict())
-    logging.getLogger("forms").info(f"submit: {request.form.to_dict()}")
+    logging.getLogger("forms").info(f"submit: {request.form.to_dict()}") # TODO log cookies
     session["count"] += 1
     return redirect("/#left")
 

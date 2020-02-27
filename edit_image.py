@@ -10,7 +10,7 @@ import cv2
 import collections
 
 
-def edited_image(img_path: str, change: str, value: float) -> Image:
+def edited_image(img_path: str, change: str, value: float) -> Image:  # TODO https://lazka.github.io/pgi-docs/#Gegl-0.4/classes/Config.html#Gegl.Config AAAAAAAAAAAAAAAAAAAAAAAA
     with tempfile.NamedTemporaryFile(suffix=".jpg") as out:
         img = None
         if "lcontrast" == change:  # CLAHE
