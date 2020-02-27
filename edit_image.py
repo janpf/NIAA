@@ -1,48 +1,70 @@
 import contextlib
 import os
 import shutil
-import subprocess
 import tempfile
 from pathlib import Path
 from typing import Dict, Tuple
 from PIL import Image
 import cv2
 import collections
+import gi
 
+gi.require_version('Gegl', '0.4')
+from gi.repository import Gegl
 
 def edited_image(img_path: str, change: str, value: float) -> Image:  # TODO https://lazka.github.io/pgi-docs/#Gegl-0.4/classes/Config.html#Gegl.Config AAAAAAAAAAAAAAAAAAAAAAAA
+    Gegl.init()
+    Gegl.config().props.application_license = "GPL3" #  this is essential
+
+    if "lcontrast" == change:  # CLAHE
+        img = cv2.imread(img_path)
+        img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+        l, a, b = cv2.split(img_lab)
+
+        cl = cv2.createCLAHE(clipLimit=value, tileGridSize=(8, 8)).apply(l)
+
+        limg = cv2.merge((cl, a, b))
+        img = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
+        return Image.fromarray(img)
+
+    graph = Gegl.Node()
+    gegl_img = graph.create_child('gegl:load')
+    gegl_img.set_property('path', img_path)
+
+    if "exposure" == change:  # [-10, 0, 10] # TODO 5 ist häufig schon extrem
+        colorfilter = graph.create_child('gegl:exposure')
+        colorfilter.set_property('exposure', value)
+
+    elif "temperature" == change:  # [1000, 6500, 12000]
+        colorfilter = graph.create_child('gegl:color-temperature')
+        colorfilter.set_property('intended-temperature', value)
+
+    elif "hue" == change:  # [-180, 0, 180]
+        colorfilter = graph.create_child('gegl:hue-chroma')
+        colorfilter.set_property('hue', value)
+
+    elif "saturation" == change:  # [0, 1, 2]
+        colorfilter = graph.create_child('gegl:saturation')
+        colorfilter.set_property('scale', value)
+
+    elif "brightness" == change or "contrast" == change:  # [0, 1, 2]
+        colorfilter = graph.create_child('gegl:brightness-contrast')
+        colorfilter.set_property(change, value)
+
+    elif "shadows" == change or "highlights" == change:  # [-100, 0, 100]
+        colorfilter = graph.create_child('gegl:shadows-highlights')
+        colorfilter.set_property(change, value)
+
+    gegl_img.link(colorfilter)
+
+    sink = graph.create_child('gegl:jpg-save')
+
+
     with tempfile.NamedTemporaryFile(suffix=".jpg") as out:
-        img = None
-        if "lcontrast" == change:  # CLAHE
-            img = cv2.imread(img_path)
-            img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
-            l, a, b = cv2.split(img_lab)
-
-            cl = cv2.createCLAHE(clipLimit=value, tileGridSize=(8, 8)).apply(l)
-
-            limg = cv2.merge((cl, a, b))
-            img = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
-            return Image.fromarray(img)
-
-        elif "exposure" == change:  # [-10, 0, 10] # TODO 5 ist häufig schon extrem
-            subprocess.run(["gegl", str(img_path), "-o", out.name, "--", "exposure", f"{change}={value}"])
-
-        elif "temperature" == change:  # [1000, 6500, 12000]
-            subprocess.run(["gegl", str(img_path), "-o", out.name, "--", "color-temperature", f"intended-temperature={value}"])
-
-        elif "hue" == change:  # [-180, 0, 180] # TODO FIXME hue broken, no idea, why
-            subprocess.run(["gegl", str(img_path), "-o", "-", "--", "hue-chroma", f"{change}={value}"])
-
-        elif "saturation" == change:  # [0, 1, 2]
-            subprocess.run(["gegl", str(img_path), "-o", out.name, "--", "saturation", f"scale={value}"])
-
-        elif "brightness" == change or "contrast" == change:  # [0, 1, 2]
-            subprocess.run(["gegl", str(img_path), "-o", out.name, "--", "brightness-contrast", f"{change}={value}"])
-
-        elif "shadows" == change or "highlights" == change:  # [-100, 0, 100] # TODO FIXME shadows broken, no idea why
-            subprocess.run(["gegl", str(img_path), "-o", out.name, "--", "shadows-highlights", f"{change}={value}"])
-
-        return Image.open(str(out.name))
+        sink.set_property('path', out.name)
+        colorfilter.link(sink)
+        sink.process()
+        return Image.open(out.name)
 
 
 parameter_range = collections.defaultdict(dict)
@@ -92,9 +114,8 @@ if __name__ == "__main__":
     parser.add_argument("--out", type=str, help="dest for edited images", default="/scratch/stud/pfister/NIAA/AVA/changed")
     args = parser.parse_args()
 
-    (Path(args.out) / args.parameter).mkdir(parents=True, exist_ok=True)
-    outfile = Path(args.out) / args.parameter / f"{Path(args.image).stem}_{args.parameter}_{args.value}.jpg"
+    #(Path(args.out) / args.parameter).mkdir(parents=True, exist_ok=True)
+    #outfile = Path(args.out) / args.parameter / f"{Path(args.image).stem}_{args.parameter}_{args.value}.jpg"
 
-    print(outfile)
-    with edited_image(img_path=args.image, change=args.parameter, value=args.value) as tmp:
-        shutil.copy(tmp.name, outfile)
+    #print(outfile)
+    edited_image(img_path=args.image, change=args.parameter, value=args.value).save(args.out)

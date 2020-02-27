@@ -4,5 +4,6 @@ opencv-python-headless
 pandas
 Pillow
 pillow-lut
+PyGObject
 torch
 torchvision
