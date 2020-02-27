@@ -4,3 +4,4 @@ numpy
 opencv-python-headless
 Pillow
 pillow-lut
+PyGObject
