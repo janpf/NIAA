@@ -1,19 +1,22 @@
 import collections
+import io
 import tempfile
 from contextlib import redirect_stdout
 from pathlib import Path
 from typing import Dict, Tuple
 
 import cv2
+import numpy as np
 from PIL import Image
 
-import numpy as np
 import gi
-gi.require_version('Gegl', '0.4')
+
+gi.require_version("Gegl", "0.4")
 from gi.repository import Gegl
 
 Gegl.init()
-Gegl.config().props.application_license = "GPL3" #  this is essential
+Gegl.config().props.application_license = "GPL3"  #  this is essential
+
 
 def edit_image(img_path: str, change: str, value: float) -> Image:
 
@@ -29,38 +32,46 @@ def edit_image(img_path: str, change: str, value: float) -> Image:
         return Image.fromarray(img)
 
     graph = Gegl.Node()
-    gegl_img = graph.create_child('gegl:load')
-    gegl_img.set_property('path', img_path)
+    gegl_img = graph.create_child("gegl:load")
+    gegl_img.set_property("path", img_path)
 
     if "exposure" == change:  # [-10, 0, 10] # TODO 5 ist häufig schon extrem
-        colorfilter = graph.create_child('gegl:exposure')
-        colorfilter.set_property('exposure', value)
+        colorfilter = graph.create_child("gegl:exposure")
+        colorfilter.set_property("exposure", value)
 
     elif "temperature" == change:  # [1000, 6500, 12000]
-        colorfilter = graph.create_child('gegl:color-temperature')
-        colorfilter.set_property('intended-temperature', value)
+        colorfilter = graph.create_child("gegl:color-temperature")
+        colorfilter.set_property("intended-temperature", value)
 
     elif "hue" == change:  # [-180, 0, 180]
-        colorfilter = graph.create_child('gegl:hue-chroma')
-        colorfilter.set_property('hue', value)
+        colorfilter = graph.create_child("gegl:hue-chroma")
+        colorfilter.set_property("hue", value)
 
     elif "saturation" == change:  # [0, 1, 2]
-        colorfilter = graph.create_child('gegl:saturation')
-        colorfilter.set_property('scale', value)
+        colorfilter = graph.create_child("gegl:saturation")
+        colorfilter.set_property("scale", value)
 
     elif "brightness" == change or "contrast" == change:  # [0, 1, 2]
-        colorfilter = graph.create_child('gegl:brightness-contrast')
+        colorfilter = graph.create_child("gegl:brightness-contrast")
         colorfilter.set_property(change, value)
 
     elif "shadows" == change or "highlights" == change:  # [-100, 0, 100]
-        colorfilter = graph.create_child('gegl:shadows-highlights')
+        colorfilter = graph.create_child("gegl:shadows-highlights")
         colorfilter.set_property(change, value)
 
     gegl_img.link(colorfilter)
 
+    with io.BytesIO() as buf, redirect_stdout(buf):
+        sink = graph.create_child("gegl:jpg-save")
+        sink.set_property("path", "-")
+        colorfilter.link(sink)
+        sink.process()
+        buf.seek(0)
+        return Image.open(buf)
+
     with tempfile.NamedTemporaryFile(suffix=".jpg") as out:
-        sink = graph.create_child('gegl:jpg-save') #  potential for sink = graph.create_child('gegl:npy-save')
-        sink.set_property('path', out.name)
+        sink = graph.create_child("gegl:jpg-save")
+        sink.set_property("path", out.name)
         colorfilter.link(sink)
         sink.process()
         # TODO FIXME unref den graph. der leaked wahrscheinlich memory wie crazy
@@ -108,14 +119,14 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image", type=str, help="path to a single image", default="/scratch/stud/pfister/NIAA/442284.jpg")
+    parser.add_argument("--image", type=str, help="path to a single image", default="/data/442284.jpg")
     parser.add_argument("--parameter", type=str, help="what to change: brightness, contrast...")
     parser.add_argument("--value", type=float, help="change value")
-    parser.add_argument("--out", type=str, help="dest for edited images", default="/scratch/stud/pfister/NIAA/AVA/changed")
+    parser.add_argument("--out", type=str, help="dest for edited images", default="/data/output.jpg")
     args = parser.parse_args()
 
-    #(Path(args.out) / args.parameter).mkdir(parents=True, exist_ok=True)
-    #outfile = Path(args.out) / args.parameter / f"{Path(args.image).stem}_{args.parameter}_{args.value}.jpg"
+    # (Path(args.out) / args.parameter).mkdir(parents=True, exist_ok=True)
+    # outfile = Path(args.out) / args.parameter / f"{Path(args.image).stem}_{args.parameter}_{args.value}.jpg"
 
-    #print(outfile)
+    # print(outfile)
     edit_image(img_path=args.image, change=args.parameter, value=args.value).save(args.out)
