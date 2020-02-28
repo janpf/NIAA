@@ -61,14 +61,6 @@ def edit_image(img_path: str, change: str, value: float) -> Image:
 
     gegl_img.link(colorfilter)
 
-    with io.BytesIO() as buf, redirect_stdout(buf):
-        sink = graph.create_child("gegl:jpg-save")
-        sink.set_property("path", "-")
-        colorfilter.link(sink)
-        sink.process()
-        buf.seek(0)
-        return Image.open(buf)
-
     with tempfile.NamedTemporaryFile(suffix=".jpg") as out:
         sink = graph.create_child("gegl:jpg-save")
         sink.set_property("path", out.name)
