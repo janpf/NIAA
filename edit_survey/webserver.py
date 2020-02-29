@@ -4,43 +4,56 @@ import random
 import secrets
 import tempfile
 from io import BytesIO
+from multiprocessing import Lock, Process, SimpleQueue
 from pathlib import Path
 from random import shuffle
 from typing import Dict, Tuple
 
-import numpy as np
 from flask import Flask, abort, redirect, render_template, request, session
 from flask.helpers import send_file, url_for
 
-from edit_image import edit_image, random_parameters
+from edit_image import edit_image_mp, random_parameters
 
 app = Flask(__name__)
 formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
 
+dictLock = Lock()
+queuedImageData = dict()  # hashval to dict
+preprocessedImages = dict()  # hashval to tuple of queues which hold exactly one image each
+
+
+def preprocessImages():
+    with dictLock:
+        while len(queuedImageData) < 10:
+            chosen_img = random.choice(app.imgs)
+            image_file = Path(app.config.get("imageFolder")) / chosen_img
+            img = f"/img/{chosen_img}"
+
+            edits = random_parameters()
+            parameter, changes = edits[0], list(edits[1])
+            shuffle(changes)
+            leftChanges, rightChanges = changes
+            hashval = hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}")
+
+            queuedImageData[hashval] = {"img": img, "edits": edits, "parameter": parameter, "leftChanges": leftChanges, "rightChanges": rightChanges, "hashval": hashval}
+            preprocessedImages[hashval] = (SimpleQueue(), SimpleQueue())
+
+            Process(target=edit_image_mp, args=(str(image_file), parameter, leftChanges, preprocessedImages[hashval][0])).start()
+            Process(target=edit_image_mp, args=(str(image_file), parameter, rightChanges, preprocessedImages[hashval][1])).start()
+
+        preprocessedImages = {k: v for (k, v) in preprocessedImages.items() if v[0] or v[1]}  # only delete, if both pipes are Noned
+
 
 @app.route("/")
 def survey():
-    img = f"/img/{random.choice(app.imgs)}"
-    edits = random_parameters()
-    parameter, changes = edits[0], list(edits[1])
-    shuffle(changes)
-    leftChanges, rightChanges = changes
-    logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{parameter}:{changes}")  # TODO log hash and cookies
-    # print(f"{parameter}:{changes}")
-    hashval = hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}")
-    # fmt: off
-    return render_template(
-        "index.html",
-        leftImage=f"{img}?{parameter}={leftChanges}&l&hash={hashval}",
-        rightImage=f"{img}?{parameter}={rightChanges}&r&hash={hashval}",
-        img=img, parameter=parameter,
-        leftChanges=leftChanges,
-        rightChanges=rightChanges,
-        hash=hashval,
-        username=session["name"],
-        count=session["count"]
-    )
-    # fmt: on
+    preprocessImages()  # queue new images for preprocessing
+    with dictLock:
+        first_hash = list(queuedImageData)[0]  # get first queued image (hopefully)
+        data = queuedImageData[first_hash]
+        del queuedImageData[first_hash]  # so that no other "/index" call can get the same comparison
+
+    logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['parameter']}:{data['changes']}")  # TODO log hash and cookies
+    return render_template("index.html", username=session["name"], count=session["count"], **data)
 
 
 @app.route("/poll", methods=["POST"])
@@ -54,17 +67,18 @@ def poll():
 @app.route("/img/<image>")  # XXX naming is a minefield in here
 def img(image: str):
     changes: Dict[str, float] = request.args.to_dict()
-    changes = {k: float(v) for (k, v) in changes.items() if not k in ["r", "l", "hash"]}
 
     if not image in app.imgsSet:
         abort(404)
-    if len(changes) != 1:
-        abort(500)
 
-    image_file = Path(app.config.get("imageFolder")) / image
-    change, value = changes.popitem()
+    with dictLock:
+        if "l" in changes:
+            img = preprocessedImages[changes["hash"]][0].get()
+            preprocessedImages[changes["hash"]] = (None, preprocessedImages[changes["hash"]][1])
+        else:
+            img = preprocessedImages[changes["hash"]][1].get()
+            preprocessedImages[changes["hash"]] = (preprocessedImages[changes["hash"]][0], None)
 
-    img = edit_image(str(image_file), change, value)
     file_object = BytesIO()
     img.save(file_object, "JPEG")
     file_object.seek(0)

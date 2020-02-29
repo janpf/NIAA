@@ -69,6 +69,8 @@ def edit_image(img_path: str, change: str, value: float) -> Image:
         # TODO FIXME unref den graph. der leaked wahrscheinlich memory wie crazy
         return Image.open(out.name)
 
+def edit_image_mp(img_path: str, change: str, value: float, q: multiprocessing.SimpleQueue):
+    q.put(edit_image(img_path, change, value))
 
 parameter_range = collections.defaultdict(dict)
 parameter_range["lcontrast"]["min"] = 0

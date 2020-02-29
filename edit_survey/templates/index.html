@@ -161,7 +161,7 @@
         <input type="hidden" name="leftChanges" value="{{ leftChanges }}">
         <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
         <input type="hidden" name="chosen" value="leftImage">
-        <input type="image" src="{{ leftImage }}">
+        <input type="image" src="{{img}}?{{parameter}}={{leftChanges}}&l&hash={{hashval}}">
 
         <input type="hidden" name="hash" value="{{ hash }}">
         <input type="hidden" name="screenWidth" value="js-disabled?">
@@ -176,7 +176,7 @@
         <input type="hidden" name="leftChanges" value="{{ leftChanges }}">
         <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
         <input type="hidden" name="chosen" value="rightImage">
-        <input type="image" src="{{ rightImage }}">
+        <input type="image" src="{{img}}?{{parameter}}={{rightChanges}}&r&hash={{hashval}}">
 
         <input type="hidden" name="hash" value="{{ hash }}">
         <input type="hidden" name="screenWidth" value="js-disabled?">
