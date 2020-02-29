@@ -41,8 +41,6 @@ def preprocessImages():
             Process(target=edit_image_mp, args=(str(image_file), parameter, leftChanges, preprocessedImages[hashval][0])).start()
             Process(target=edit_image_mp, args=(str(image_file), parameter, rightChanges, preprocessedImages[hashval][1])).start()
 
-        preprocessedImages = {k: v for (k, v) in preprocessedImages.items() if v[0] or v[1]}  # only delete, if both pipes are Noned
-
 
 @app.route("/")
 def survey():
@@ -78,6 +76,9 @@ def img(image: str):
         else:
             img = preprocessedImages[changes["hash"]][1].get()
             preprocessedImages[changes["hash"]] = (preprocessedImages[changes["hash"]][0], None)
+
+        if preprocessedImages[changes["hash"]][0] is None and preprocessedImages[changes["hash"]][1] is None:  # delete images from the queue, if both have already been served
+            del preprocessedImages[changes["hash"]]
 
     file_object = BytesIO()
     img.save(file_object, "JPEG")
