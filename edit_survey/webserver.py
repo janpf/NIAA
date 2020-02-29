@@ -1,6 +1,5 @@
 import argparse
 import logging
-import math
 import random
 import secrets
 import tempfile
@@ -13,53 +12,10 @@ import numpy as np
 from flask import Flask, abort, redirect, render_template, request, session
 from flask.helpers import send_file, url_for
 
-from edit_image import edit_image, parameter_range
+from edit_image import edit_image, random_parameters
 
 app = Flask(__name__)
 formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-
-
-def random_parameters() -> Tuple[str, Tuple[float, float]]: # TODO verteilungen gefallen mir nicht so # TODO bessere hunderter runden
-
-    change = random.choice(list(parameter_range.keys()))
-
-    if change == "lcontrast":
-        pos_neg = random.choice(["positiv", "interval"])
-        lcontrast_vals = [round(val, 1) for val in list(np.arange(0.1, 1, 0.1)) + list(range(1, 10)) + list(range(10, 41, 5))]  # [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40]
-        if pos_neg == "positive":
-            changeVal = (0, random.choice(lcontrast_vals))
-        else:
-            changeVal = (random.choice(lcontrast_vals), random.choice(lcontrast_vals))
-
-    elif change == "hue":
-        pos_neg = random.choice(["positiv", "negative", "interval"])  # in order to not match a positive change with a negative one
-
-        if pos_neg == "positive":
-            changeVal = (0, random.choice(np.arange(1, 11, 1)))  # TODO check
-        elif pos_neg == "negative":
-            changeVal = (0, random.choice(np.arange(-10, 0, 1)))  # TODO check
-        else:
-            hue_space = random.choice(list(np.arange(-10, 0, 1)) + list(np.arange(1, 11, 1)))
-            changeVal = (hue_space, hue_space)
-            while not math.copysign(1, changeVal[0]) == math.copysign(1, changeVal[1]):  # make sure to not compare an image to another one, which has been edited in the other "direction"
-                changeVal = (changeVal[0], hue_space)
-
-    else:
-        pos_neg = random.choice(["positiv", "negative", "interval"])
-        if pos_neg == "positive":
-            changeVal = (parameter_range[change]["default"], random.choice(np.linspace(parameter_range[change]["default"], parameter_range[change]["max"], 10)))
-        elif pos_neg == "negative":
-            changeVal = (parameter_range[change]["default"], random.choice(np.linspace(parameter_range[change]["min"], parameter_range[change]["default"], 10)))
-        else:
-            changeVal = (random.choice(np.linspace(parameter_range[change]["min"], parameter_range[change]["max"], 20)), random.choice(np.linspace(parameter_range[change]["min"], parameter_range[change]["max"], 20)))
-            #fmt:off
-            while (changeVal[0] < parameter_range[change]["default"] and changeVal[1] > parameter_range[change]["default"]
-                    ) or (
-                   changeVal[0] > parameter_range[change]["default"] and changeVal[1] < parameter_range[change]["default"]):
-            #fmt:on # make sure to not compare an image to another one, which has been edited in the other "direction
-                changeVal = (changeVal[0], random.choice(np.linspace(parameter_range[change]["min"], parameter_range[change]["max"], 20)))
-        changeVal = (round(changeVal[0], 1), round(changeVal[1], 1))
-    return change, changeVal
 
 
 @app.route("/")
@@ -69,7 +25,7 @@ def survey():
     parameter, changes = edits[0], list(edits[1])
     shuffle(changes)
     leftChanges, rightChanges = changes
-    logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{parameter}:{changes}") # TODO log hash and cookies
+    logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{parameter}:{changes}")  # TODO log hash and cookies
     # print(f"{parameter}:{changes}")
     hashval = hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}")
     # fmt: off
@@ -90,7 +46,7 @@ def survey():
 @app.route("/poll", methods=["POST"])
 def poll():
     print(request.form.to_dict())
-    logging.getLogger("forms").info(f"submit: {request.form.to_dict()}") # TODO log cookies
+    logging.getLogger("forms").info(f"submit: {request.form.to_dict()}")  # TODO log cookies
     session["count"] += 1
     return redirect("/#left")
 

@@ -4,15 +4,15 @@ import tempfile
 from contextlib import redirect_stdout
 from pathlib import Path
 from typing import Dict, Tuple
-
 import cv2
 import numpy as np
 from PIL import Image
-
+import math
 import gi
 
 gi.require_version("Gegl", "0.4")
 from gi.repository import Gegl
+import random
 
 Gegl.init()
 Gegl.config().props.application_license = "GPL3"  #  this is essential
@@ -106,6 +106,49 @@ parameter_range["shadows"]["max"] = 100
 parameter_range["highlights"]["min"] = -100
 parameter_range["highlights"]["default"] = 0
 parameter_range["highlights"]["max"] = 100
+
+
+def random_parameters() -> Tuple[str, Tuple[float, float]]: # TODO verteilungen gefallen mir nicht so # TODO bessere hunderter runden
+
+    change = random.choice(list(parameter_range.keys()))
+
+    if change == "lcontrast":
+        pos_neg = random.choice(["positiv", "interval"])
+        lcontrast_vals = [round(val, 1) for val in list(np.arange(0.1, 1, 0.1)) + list(range(1, 10)) + list(range(10, 41, 5))]  # [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40]
+        if pos_neg == "positive":
+            changeVal = (0, random.choice(lcontrast_vals))
+        else:
+            changeVal = (random.choice(lcontrast_vals), random.choice(lcontrast_vals))
+
+    elif change == "hue":
+        pos_neg = random.choice(["positiv", "negative", "interval"])  # in order to not match a positive change with a negative one
+
+        if pos_neg == "positive":
+            changeVal = (0, random.choice(np.arange(1, 11, 1)))  # TODO check
+        elif pos_neg == "negative":
+            changeVal = (0, random.choice(np.arange(-10, 0, 1)))  # TODO check
+        else:
+            hue_space = random.choice(list(np.arange(-10, 0, 1)) + list(np.arange(1, 11, 1)))
+            changeVal = (hue_space, hue_space)
+            while not math.copysign(1, changeVal[0]) == math.copysign(1, changeVal[1]):  # make sure to not compare an image to another one, which has been edited in the other "direction"
+                changeVal = (changeVal[0], hue_space)
+
+    else:
+        pos_neg = random.choice(["positiv", "negative", "interval"])
+        if pos_neg == "positive":
+            changeVal = (parameter_range[change]["default"], random.choice(np.linspace(parameter_range[change]["default"], parameter_range[change]["max"], 10)))
+        elif pos_neg == "negative":
+            changeVal = (parameter_range[change]["default"], random.choice(np.linspace(parameter_range[change]["min"], parameter_range[change]["default"], 10)))
+        else:
+            changeVal = (random.choice(np.linspace(parameter_range[change]["min"], parameter_range[change]["max"], 20)), random.choice(np.linspace(parameter_range[change]["min"], parameter_range[change]["max"], 20)))
+            #fmt:off
+            while (changeVal[0] < parameter_range[change]["default"] and changeVal[1] > parameter_range[change]["default"]
+                    ) or (
+                   changeVal[0] > parameter_range[change]["default"] and changeVal[1] < parameter_range[change]["default"]):
+            #fmt:on # make sure to not compare an image to another one, which has been edited in the other "direction
+                changeVal = (changeVal[0], random.choice(np.linspace(parameter_range[change]["min"], parameter_range[change]["max"], 20)))
+        changeVal = (round(changeVal[0], 1), round(changeVal[1], 1))
+    return change, changeVal
 
 if __name__ == "__main__":
     import argparse
