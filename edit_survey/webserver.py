@@ -7,7 +7,7 @@ from io import BytesIO
 from multiprocessing import Lock, Process, SimpleQueue
 from pathlib import Path
 from random import shuffle
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Any
 
 from flask import Flask, abort, redirect, render_template, request, session
 from flask.helpers import send_file, url_for
@@ -18,8 +18,8 @@ app = Flask(__name__)
 formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
 
 dictLock = Lock()
-queuedImageData = dict()  # hashval to dict
-preprocessedImages = dict()  # hashval to tuple of queues which hold exactly one image each
+queuedImageData = dict()  # type: Dict[str, Dict[str, Any]] # hashval to dict of strings
+preprocessedImages = dict()  # type: Dict[str, Tuple[SimpleQueue, SimpleQueue]] # hashval to tuple of queues which hold exactly one image each
 
 
 def preprocessImages():
@@ -45,6 +45,7 @@ def preprocessImages():
 @app.route("/")
 def survey():
     preprocessImages()  # queue new images for preprocessing
+
     with dictLock:
         first_hash = list(queuedImageData)[0]  # get first queued image (hopefully)
         data = queuedImageData[first_hash]
@@ -62,7 +63,7 @@ def poll():
     return redirect("/#left")
 
 
-@app.route("/img/<image>")  # XXX naming is a minefield in here
+@app.route("/img/<image>")
 def img(image: str):
     changes: Dict[str, float] = request.args.to_dict()
 
