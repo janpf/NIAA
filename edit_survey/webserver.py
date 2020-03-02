@@ -18,8 +18,8 @@ app = Flask(__name__)
 formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
 
 dictLock = Lock()
-queuedImageData = dict()  # type: Dict[str, Dict[str, Any]] # hashval to dict of strings
-preprocessedImages = dict()  # type: Dict[str, Tuple[SimpleQueue, SimpleQueue]] # hashval to tuple of queues which hold exactly one image each
+queuedImageData = dict()  # type: Dict[str, Dict[str, Any]]
+preprocessedImages = dict()  # type: Dict[str, Tuple[SimpleQueue, SimpleQueue]]
 
 
 def preprocessImages():
