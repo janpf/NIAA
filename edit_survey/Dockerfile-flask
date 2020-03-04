@@ -1,5 +1,9 @@
 FROM python:3.7
 
+# because debian only has v2.6: downloading v3
+RUN echo 'deb http://download.opensuse.org/repositories/graphics:/darktable/Debian_10/ /' > /etc/apt/sources.list.d/graphics:darktable.list
+RUN wget -nv https://download.opensuse.org/repositories/graphics:darktable/Debian_10/Release.key -O Release.key
+RUN apt-key add - < Release.key
 RUN apt-get update
 RUN apt-get install -y darktable
 
