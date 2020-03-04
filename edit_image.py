@@ -20,7 +20,7 @@ def edit_image(img_path: str, change: str, value: float) -> Image:
                 if "lcontrast" == change:
                     copyfile("./darktable_xmp/localcontrast.xmp", edit_file.name) # TODO edit before copying
                     subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", "':memory:'", "--configdir", darktable_config])
-            return Image.open(out.name)
+                return Image.open(out.name)
 
 def edit_image_mp(img_path: str, change: str, value: float, q: multiprocessing.SimpleQueue):
     q.put(edit_image(img_path, change, value))
