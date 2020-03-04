@@ -10,6 +10,7 @@ from typing import Dict, Tuple
 import os
 import numpy as np
 from PIL import Image
+from multiprocessing import SimpleQueue
 
 
 def edit_image(img_path: str, change: str, value: float) -> Image:
@@ -22,7 +23,7 @@ def edit_image(img_path: str, change: str, value: float) -> Image:
                     subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", "':memory:'", "--configdir", darktable_config])
                 return Image.open(out.name)
 
-def edit_image_mp(img_path: str, change: str, value: float, q: multiprocessing.SimpleQueue):
+def edit_image_mp(img_path: str, change: str, value: float, q: SimpleQueue):
     q.put(edit_image(img_path, change, value))
 
 parameter_range = collections.defaultdict(dict) # TODO redo for darktables
