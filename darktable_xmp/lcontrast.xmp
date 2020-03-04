@@ -24,7 +24,7 @@
       darktable:operation="bilat"
       darktable:enabled="1"
       darktable:modversion="3"
-      darktable:params="010000000000003f0000003f000080400000003f"
+      darktable:params="010000000000003f0000003ff6285c400000003f"
       darktable:multi_name=""
       darktable:multi_priority="0"
       darktable:iop_order="53.0000000000000"

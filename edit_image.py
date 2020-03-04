@@ -18,9 +18,30 @@ def edit_image(img_path: str, change: str, value: float) -> Image:
         with tempfile.NamedTemporaryFile(suffix=".jpg") as out:
             os.remove(out.name) # because darktable can't overwrite...
             with tempfile.TemporaryDirectory() as darktable_config: # because otherwise darktable can't more than one instance in parallel
-                if "lcontrast" == change:
+                if "lcontrast" == change: # XXX localcontrast xmp in darktable is broken atm. no idea why # TODO revert to opencv
                     copyfile("./darktable_xmp/localcontrast.xmp", edit_file.name) # TODO edit before copying
-                    subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", "':memory:'", "--configdir", darktable_config])
+                    subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", ":memory:", "--configdir", darktable_config])
+
+                if "brightness" == change or "contrast" == change or "saturation" == change:
+                    copyfile("./darktable_xmp/colisa.xmp", edit_file.name) # TODO edit before copying
+                    subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", ":memory:", "--configdir", darktable_config])
+
+                if "shadows" == change or "highlights" == change:
+                    copyfile("./darktable_xmp/shadhi.xmp", edit_file.name) # TODO edit before copying
+                    subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", ":memory:", "--configdir", darktable_config])
+
+                if "exposure" == change:
+                    copyfile("./darktable_xmp/exposure.xmp", edit_file.name) # TODO edit before copying
+                    subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", ":memory:", "--configdir", darktable_config])
+
+                if "vibrance" == change:
+                    copyfile("./darktable_xmp/vibrance.xmp", edit_file.name) # TODO edit before copying
+                    subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", ":memory:", "--configdir", darktable_config])
+
+                if "temperature" == change or "tint" == change:
+                    copyfile("./darktable_xmp/temp.xmp", edit_file.name) # TODO edit before copying
+                    subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", ":memory:", "--configdir", darktable_config])
+
                 return Image.open(out.name)
 
 def edit_image_mp(img_path: str, change: str, value: float, q: SimpleQueue):
