@@ -3,6 +3,5 @@ numpy
 opencv-python-headless
 pandas
 Pillow
-PyGObject
 torch
 torchvision
