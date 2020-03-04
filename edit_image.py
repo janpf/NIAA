@@ -1,78 +1,31 @@
 import collections
-import io
+import math
+import random
+from shutil import copyfile
+import subprocess
 import tempfile
 from contextlib import redirect_stdout
 from pathlib import Path
 from typing import Dict, Tuple
-import cv2
+import os
 import numpy as np
 from PIL import Image
-import math
-import gi
-
-gi.require_version("Gegl", "0.4")
-from gi.repository import Gegl
-import random
-
-Gegl.init()
-Gegl.config().props.application_license = "GPL3"  #  this is essential
 
 
 def edit_image(img_path: str, change: str, value: float) -> Image:
-
-    if "lcontrast" == change:  # CLAHE
-        img = cv2.imread(img_path)
-        img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
-        l, a, b = cv2.split(img_lab)
-
-        cl = cv2.createCLAHE(clipLimit=value, tileGridSize=(8, 8)).apply(l)
-
-        limg = cv2.merge((cl, a, b))
-        img = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
-        return Image.fromarray(img)
-
-    graph = Gegl.Node()
-    gegl_img = graph.create_child("gegl:load")
-    gegl_img.set_property("path", img_path)
-
-    if "exposure" == change:  # [-10, 0, 10] # TODO 5 ist häufig schon extrem
-        colorfilter = graph.create_child("gegl:exposure")
-        colorfilter.set_property("exposure", value)
-
-    elif "temperature" == change:  # [1000, 6500, 12000]
-        colorfilter = graph.create_child("gegl:color-temperature")
-        colorfilter.set_property("intended-temperature", value)
-
-    elif "hue" == change:  # [-180, 0, 180]
-        colorfilter = graph.create_child("gegl:hue-chroma")
-        colorfilter.set_property("hue", value)
-
-    elif "saturation" == change:  # [0, 1, 2]
-        colorfilter = graph.create_child("gegl:saturation")
-        colorfilter.set_property("scale", value)
-
-    elif "brightness" == change or "contrast" == change:  # [0, 1, 2]
-        colorfilter = graph.create_child("gegl:brightness-contrast")
-        colorfilter.set_property(change, value)
-
-    elif "shadows" == change or "highlights" == change:  # [-100, 0, 100]
-        colorfilter = graph.create_child("gegl:shadows-highlights")
-        colorfilter.set_property(change, value)
-
-    gegl_img.link(colorfilter)
-
-    with tempfile.NamedTemporaryFile(suffix=".jpg") as out:
-        sink = graph.create_child("gegl:jpg-save")
-        sink.set_property("path", out.name)
-        colorfilter.link(sink)
-        sink.process()
-        # TODO FIXME unref den graph. der leaked wahrscheinlich memory wie crazy
-        return Image.open(out.name)
+    with tempfile.NamedTemporaryFile(suffix=".xmp") as edit_file:
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as out:
+            os.remove(out.name) # because darktable can't overwrite...
+            with tempfile.TemporaryDirectory() as darktable_config: # because otherwise darktable can't more than one instance in parallel
+                if "lcontrast" == change:
+                    copyfile("./darktable_xmp/localcontrast.xmp", edit_file.name) # TODO edit before copying
+                    subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", "':memory:'", "--configdir", darktable_config])
+            return Image.open(out.name)
 
 def edit_image_mp(img_path: str, change: str, value: float, q: multiprocessing.SimpleQueue):
     q.put(edit_image(img_path, change, value))
 
-parameter_range = collections.defaultdict(dict)
+parameter_range = collections.defaultdict(dict) # TODO redo for darktables
 parameter_range["lcontrast"]["min"] = 0
 parameter_range["lcontrast"]["default"] = 0  # i think default is impossible (possibly due to c bindings type conversions)
 parameter_range["lcontrast"]["max"] = 40
@@ -110,7 +63,7 @@ parameter_range["highlights"]["default"] = 0
 parameter_range["highlights"]["max"] = 100
 
 
-def random_parameters() -> Tuple[str, Tuple[float, float]]: # TODO verteilungen gefallen mir nicht so # TODO bessere hunderter runden
+def random_parameters() -> Tuple[str, Tuple[float, float]]: # TODO redo for darktables
 
     change = random.choice(list(parameter_range.keys()))
 
@@ -126,9 +79,9 @@ def random_parameters() -> Tuple[str, Tuple[float, float]]: # TODO verteilungen 
         pos_neg = random.choice(["positiv", "negative", "interval"])  # in order to not match a positive change with a negative one
 
         if pos_neg == "positive":
-            changeVal = (0, random.choice(np.arange(1, 11, 1)))  # TODO check
+            changeVal = (0, random.choice(np.arange(1, 11, 1)))
         elif pos_neg == "negative":
-            changeVal = (0, random.choice(np.arange(-10, 0, 1)))  # TODO check
+            changeVal = (0, random.choice(np.arange(-10, 0, 1)))
         else:
             hue_space = random.choice(list(np.arange(-10, 0, 1)) + list(np.arange(1, 11, 1)))
             changeVal = (hue_space, hue_space)
