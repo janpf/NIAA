@@ -1,16 +1,18 @@
 import collections
 import math
+import os
 import random
-from shutil import copyfile
 import subprocess
 import tempfile
 from contextlib import redirect_stdout
-from pathlib import Path
-from typing import Dict, Tuple
-import os
-import numpy as np
-from PIL import Image
 from multiprocessing import SimpleQueue
+from pathlib import Path
+from struct import pack, unpack
+from typing import Dict, Tuple
+
+import numpy as np
+from jinja2 import Template
+from PIL import Image
 
 
 def edit_image(img_path: str, change: str, value: float) -> Image:
@@ -19,27 +21,29 @@ def edit_image(img_path: str, change: str, value: float) -> Image:
             os.remove(out.name) # because darktable can't overwrite...
             with tempfile.TemporaryDirectory() as darktable_config: # because otherwise darktable can't more than one instance in parallel
                 if "lcontrast" == change: # XXX localcontrast xmp in darktable is broken atm. no idea why # TODO revert to opencv
-                    copyfile("./darktable_xmp/localcontrast.xmp", edit_file.name) # TODO edit before copying
                     subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", ":memory:", "--configdir", darktable_config])
 
-                if "brightness" == change or "contrast" == change or "saturation" == change:
-                    copyfile("./darktable_xmp/colisa.xmp", edit_file.name) # TODO edit before copying
+                if "contrast" == change or "brightness" == change or "saturation" == change:
+                    param_index = ["contrast", "brightness", "saturation"].index(change)
+                    default_str = "".join(["%02x" % b for b in bytearray(pack("f", 0))])
+                    change_val_enc = "".join(["%02x" % b for b in bytearray(pack("f", change))])
+
+                    change_str = [change_val_enc if _ == param_index else default_str for _ in range(3)]
+
+                    with open("./darktable_xmp/colisa.xmp") as template_file:
+                        Template(template_file.read()).stream(value=change_str).dump(edit_file)
                     subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", ":memory:", "--configdir", darktable_config])
 
                 if "shadows" == change or "highlights" == change:
-                    copyfile("./darktable_xmp/shadhi.xmp", edit_file.name) # TODO edit before copying
                     subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", ":memory:", "--configdir", darktable_config])
 
                 if "exposure" == change:
-                    copyfile("./darktable_xmp/exposure.xmp", edit_file.name) # TODO edit before copying
                     subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", ":memory:", "--configdir", darktable_config])
 
                 if "vibrance" == change:
-                    copyfile("./darktable_xmp/vibrance.xmp", edit_file.name) # TODO edit before copying
                     subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", ":memory:", "--configdir", darktable_config])
 
                 if "temperature" == change or "tint" == change:
-                    copyfile("./darktable_xmp/temp.xmp", edit_file.name) # TODO edit before copying
                     subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", ":memory:", "--configdir", darktable_config])
 
                 return Image.open(out.name)
