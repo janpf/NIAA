@@ -26,12 +26,11 @@ def edit_image(img_path: str, change: str, value: float) -> Image:
                 if "contrast" == change or "brightness" == change or "saturation" == change:
                     param_index = ["contrast", "brightness", "saturation"].index(change)
                     default_str = "".join(["%02x" % b for b in bytearray(pack("f", 0))])
-                    change_val_enc = "".join(["%02x" % b for b in bytearray(pack("f", change))])
-
-                    change_str = [change_val_enc if _ == param_index else default_str for _ in range(3)]
+                    change_val_enc = "".join(["%02x" % b for b in bytearray(pack("f", value))])
+                    change_str = "".join([change_val_enc if _ == param_index else default_str for _ in range(3)])
 
                     with open("./darktable_xmp/colisa.xmp") as template_file:
-                        Template(template_file.read()).stream(value=change_str).dump(edit_file)
+                        Template(template_file.read()).stream(value=change_str).dump(edit_file.name)
                     subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", ":memory:", "--configdir", darktable_config])
 
                 if "shadows" == change or "highlights" == change:
