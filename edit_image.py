@@ -3,7 +3,6 @@ import math
 import random
 import subprocess
 import tempfile
-from multiprocessing import SimpleQueue
 from pathlib import Path
 from struct import pack, unpack
 from typing import Dict, Tuple
@@ -67,7 +66,7 @@ def edit_image(img_path: str, change: str, value: float) -> Image:
         return Image.open(out_file)
 
 
-def edit_image_mp(img_path: str, change: str, value: float, q: SimpleQueue):
+def edit_image_mp(img_path: str, change: str, value: float, q):
     q.put(edit_image(img_path, change, value))
 
 

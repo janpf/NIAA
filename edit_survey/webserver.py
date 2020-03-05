@@ -38,7 +38,7 @@ def preprocessImages():
             queuedImageData[hashval] = {"img": img, "edits": edits, "parameter": parameter, "leftChanges": leftChanges, "rightChanges": rightChanges, "hashval": hashval}
             preprocessedImages[hashval] = (SimpleQueue(), SimpleQueue())
 
-            Process(target=edit_image_mp, args=(str(image_file), parameter, leftChanges, preprocessedImages[hashval][0])).start()  # TODO lambda?
+            Process(target=edit_image_mp, args=(str(image_file), parameter, leftChanges, preprocessedImages[hashval][0])).start()
             Process(target=edit_image_mp, args=(str(image_file), parameter, rightChanges, preprocessedImages[hashval][1])).start()
 
 
