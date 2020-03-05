@@ -1,6 +1,8 @@
 FROM pytorch/pytorch:latest
 
 # because ubuntu only has v2.6: downloading v3
+RUN apt-get update
+RUN apt-get install -y wget
 RUN echo 'deb http://download.opensuse.org/repositories/graphics:/darktable/xUbuntu_18.04/ /' > /etc/apt/sources.list.d/graphics:darktable.list
 RUN wget -nv https://download.opensuse.org/repositories/graphics:darktable/xUbuntu_18.04/Release.key -O Release.key
 RUN apt-key add - < Release.key
