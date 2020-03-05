@@ -24,7 +24,7 @@
       darktable:operation="exposure"
       darktable:enabled="1"
       darktable:modversion="5"
-      darktable:params="00000000000000000000404000004842000080c0"
+      darktable:params="{{value}}"
       darktable:multi_name=""
       darktable:multi_priority="0"
       darktable:iop_order="21.0000000000000"

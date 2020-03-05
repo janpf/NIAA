@@ -24,7 +24,7 @@
       darktable:operation="temperature"
       darktable:enabled="1"
       darktable:modversion="3"
-      darktable:params="f3efbf3f0000803fa91a073f0000807f"
+      darktable:params="{{value}}"
       darktable:multi_name=""
       darktable:multi_priority="0"
       darktable:iop_order="3.0000000000000"

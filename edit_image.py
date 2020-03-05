@@ -16,41 +16,54 @@ from PIL import Image
 
 
 def edit_image(img_path: str, change: str, value: float) -> Image:
-    with tempfile.NamedTemporaryFile(suffix=".xmp") as edit_file:
-        with tempfile.NamedTemporaryFile(suffix=".jpg") as out:
-            os.remove(out.name) # because darktable can't overwrite...
-            with tempfile.TemporaryDirectory() as darktable_config: # because otherwise darktable can't more than one instance in parallel
-                if "lcontrast" == change: # XXX localcontrast xmp in darktable is broken atm. no idea why # TODO revert to opencv
-                    subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", ":memory:", "--configdir", darktable_config])
+    with tempfile.TemporaryDirectory() as darktable_config:  # because otherwise darktable can't open more than one instance in parallel
+        edit_file = str(Path(darktable_config) / "edit.xmp")
+        out_file = str(Path(darktable_config) / "out.jpg")
 
-                if "contrast" == change or "brightness" == change or "saturation" == change:
-                    param_index = ["contrast", "brightness", "saturation"].index(change)
-                    default_str = "".join(["%02x" % b for b in bytearray(pack("f", 0))])
-                    change_val_enc = "".join(["%02x" % b for b in bytearray(pack("f", value))])
-                    change_str = "".join([change_val_enc if _ == param_index else default_str for _ in range(3)])
+        if "lcontrast" == change:  # XXX localcontrast xmp in darktable is broken atm. no idea why # TODO revert to opencv
+            raise ("not implemented")
 
-                    with open("./darktable_xmp/colisa.xmp") as template_file:
-                        Template(template_file.read()).stream(value=change_str).dump(edit_file.name)
-                    subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", ":memory:", "--configdir", darktable_config])
+        if "contrast" == change or "brightness" == change or "saturation" == change:
+            template_file = "./darktable_xmp/colisa.xmp"
+            param_index = ["contrast", "brightness", "saturation"].index(change)
+            default_str = "".join(["%02x" % b for b in bytearray(pack("f", 0))])
+            change_val_enc = "".join(["%02x" % b for b in bytearray(pack("f", value))])
+            change_str = "".join([change_val_enc if _ == param_index else default_str for _ in range(3)])
 
-                if "shadows" == change or "highlights" == change:
-                    subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", ":memory:", "--configdir", darktable_config])
+        if "shadows" == change or "highlights" == change:
+            template_file = "./darktable_xmp/shadhi.xmp"
+            if "shadows" == change:
+                change_str = f"000000000000c842{''.join(['%02x' % b for b in bytearray(pack('f', value))])}000000000000c84200000000000048420000c842000048427f000000bd37863500000000"
+            elif "highlights" == change:
+                change_str = f"000000000000c8420000484200000000{''.join(['%02x' % b for b in bytearray(pack('f', value))])}00000000000048420000c842000048427f000000bd37863500000000"
 
-                if "exposure" == change:
-                    subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", ":memory:", "--configdir", darktable_config])
+        if "exposure" == change:
+            template_file = "./darktable_xmp/exposure.xmp"
+            change_str = f"00000000000000000000404000004842000080c0"  # TODO check
 
-                if "vibrance" == change:
-                    subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", ":memory:", "--configdir", darktable_config])
+        if "vibrance" == change:
+            template_file = "./darktable_xmp/vibrance.xmp"
+            change_str = "".join(["%02x" % b for b in bytearray(pack("f", value))])
 
-                if "temperature" == change or "tint" == change:
-                    subprocess.run(["darktable-cli", img_path, edit_file.name, out.name, "--core", "--library", ":memory:", "--configdir", darktable_config])
+        if "temperature" == change or "tint" == change:
+            template_file = "./darktable_xmp/temperature.xmp"
+            if "temperature" == change:
+                change_str = f"f3efbf3f0000803fa91a073f0000807f"  # TODO check
+            elif "tint" == change:
+                change_str = f"f3efbf3f0000803fa91a073f0000807f"  # TODO check
 
-                return Image.open(out.name)
+        with open(template_file) as template_file:
+            Template(template_file.read()).stream(value=change_str).dump(edit_file)
+
+        subprocess.run(["darktable-cli", img_path, edit_file, out_file, "--core", "--library", ":memory:", "--configdir", darktable_config])
+        return Image.open(out_file)
+
 
 def edit_image_mp(img_path: str, change: str, value: float, q: SimpleQueue):
     q.put(edit_image(img_path, change, value))
 
-parameter_range = collections.defaultdict(dict) # TODO redo for darktables
+
+parameter_range = collections.defaultdict(dict)  # TODO redo for darktables
 parameter_range["lcontrast"]["min"] = 0
 parameter_range["lcontrast"]["default"] = 0  # i think default is impossible (possibly due to c bindings type conversions)
 parameter_range["lcontrast"]["max"] = 40
@@ -88,12 +101,11 @@ parameter_range["highlights"]["default"] = 0
 parameter_range["highlights"]["max"] = 100
 
 
-def random_parameters() -> Tuple[str, Tuple[float, float]]: # TODO redo for darktables
-
+def random_parameters() -> Tuple[str, Tuple[float, float]]:  # TODO redo for darktables
     change = random.choice(list(parameter_range.keys()))
 
     if change == "lcontrast":
-        pos_neg = random.choice(["positiv", "interval"])
+        pos_neg = random.choice(["positive", "interval"])
         lcontrast_vals = [round(val, 1) for val in list(np.arange(0.1, 1, 0.1)) + list(range(1, 10)) + list(range(10, 41, 5))]  # [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40]
         if pos_neg == "positive":
             changeVal = (0, random.choice(lcontrast_vals))
@@ -101,7 +113,7 @@ def random_parameters() -> Tuple[str, Tuple[float, float]]: # TODO redo for dark
             changeVal = (random.choice(lcontrast_vals), random.choice(lcontrast_vals))
 
     elif change == "hue":
-        pos_neg = random.choice(["positiv", "negative", "interval"])  # in order to not match a positive change with a negative one
+        pos_neg = random.choice(["positive", "negative", "interval"])  # in order to not match a positive change with a negative one
 
         if pos_neg == "positive":
             changeVal = (0, random.choice(np.arange(1, 11, 1)))
@@ -114,21 +126,20 @@ def random_parameters() -> Tuple[str, Tuple[float, float]]: # TODO redo for dark
                 changeVal = (changeVal[0], hue_space)
 
     else:
-        pos_neg = random.choice(["positiv", "negative", "interval"])
+        pos_neg = random.choice(["positive", "negative", "interval"])
         if pos_neg == "positive":
             changeVal = (parameter_range[change]["default"], random.choice(np.linspace(parameter_range[change]["default"], parameter_range[change]["max"], 10)))
         elif pos_neg == "negative":
             changeVal = (parameter_range[change]["default"], random.choice(np.linspace(parameter_range[change]["min"], parameter_range[change]["default"], 10)))
         else:
             changeVal = (random.choice(np.linspace(parameter_range[change]["min"], parameter_range[change]["max"], 20)), random.choice(np.linspace(parameter_range[change]["min"], parameter_range[change]["max"], 20)))
-            #fmt:off
-            while (changeVal[0] < parameter_range[change]["default"] and changeVal[1] > parameter_range[change]["default"]
-                    ) or (
-                   changeVal[0] > parameter_range[change]["default"] and changeVal[1] < parameter_range[change]["default"]):
-            #fmt:on # make sure to not compare an image to another one, which has been edited in the other "direction
+            # make sure to not compare an image to another one, which has been edited in the other "direction
+            while (changeVal[0] < parameter_range[change]["default"] and changeVal[1] > parameter_range[change]["default"]) or (changeVal[0] > parameter_range[change]["default"] and changeVal[1] < parameter_range[change]["default"]):
                 changeVal = (changeVal[0], random.choice(np.linspace(parameter_range[change]["min"], parameter_range[change]["max"], 20)))
+
         changeVal = (round(changeVal[0], 1), round(changeVal[1], 1))
     return change, changeVal
+
 
 if __name__ == "__main__":
     import argparse

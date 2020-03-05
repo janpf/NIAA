@@ -24,7 +24,7 @@
       darktable:operation="vibrance"
       darktable:enabled="1"
       darktable:modversion="2"
-      darktable:params="0000c842"
+      darktable:params="{{value}}"
       darktable:multi_name=""
       darktable:multi_priority="0"
       darktable:iop_order="57.0000000000000"
