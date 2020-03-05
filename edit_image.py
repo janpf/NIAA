@@ -26,48 +26,48 @@ def edit_image(img_path: str, change: str, value: float, out_path: str = None) -
         img = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
         return Image.fromarray(img)
 
-    with tempfile.TemporaryDirectory() as darktable_config:  # because otherwise darktable can't open more than one instance in parallel
-        edit_file = str(Path(darktable_config) / "edit.xmp")
-        out_file = str(Path(darktable_config) / "out.jpg")
+    darktable_config = tempfile.mkdtemp() # because otherwise darktable can't open more than one instance in parallel
+    edit_file = str(Path(darktable_config) / "edit.xmp")
+    out_file = str(Path(darktable_config) / "out.jpg")
 
-        if "contrast" == change or "brightness" == change or "saturation" == change:
-            template_file = "./darktable_xmp/colisa.xmp"
-            param_index = ["contrast", "brightness", "saturation"].index(change)
-            default_str = "".join(["%02x" % b for b in bytearray(pack("f", 0))])
-            change_val_enc = "".join(["%02x" % b for b in bytearray(pack("f", value))])
-            change_str = "".join([change_val_enc if _ == param_index else default_str for _ in range(3)])
+    if "contrast" == change or "brightness" == change or "saturation" == change:
+        template_file = "./darktable_xmp/colisa.xmp"
+        param_index = ["contrast", "brightness", "saturation"].index(change)
+        default_str = "".join(["%02x" % b for b in bytearray(pack("f", 0))])
+        change_val_enc = "".join(["%02x" % b for b in bytearray(pack("f", value))])
+        change_str = "".join([change_val_enc if _ == param_index else default_str for _ in range(3)])
 
-        if "shadows" == change or "highlights" == change:
-            template_file = "./darktable_xmp/shadhi.xmp"
-            if "shadows" == change:
-                change_str = f"000000000000c842{''.join(['%02x' % b for b in bytearray(pack('f', value))])}000000000000c84200000000000048420000c842000048427f000000bd37863500000000"
-            elif "highlights" == change:
-                change_str = f"000000000000c8420000484200000000{''.join(['%02x' % b for b in bytearray(pack('f', value))])}00000000000048420000c842000048427f000000bd37863500000000"
+    if "shadows" == change or "highlights" == change:
+        template_file = "./darktable_xmp/shadhi.xmp"
+        if "shadows" == change:
+            change_str = f"000000000000c842{''.join(['%02x' % b for b in bytearray(pack('f', value))])}000000000000c84200000000000048420000c842000048427f000000bd37863500000000"
+        elif "highlights" == change:
+            change_str = f"000000000000c8420000484200000000{''.join(['%02x' % b for b in bytearray(pack('f', value))])}00000000000048420000c842000048427f000000bd37863500000000"
 
-        if "exposure" == change:
-            template_file = "./darktable_xmp/exposure.xmp"
-            change_str = f"0000000000000000{''.join(['%02x' % b for b in bytearray(pack('f', value))])}00004842000080c0"
+    if "exposure" == change:
+        template_file = "./darktable_xmp/exposure.xmp"
+        change_str = f"0000000000000000{''.join(['%02x' % b for b in bytearray(pack('f', value))])}00004842000080c0"
 
-        if "vibrance" == change:
-            template_file = "./darktable_xmp/vibrance.xmp"
-            change_str = "".join(["%02x" % b for b in bytearray(pack("f", value))])
+    if "vibrance" == change:
+        template_file = "./darktable_xmp/vibrance.xmp"
+        change_str = "".join(["%02x" % b for b in bytearray(pack("f", value))])
 
-        if "temperature" == change or "tint" == change:
-            raise ("aaaarg")
-            template_file = "./darktable_xmp/temperature.xmp"
-            if "temperature" == change:
-                change_str = f"f3efbf3f0000803fa91a073f0000807f"
-            elif "tint" == change:
-                change_str = f"f3efbf3f0000803fa91a073f0000807f"
+    if "temperature" == change or "tint" == change:
+        raise ("aaaarg")
+        template_file = "./darktable_xmp/temperature.xmp"
+        if "temperature" == change:
+            change_str = f"f3efbf3f0000803fa91a073f0000807f"
+        elif "tint" == change:
+            change_str = f"f3efbf3f0000803fa91a073f0000807f"
 
-        with open(template_file) as template_file:
-            Template(template_file.read()).stream(value=change_str).dump(edit_file)
+    with open(template_file) as template_file:
+        Template(template_file.read()).stream(value=change_str).dump(edit_file)
 
-        if out_path:
-            subprocess.run(["darktable-cli", img_path, edit_file, out_path, "--core", "--library", ":memory:", "--configdir", darktable_config])
-        else:
-            subprocess.run(["darktable-cli", img_path, edit_file, out_file, "--core", "--library", ":memory:", "--configdir", darktable_config])
-            return Image.open(out_file)
+    if out_path:
+        subprocess.Popen(["darktable-cli", img_path, edit_file, out_path, "--core", "--library", ":memory:", "--configdir", darktable_config])
+    else:
+        subprocess.run(["darktable-cli", img_path, edit_file, out_file, "--core", "--library", ":memory:", "--configdir", darktable_config])
+        return Image.open(out_file)
 
 
 parameter_range = collections.defaultdict(dict)
@@ -78,7 +78,7 @@ parameter_range["contrast"]["max"] = 1
 parameter_range["brightness"] = parameter_range["contrast"]
 parameter_range["saturation"] = parameter_range["contrast"]
 
-parameter_range["shadows"]["min"] = -100  # wahrscheinlich 3. Packen
+parameter_range["shadows"]["min"] = -100  # wahrscheinlich 3. Packen # TODO FIXME shallow copy
 parameter_range["shadows"]["max"] = 100
 
 parameter_range["highlights"] = parameter_range["shadows"]  # wahrscheinlich 5. Packen

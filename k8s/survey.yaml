@@ -25,10 +25,10 @@ spec:
           resources:
             limits:
               cpu: "4"
-              memory: "4Gi"
+              memory: "8Gi"
             requests:
               cpu: "4"
-              memory: "4Gi"
+              memory: "8Gi"
           volumeMounts:
             - mountPath: /app
               name: code

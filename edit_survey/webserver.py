@@ -70,9 +70,8 @@ def img(image: str):
 
     if not image in app.imgsSet:
         abort(404)
-    edited = image.replace(".", f"_{changes['side']}.")  # only works if one dot in imagepath :D
+    edited = image.split(".")[0] + f"_{changes['side']}.jpg"  # only works if one dot in imagepath :D
     return send_file(app.config.get("editedImageFolder") / edited, mimetype="image/jpeg")
-
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
