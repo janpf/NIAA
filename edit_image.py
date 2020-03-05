@@ -13,7 +13,7 @@ from jinja2 import Template
 from PIL import Image
 
 
-def edit_image(img_path: str, change: str, value: float) -> Image:  # TODO alles mal checken
+def edit_image(img_path: str, change: str, value: float, out_path: str = None) -> Image:  # TODO alles mal checken
 
     if "lcontrast" == change:  # XXX localcontrast xmp in darktable is broken atm. no idea why
         img = cv2.imread(img_path)
@@ -63,12 +63,11 @@ def edit_image(img_path: str, change: str, value: float) -> Image:  # TODO alles
         with open(template_file) as template_file:
             Template(template_file.read()).stream(value=change_str).dump(edit_file)
 
-        subprocess.run(["darktable-cli", img_path, edit_file, out_file, "--core", "--library", ":memory:", "--configdir", darktable_config])
-        return Image.open(out_file)
-
-
-def edit_image_mp(img_path: str, change: str, value: float, q):
-    q.put(edit_image(img_path, change, value))
+        if out_path:
+            subprocess.run(["darktable-cli", img_path, edit_file, out_path, "--core", "--library", ":memory:", "--configdir", darktable_config])
+        else:
+            subprocess.run(["darktable-cli", img_path, edit_file, out_file, "--core", "--library", ":memory:", "--configdir", darktable_config])
+            return Image.open(out_file)
 
 
 parameter_range = collections.defaultdict(dict)

@@ -12,7 +12,7 @@ from typing import Dict, Tuple, Any
 from flask import Flask, abort, redirect, render_template, request, session
 from flask.helpers import send_file, url_for
 
-from edit_image import edit_image_mp, random_parameters
+from edit_image import edit_image, random_parameters
 
 app = Flask(__name__)
 formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
@@ -24,7 +24,7 @@ preprocessedImages = dict()  # type: Dict[str, Tuple[SimpleQueue, SimpleQueue]]
 # TODO just write and log everything into a sqlite
 
 
-def preprocessImages():
+def preprocessImages():  # TODO cleanup
     with dictLock:
         while len(queuedImageData) < 10:
             chosen_img = random.choice(app.imgs)
@@ -35,13 +35,12 @@ def preprocessImages():
             parameter, changes = edits[0], list(edits[1])
             shuffle(changes)
             leftChanges, rightChanges = changes
-            hashval = hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}")
+            hashval = str(hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}"))
 
             queuedImageData[hashval] = {"img": img, "edits": edits, "parameter": parameter, "leftChanges": leftChanges, "rightChanges": rightChanges, "hashval": hashval}
-            preprocessedImages[hashval] = (SimpleQueue(), SimpleQueue())
 
-            Process(target=edit_image_mp, args=(str(image_file), parameter, leftChanges, preprocessedImages[hashval][0])).start()
-            Process(target=edit_image_mp, args=(str(image_file), parameter, rightChanges, preprocessedImages[hashval][1])).start()
+            Process(target=edit_image, args=(str(image_file), parameter, leftChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_l.jpg"))).start()
+            Process(target=edit_image, args=(str(image_file), parameter, rightChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_r.jpg"))).start()
 
 
 @app.route("/")
@@ -53,7 +52,7 @@ def survey():
         data = queuedImageData[first_hash]
         del queuedImageData[first_hash]  # so that no other "/index" call can get the same comparison
 
-    logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['parameter']}:{data['changes']}; {session}")
+    logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['parameter']}:{[data['leftChanges'], data['rightChanges']]}; {session}")
     return render_template("index.html", username=session["name"], count=session["count"], **data)
 
 
@@ -65,29 +64,14 @@ def poll():
     return redirect("/#left")
 
 
-@app.route("/img/<image>")
+@app.route("/img/<image>")  # TODO wait for first image
 def img(image: str):
     changes: Dict[str, float] = request.args.to_dict()
 
     if not image in app.imgsSet:
         abort(404)
-
-    with dictLock:
-        if "l" in changes:
-            img = preprocessedImages[changes["hash"]][0].get()
-            preprocessedImages[changes["hash"]] = (None, preprocessedImages[changes["hash"]][1])
-        else:
-            img = preprocessedImages[changes["hash"]][1].get()
-            preprocessedImages[changes["hash"]] = (preprocessedImages[changes["hash"]][0], None)
-
-        if preprocessedImages[changes["hash"]][0] is None and preprocessedImages[changes["hash"]][1] is None:  # delete images from the queue, if both have already been served
-            del preprocessedImages[changes["hash"]]
-
-    file_object = BytesIO()
-    img.save(file_object, "JPEG")
-    file_object.seek(0)
-
-    return send_file(file_object, mimetype="image/jpeg")
+    edited = image.replace(".", f"_{changes['side']}.")  # only works if one dot in imagepath :D
+    return send_file(app.config.get("editedImageFolder") / edited, mimetype="image/jpeg")
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -154,7 +138,10 @@ def load_app(imgFile="/data/train.txt", imageFolder="/data/images", out="/data/l
     setup_logger("requests", Path(out) / "requests.log")
 
     app.config["imageFolder"] = imageFolder
+    app.config["editedImageFolder"] = Path("/tmp/imgs/")
     app.config["TEMPLATES_AUTO_RELOAD"] = True
+
+    app.config.get("editedImageFolder").mkdir(parents=True, exist_ok=True)
 
     app.secret_key = "secr3t"  # TODO
 
