@@ -46,13 +46,14 @@ def edit_image(img_path: str, change: str, value: float) -> Image:
 
         if "exposure" == change:
             template_file = "./darktable_xmp/exposure.xmp"
-            change_str = f"00000000000000000000404000004842000080c0"  # TODO check
+            change_str = f"0000000000000000{''.join(['%02x' % b for b in bytearray(pack('f', value))])}00004842000080c0"  # TODO check
 
         if "vibrance" == change:
             template_file = "./darktable_xmp/vibrance.xmp"
             change_str = "".join(["%02x" % b for b in bytearray(pack("f", value))])
 
         if "temperature" == change or "tint" == change:
+            raise ("aaaarg")
             template_file = "./darktable_xmp/temperature.xmp"
             if "temperature" == change:
                 change_str = f"f3efbf3f0000803fa91a073f0000807f"  # TODO check
@@ -71,41 +72,36 @@ def edit_image_mp(img_path: str, change: str, value: float, q):
 
 
 parameter_range = collections.defaultdict(dict)  # TODO redo for darktables
-parameter_range["lcontrast"]["min"] = 0
-parameter_range["lcontrast"]["default"] = 0  # i think default is impossible (possibly due to c bindings type conversions)
-parameter_range["lcontrast"]["max"] = 40
+parameter_range["contrast"]["min"] = -1
+parameter_range["contrast"]["default"] = 0
+parameter_range["contrast"]["max"] = 1
 
-parameter_range["saturation"]["min"] = 0
-parameter_range["saturation"]["default"] = 1
-parameter_range["saturation"]["max"] = 2
+parameter_range["brightness"] = parameter_range["contrast"]
+parameter_range["saturation"] = parameter_range["contrast"]
 
-parameter_range["exposure"]["min"] = -10
+parameter_range["shadows"]["min"] = -100  # wahrscheinlich 3. Packen
+parameter_range["shadows"]["max"] = 100
+
+parameter_range["highlights"] = parameter_range["shadows"]  # wahrscheinlich 5. Packen
+
+parameter_range["shadows"]["default"] = 50
+parameter_range["highlights"]["default"] = -50
+
+parameter_range["exposure"]["min"] = -3  # wahrscheinlich 3. Packen
 parameter_range["exposure"]["default"] = 0
-parameter_range["exposure"]["max"] = 10
+parameter_range["exposure"]["max"] = 3
+
+parameter_range["vibrance"]["min"] = 0
+parameter_range["vibrance"]["default"] = 25
+parameter_range["vibrance"]["max"] = 100
 
 parameter_range["temperature"]["min"] = 1000
 parameter_range["temperature"]["default"] = 6500
 parameter_range["temperature"]["max"] = 12000
 
-parameter_range["hue"]["min"] = -180
-parameter_range["hue"]["default"] = 0
-parameter_range["hue"]["max"] = 180
-
-parameter_range["brightness"]["min"] = 0
-parameter_range["brightness"]["default"] = 1
-parameter_range["brightness"]["max"] = 2
-
-parameter_range["contrast"]["min"] = 0
-parameter_range["contrast"]["default"] = 1
-parameter_range["contrast"]["max"] = 2
-
-parameter_range["shadows"]["min"] = -100
-parameter_range["shadows"]["default"] = 0
-parameter_range["shadows"]["max"] = 100
-
-parameter_range["highlights"]["min"] = -100
-parameter_range["highlights"]["default"] = 0
-parameter_range["highlights"]["max"] = 100
+parameter_range["lcontrast"]["min"] = 0
+parameter_range["lcontrast"]["default"] = 0  # i think default is impossible (possibly due to c bindings type conversions)
+parameter_range["lcontrast"]["max"] = 40
 
 
 def random_parameters() -> Tuple[str, Tuple[float, float]]:  # TODO redo for darktables
