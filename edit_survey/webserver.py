@@ -51,14 +51,14 @@ def survey():
         data = queuedImageData[first_hash]
         del queuedImageData[first_hash]  # so that no other "/index" call can get the same comparison
 
-    logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['parameter']}:{data['changes']}")  # TODO log hash and cookies
+    logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['parameter']}:{data['changes']}; {session}")  # TODO log hash and cookies
     return render_template("index.html", username=session["name"], count=session["count"], **data)
 
 
 @app.route("/poll", methods=["POST"])
 def poll():
     print(request.form.to_dict())
-    logging.getLogger("forms").info(f"submit: {request.form.to_dict()}")  # TODO log cookies
+    logging.getLogger("forms").info(f"submit: {request.form.to_dict()}; {session}")  # TODO log cookies
     session["count"] += 1
     return redirect("/#left")
 

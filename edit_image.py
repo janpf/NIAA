@@ -13,7 +13,7 @@ from jinja2 import Template
 from PIL import Image
 
 
-def edit_image(img_path: str, change: str, value: float) -> Image:
+def edit_image(img_path: str, change: str, value: float) -> Image:  # TODO alles mal checken
 
     if "lcontrast" == change:  # XXX localcontrast xmp in darktable is broken atm. no idea why
         img = cv2.imread(img_path)
@@ -46,7 +46,7 @@ def edit_image(img_path: str, change: str, value: float) -> Image:
 
         if "exposure" == change:
             template_file = "./darktable_xmp/exposure.xmp"
-            change_str = f"0000000000000000{''.join(['%02x' % b for b in bytearray(pack('f', value))])}00004842000080c0"  # TODO check
+            change_str = f"0000000000000000{''.join(['%02x' % b for b in bytearray(pack('f', value))])}00004842000080c0"
 
         if "vibrance" == change:
             template_file = "./darktable_xmp/vibrance.xmp"
@@ -56,9 +56,9 @@ def edit_image(img_path: str, change: str, value: float) -> Image:
             raise ("aaaarg")
             template_file = "./darktable_xmp/temperature.xmp"
             if "temperature" == change:
-                change_str = f"f3efbf3f0000803fa91a073f0000807f"  # TODO check
+                change_str = f"f3efbf3f0000803fa91a073f0000807f"
             elif "tint" == change:
-                change_str = f"f3efbf3f0000803fa91a073f0000807f"  # TODO check
+                change_str = f"f3efbf3f0000803fa91a073f0000807f"
 
         with open(template_file) as template_file:
             Template(template_file.read()).stream(value=change_str).dump(edit_file)
@@ -71,7 +71,7 @@ def edit_image_mp(img_path: str, change: str, value: float, q):
     q.put(edit_image(img_path, change, value))
 
 
-parameter_range = collections.defaultdict(dict)  # TODO redo for darktables
+parameter_range = collections.defaultdict(dict)
 parameter_range["contrast"]["min"] = -1
 parameter_range["contrast"]["default"] = 0
 parameter_range["contrast"]["max"] = 1
