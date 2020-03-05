@@ -1,27 +1,35 @@
 import collections
 import math
-import os
 import random
 import subprocess
 import tempfile
-from contextlib import redirect_stdout
 from multiprocessing import SimpleQueue
 from pathlib import Path
 from struct import pack, unpack
 from typing import Dict, Tuple
 
+import cv2
 import numpy as np
 from jinja2 import Template
 from PIL import Image
 
 
 def edit_image(img_path: str, change: str, value: float) -> Image:
+
+    if "lcontrast" == change:  # XXX localcontrast xmp in darktable is broken atm. no idea why
+        img = cv2.imread(img_path)
+        img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+        l, a, b = cv2.split(img_lab)
+
+        cl = cv2.createCLAHE(clipLimit=value, tileGridSize=(8, 8)).apply(l)
+
+        limg = cv2.merge((cl, a, b))
+        img = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
+        return Image.fromarray(img)
+
     with tempfile.TemporaryDirectory() as darktable_config:  # because otherwise darktable can't open more than one instance in parallel
         edit_file = str(Path(darktable_config) / "edit.xmp")
         out_file = str(Path(darktable_config) / "out.jpg")
-
-        if "lcontrast" == change:  # XXX localcontrast xmp in darktable is broken atm. no idea why # TODO revert to opencv
-            raise ("not implemented")
 
         if "contrast" == change or "brightness" == change or "saturation" == change:
             template_file = "./darktable_xmp/colisa.xmp"
