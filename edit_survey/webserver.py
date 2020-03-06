@@ -3,11 +3,12 @@ import logging
 import random
 import secrets
 import tempfile
+from collections import deque
 from io import BytesIO
 from multiprocessing import Lock, Process, SimpleQueue
 from pathlib import Path
 from random import shuffle
-from typing import Dict, Tuple, Any
+from typing import Any, Dict, Tuple
 
 from flask import Flask, abort, redirect, render_template, request, session
 from flask.helpers import send_file, url_for
@@ -15,7 +16,6 @@ from flask.helpers import send_file, url_for
 from edit_image import edit_image, random_parameters
 
 app = Flask(__name__)
-formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
 
 # TODO just write and log everything into a sqlite
 
@@ -23,6 +23,7 @@ formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
 def preprocessImages():  # TODO cleanup
     with app.dictLock:
         while len(app.queuedImageData) < 10:
+            print("images already qeueued", len(app.queuedImageData))
             chosen_img = random.choice(app.imgs)
             image_file = Path(app.config.get("imageFolder")) / chosen_img
             img = f"/img/{chosen_img}"
@@ -33,7 +34,7 @@ def preprocessImages():  # TODO cleanup
             leftChanges, rightChanges = changes
             hashval = str(hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}"))
 
-            app.queuedImageData[hashval] = {"img": img, "edits": edits, "parameter": parameter, "leftChanges": leftChanges, "rightChanges": rightChanges, "hashval": hashval}
+            app.queuedImageData.appendleft({"img": img, "edits": edits, "parameter": parameter, "leftChanges": leftChanges, "rightChanges": rightChanges, "hashval": hashval})
 
             Process(target=edit_image, args=(str(image_file), parameter, leftChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_l.jpg"))).start()
             Process(target=edit_image, args=(str(image_file), parameter, rightChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_r.jpg"))).start()
@@ -44,9 +45,7 @@ def survey():
     preprocessImages()  # queue new images for preprocessing
 
     with app.dictLock:
-        first_hash = list(app.queuedImageData)[0]  # get first queued image (hopefully)
-        data = app.queuedImageData[first_hash]
-        del app.queuedImageData[first_hash]  # so that no other "/index" call can get the same comparison
+        data = app.queuedImageData.pop()
 
     logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['parameter']}:{[data['leftChanges'], data['rightChanges']]}; {session}")
     return render_template("index.html", username=session["name"], count=session["count"], **data)
@@ -114,6 +113,7 @@ def log_request_info():
 
 def setup_logger(name, log_file, level=logging.INFO):
     handler = logging.FileHandler(log_file)
+    formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
     handler.setFormatter(formatter)
 
     logger = logging.getLogger(name)
@@ -142,7 +142,7 @@ def load_app(imgFile="/data/train.txt", imageFolder="/data/images", out="/data/l
     app.secret_key = "secr3t"  # TODO
 
     app.dictLock = Lock()
-    app.queuedImageData = dict()  # type: Dict[str, Dict[str, Any]]
+    app.queuedImageData = deque([])
 
     with open(imgFile, "r") as f:
         app.imgs = [img.strip() for img in f.readlines()]

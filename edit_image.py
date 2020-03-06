@@ -26,7 +26,7 @@ def edit_image(img_path: str, change: str, value: float, out_path: str = None) -
         img = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
         return Image.fromarray(img)
 
-    darktable_config = tempfile.mkdtemp() # because otherwise darktable can't open more than one instance in parallel
+    darktable_config = tempfile.mkdtemp()  # because otherwise darktable can't open more than one instance in parallel
     edit_file = str(Path(darktable_config) / "edit.xmp")
     out_file = str(Path(darktable_config) / "out.jpg")
 
@@ -79,12 +79,12 @@ parameter_range["brightness"] = parameter_range["contrast"]
 parameter_range["saturation"] = parameter_range["contrast"]
 
 parameter_range["shadows"]["min"] = -100  # wahrscheinlich 3. Packen # TODO FIXME shallow copy
+parameter_range["shadows"]["default"] = 50
 parameter_range["shadows"]["max"] = 100
 
-parameter_range["highlights"] = parameter_range["shadows"]  # wahrscheinlich 5. Packen
-
-parameter_range["shadows"]["default"] = 50
+parameter_range["highlights"]["min"] = -100  # wahrscheinlich 5. Packen
 parameter_range["highlights"]["default"] = -50
+parameter_range["highlights"]["max"] = 100
 
 parameter_range["exposure"]["min"] = -3  # wahrscheinlich 3. Packen
 parameter_range["exposure"]["default"] = 0
@@ -94,9 +94,9 @@ parameter_range["vibrance"]["min"] = 0
 parameter_range["vibrance"]["default"] = 25
 parameter_range["vibrance"]["max"] = 100
 
-parameter_range["temperature"]["min"] = 1000
-parameter_range["temperature"]["default"] = 6500
-parameter_range["temperature"]["max"] = 12000
+# parameter_range["temperature"]["min"] = 1000
+# parameter_range["temperature"]["default"] = 6500
+# parameter_range["temperature"]["max"] = 12000
 
 parameter_range["lcontrast"]["min"] = 0
 parameter_range["lcontrast"]["default"] = 0  # i think default is impossible (possibly due to c bindings type conversions)
@@ -113,19 +113,6 @@ def random_parameters() -> Tuple[str, Tuple[float, float]]:  # TODO redo for dar
             changeVal = (0, random.choice(lcontrast_vals))
         else:
             changeVal = (random.choice(lcontrast_vals), random.choice(lcontrast_vals))
-
-    elif change == "hue":
-        pos_neg = random.choice(["positive", "negative", "interval"])  # in order to not match a positive change with a negative one
-
-        if pos_neg == "positive":
-            changeVal = (0, random.choice(np.arange(1, 11, 1)))
-        elif pos_neg == "negative":
-            changeVal = (0, random.choice(np.arange(-10, 0, 1)))
-        else:
-            hue_space = random.choice(list(np.arange(-10, 0, 1)) + list(np.arange(1, 11, 1)))
-            changeVal = (hue_space, hue_space)
-            while not math.copysign(1, changeVal[0]) == math.copysign(1, changeVal[1]):  # make sure to not compare an image to another one, which has been edited in the other "direction"
-                changeVal = (changeVal[0], hue_space)
 
     else:
         pos_neg = random.choice(["positive", "negative", "interval"])
