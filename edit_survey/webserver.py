@@ -17,16 +17,12 @@ from edit_image import edit_image, random_parameters
 app = Flask(__name__)
 formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
 
-dictLock = Lock()
-queuedImageData = dict()  # type: Dict[str, Dict[str, Any]]
-preprocessedImages = dict()  # type: Dict[str, Tuple[SimpleQueue, SimpleQueue]]
-
 # TODO just write and log everything into a sqlite
 
 
 def preprocessImages():  # TODO cleanup
-    with dictLock:
-        while len(queuedImageData) < 10:
+    with app.dictLock:
+        while len(app.queuedImageData) < 10:
             chosen_img = random.choice(app.imgs)
             image_file = Path(app.config.get("imageFolder")) / chosen_img
             img = f"/img/{chosen_img}"
@@ -37,7 +33,7 @@ def preprocessImages():  # TODO cleanup
             leftChanges, rightChanges = changes
             hashval = str(hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}"))
 
-            queuedImageData[hashval] = {"img": img, "edits": edits, "parameter": parameter, "leftChanges": leftChanges, "rightChanges": rightChanges, "hashval": hashval}
+            app.queuedImageData[hashval] = {"img": img, "edits": edits, "parameter": parameter, "leftChanges": leftChanges, "rightChanges": rightChanges, "hashval": hashval}
 
             Process(target=edit_image, args=(str(image_file), parameter, leftChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_l.jpg"))).start()
             Process(target=edit_image, args=(str(image_file), parameter, rightChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_r.jpg"))).start()
@@ -47,10 +43,10 @@ def preprocessImages():  # TODO cleanup
 def survey():
     preprocessImages()  # queue new images for preprocessing
 
-    with dictLock:
-        first_hash = list(queuedImageData)[0]  # get first queued image (hopefully)
-        data = queuedImageData[first_hash]
-        del queuedImageData[first_hash]  # so that no other "/index" call can get the same comparison
+    with app.dictLock:
+        first_hash = list(app.queuedImageData)[0]  # get first queued image (hopefully)
+        data = app.queuedImageData[first_hash]
+        del app.queuedImageData[first_hash]  # so that no other "/index" call can get the same comparison
 
     logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['parameter']}:{[data['leftChanges'], data['rightChanges']]}; {session}")
     return render_template("index.html", username=session["name"], count=session["count"], **data)
@@ -72,6 +68,7 @@ def img(image: str):
         abort(404)
     edited = image.split(".")[0] + f"_{changes['side']}.jpg"  # only works if one dot in imagepath :D
     return send_file(app.config.get("editedImageFolder") / edited, mimetype="image/jpeg")
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -143,6 +140,9 @@ def load_app(imgFile="/data/train.txt", imageFolder="/data/images", out="/data/l
     app.config.get("editedImageFolder").mkdir(parents=True, exist_ok=True)
 
     app.secret_key = "secr3t"  # TODO
+
+    app.dictLock = Lock()
+    app.queuedImageData = dict()  # type: Dict[str, Dict[str, Any]]
 
     with open(imgFile, "r") as f:
         app.imgs = [img.strip() for img in f.readlines()]
