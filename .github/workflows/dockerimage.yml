@@ -14,10 +14,10 @@ jobs:
         run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
       - name: checkout project
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: build pytorch image
-        run: docker build . --file Dockerfile-pytorch --tag janpf/niaa:pytorch-latest
+        run: docker build . --file Dockerfile --tag janpf/niaa:pytorch-latest
 
       - name: docker push
         run: docker push janpf/niaa:pytorch-latest
@@ -30,10 +30,10 @@ jobs:
         run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
       - name: checkout project
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: build flask image
-        run: docker build . --file ./survey/Dockerfile-flask --tag janpf/niaa:flask-latest
+        run: docker build . --file ./survey/Dockerfile --tag janpf/niaa:flask-latest
 
       - name: docker push
         run: docker push janpf/niaa:flask-latest
