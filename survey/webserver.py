@@ -26,13 +26,13 @@ def preprocessImages():  # TODO cleanup # TODO move to iframe or sth
     c = conn.cursor()
     queueRanEmpty = False
     try:
-        c.execute("""SELECT * FROM queue""").fetchone()[0]
+        c.execute("""SELECT COUNT(*) FROM queue""").fetchone()[0]
     except:
-        c.execute("""INSERT INTO queue VALUES (img,parameter,leftChanges,rightChanges,hashval)""", ("tmp", "tmp", "tmp", "tmp", "tmp"))
+        c.execute("""INSERT INTO queue(img,parameter,leftChanges,rightChanges,hashval) VALUES (?,?,?,?,?)""", ("tmp", "tmp", "tmp", "tmp", "tmp"))
         queueRanEmpty = True
 
-    if c.execute("""SELECT * FROM queue""").fetchone()[0] < 30:
-        while c.execute("""SELECT * FROM queue""").fetchone()[0] < 40:  # preprocess 40 imagepairs, if less than 30 are already preprocessed
+    if c.execute("""SELECT COUNT(*) FROM queue""").fetchone()[0] < 30:
+        while c.execute("""SELECT COUNT(*) FROM queue""").fetchone()[0] < 40:  # preprocess 40 imagepairs, if less than 30 are already preprocessed
             chosen_img = random.choice(app.imgs)
             image_file = Path(app.config.get("imageFolder")) / chosen_img
             img = f"/img/{chosen_img}"
@@ -44,7 +44,7 @@ def preprocessImages():  # TODO cleanup # TODO move to iframe or sth
             hashval = str(hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}"))
 
             data = (img, parameter, leftChanges, rightChanges, hashval)
-            c.execute("""INSERT INTO queue VALUES (img,parameter,leftChanges,rightChanges,hashval)""", data)
+            c.execute("""INSERT INTO queue(img,parameter,leftChanges,rightChanges,hashval) VALUES (?,?,?,?,?)""", data)
 
             Process(target=edit_image, args=(str(image_file), parameter, leftChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_l.jpg"))).start()
             Process(target=edit_image, args=(str(image_file), parameter, rightChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_r.jpg"))).start()
@@ -58,11 +58,13 @@ def preprocessImages():  # TODO cleanup # TODO move to iframe or sth
 def survey():
     preprocessImages()  # queue new images for preprocessing
 
-    conn = sqlite3.connect(app.config["queueDB"])
+    conn = sqlite3.connect(app.config["queueDB"], isolation_level="EXCLUSIVE")
+    conn.row_factory = sqlite3.Row
+    conn.execute("BEGIN EXCLUSIVE")
     c = conn.cursor()
-    data = c.execute("""SELECT min(id) FROM queue""").fetchone()  # first inserted imagepair
+    data = c.execute("""SELECT * FROM queue ORDER BY id LIMIT 1""").fetchone()  # first inserted imagepair
+    c.execute("""DELETE FROM queue WHERE id = ?""", data["id"])
     conn.close()
-
     logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['parameter']}:{[data['leftChanges'], data['rightChanges']]}; {session}")
     return render_template("index.html", username=session["name"], count=session["count"], **data)
 
