@@ -30,8 +30,20 @@ def survey():
 
 @app.route("/poll", methods=["POST"])
 def poll():
-    print(request.form.to_dict())
-    logging.getLogger("forms").info(f"submit: {request.form.to_dict()}; {session}")
+    data = request.form.to_dict()
+    logging.getLogger("forms").info(f"submit: {data}; {session}")
+
+    conn = sqlite3.connect(app.config["subDB"])
+    c = conn.cursor()
+
+    c.execute(  # databasenormali...what?
+        """INSERT INTO submissions(img,parameter,leftChanges,rightChanges,chosen,hashval,screenWidth,screenHeight,windowWidth,windowHeight,colorDepth,userid,username,usersubs) VALUES (?,?,?,?,?)""",
+        (data["img"], data["parameter"], data["leftChanges"], data["rightChanges"], data["chosen"], data["hashval"], data["screenWidth"], data["screenHeight"], data["windowWidth"], data["windowHeight"], data["colordepth"], session["id"], session["name"], session["count"]),
+    )
+
+    conn.commit()
+    conn.close()
+
     session["count"] += 1
     return redirect("/#left")
 
@@ -143,13 +155,14 @@ def load_app(imgFile="/data/train.txt", imageFolder="/data/images", out="/data/l
     app.logger.setLevel(logging.DEBUG)
 
     setup_logger("compares", out / "compares.log")
-    setup_logger("forms", out / "forms.log")
+    setup_logger("forms", out / "submissions.log")
     setup_logger("requests", out / "requests.log")
 
     app.config["imageFolder"] = imageFolder
     app.config["editedImageFolder"] = Path("/tmp/imgs/")
     app.config["TEMPLATES_AUTO_RELOAD"] = True
     app.config["queueDB"] = out / "queue.db"
+    app.config["subDB"] = out / "submissions.db"
 
     app.config.get("editedImageFolder").mkdir(parents=True, exist_ok=True)
     app.secret_key = "secr3t"  # TODO
