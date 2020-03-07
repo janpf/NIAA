@@ -22,13 +22,13 @@ app = Flask(__name__)
 
 
 def preprocessImages():  # TODO cleanup # TODO move to iframe or sth
-    conn = sqlite3.connect(app.config["queueDB"])
+    conn = sqlite3.connect(app.config["queueDB"], isolation_level=None)
     c = conn.cursor()
     queueRanEmpty = False
     try:
         c.execute("""SELECT * FROM queue""").fetchone()[0]
     except:
-        c.execute("""INSERT INTO queue VALUES (?,?,?,?,?)""", ("tmp", "tmp", "tmp", "tmp", "tmp"))
+        c.execute("""INSERT INTO queue VALUES (img,parameter,leftChanges,rightChanges,hashval)""", ("tmp", "tmp", "tmp", "tmp", "tmp"))
         queueRanEmpty = True
 
     if c.execute("""SELECT * FROM queue""").fetchone()[0] < 30:
@@ -44,15 +44,13 @@ def preprocessImages():  # TODO cleanup # TODO move to iframe or sth
             hashval = str(hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}"))
 
             data = (img, parameter, leftChanges, rightChanges, hashval)
-            c.execute("""INSERT INTO queue VALUES (?,?,?,?,?)""", data)
-            conn.commit()  # instacommit, otherwise other threads could drastically overfill the queue
+            c.execute("""INSERT INTO queue VALUES (img,parameter,leftChanges,rightChanges,hashval)""", data)
 
             Process(target=edit_image, args=(str(image_file), parameter, leftChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_l.jpg"))).start()
             Process(target=edit_image, args=(str(image_file), parameter, rightChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_r.jpg"))).start()
 
     if queueRanEmpty:
-        c.execute("""DELETE FROM queue WHERE img = tmp""")
-    conn.commit()
+        c.execute("""DELETE FROM queue WHERE hashval = tmp""")
     conn.close()
 
 
