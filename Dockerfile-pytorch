@@ -2,12 +2,11 @@ FROM pytorch/pytorch:latest
 
 # because ubuntu only has v2.6: downloading v3
 RUN apt-get update
-RUN apt-get install -y wget gnupg2
-RUN echo 'deb http://download.opensuse.org/repositories/graphics:/darktable/xUbuntu_18.04/ /' > /etc/apt/sources.list.d/graphics:darktable.list
-RUN wget -nv https://download.opensuse.org/repositories/graphics:darktable/xUbuntu_18.04/Release.key -O Release.key
-RUN apt-key add - < Release.key
-RUN apt-get update
-RUN apt-get install -y darktable
+RUN apt-get install -y wget
+RUN wget -nv https://download.opensuse.org/repositories/graphics:/darktable/Debian_10/amd64/darktable_3.0.0-1.1_amd64.deb -O darktable.deb
+RUN apt-get install -y packagename.deb
+# no dpkg, because dependency resolution
+RUN rm darktable.deb
 
 COPY ./requirements-pytorch.txt /workspace/
 WORKDIR /workspace
