@@ -10,7 +10,6 @@ from flask.helpers import send_file, url_for
 
 from edit_image import edit_image, random_parameters
 
-# TODO just write and log everything into a sqlite
 app = Flask(__name__)
 
 
@@ -37,8 +36,8 @@ def poll():
     c = conn.cursor()
 
     c.execute(  # databasenormali...what?
-        """INSERT INTO submissions(img,parameter,leftChanges,rightChanges,chosen,hashval,screenWidth,screenHeight,windowWidth,windowHeight,colorDepth,userid,username,usersubs) VALUES (?,?,?,?,?)""",
-        (data["img"], data["parameter"], data["leftChanges"], data["rightChanges"], data["chosen"], data["hashval"], data["screenWidth"], data["screenHeight"], data["windowWidth"], data["windowHeight"], data["colordepth"], session["id"], session["name"], session["count"]),
+        """INSERT INTO submissions(img,parameter,leftChanges,rightChanges,chosen,hashval,screenWidth,screenHeight,windowWidth,windowHeight,colorDepth,userid,username,usersubs) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (data["img"], data["parameter"], data["leftChanges"], data["rightChanges"], data["chosen"], data["hashval"], data["screenWidth"], data["screenHeight"], data["windowWidth"], data["windowHeight"], data["colorDepth"], session["id"], session["name"], session["count"]),
     )
 
     conn.commit()
