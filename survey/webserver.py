@@ -18,7 +18,7 @@ app = Flask(__name__)
 def survey():
     conn = sqlite3.connect(app.config["queueDB"], isolation_level="EXCLUSIVE")
     conn.row_factory = sqlite3.Row
-    conn.execute("BEGIN EXCLUSIVE")
+    conn.execute("BEGIN EXCLUSIVE")  # completely locks down database for all other accesses
     c = conn.cursor()
     data = c.execute("""SELECT * FROM queue ORDER BY id LIMIT 1""").fetchone()  # first inserted imagepair
     c.execute("""DELETE FROM queue WHERE id = ?""", (data["id"],))
@@ -135,14 +135,13 @@ def preprocessImages():
 @app.before_request
 def log_request_info():
     rlogger = logging.getLogger("requests")
-    rlogger.info("Body: %s", request.get_data())
     rlogger.info("Headers: %s", request.headers)
     rlogger.info("Session: %s", session)
     if not session.get("authorized", False) and not (request.endpoint == "login" or request.endpoint == "preprocess"):
         return redirect(url_for("login"))
 
 
-def setup_logger(name, log_file, level=logging.INFO):
+def setup_logger(name: str, log_file: Path, level=logging.INFO) -> logging.Logger:
     handler = logging.FileHandler(log_file)
     formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
     handler.setFormatter(formatter)
@@ -153,7 +152,7 @@ def setup_logger(name, log_file, level=logging.INFO):
     return logger
 
 
-def load_app(imgFile="/data/train.txt", imageFolder="/data/images", out="/data/logs"):  # for gunicorn: https://github.com/benoitc/gunicorn/issues/135
+def load_app(imgFile: str = "/data/train.txt", imageFolder: str = "/data/images", out: str = "/data/logs") -> Flask:  # for gunicorn: https://github.com/benoitc/gunicorn/issues/135
     out = Path(out)
     # all variables will be forked, but not synchronized between gunicorn threads
     logging.basicConfig(filename=out / "flask.log", level=logging.DEBUG)
