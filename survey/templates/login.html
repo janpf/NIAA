@@ -34,7 +34,8 @@
         }
 
         body {
-            width: 100%;
+            width: 70%;
+            max-width: 1300px;
             margin: 2em auto;
             font: .9em/1.2 Arial, Helvetica, sans-serif;
             display: grid;
@@ -52,8 +53,23 @@
         form {
             display: inline-grid;
             grid-template-columns: 5fr 1fr 5fr;
-            grid-row: 2;
+            grid-row: 3;
             grid-column: 2;
+        }
+
+        .headline {
+            grid-row: 1;
+        }
+
+        .welcome {
+            grid-row: 2;
+            line-height: 1.5;
+            display: inline-block;
+            text-align: left;
+        }
+
+        .wide {
+            grid-column: 1 / -1;
         }
 
         label {
@@ -96,6 +112,39 @@
             </script>
         </div>
     </div>
+
+    <h1 class="headline wide">Image Aesthetic Assessment</h1>
+    <div class="welcome wide">
+        <p>
+            Vielen Dank für die Teilnahme an meiner Studie!
+        </p>
+        <p>
+            Der Arbeitsauftrag ist sehr einfach: <strong>das Bild anklicken, welches...</strong>
+            <dl class="row">
+                <span class="col-sm-1"></span>
+                <dt class="col-sm-1">🖼️</dt>
+                <dd class="col-sm-10">... Ihnen <strong>ästhetischer</strong> erscheint</dd>
+
+                <span class="col-sm-1"></span>
+                <dt class="col-sm-1">👨‍🎨</dt>
+                <dd class="col-sm-10">... <strong>professioneller bearbeitet</strong> aussieht</dd>
+            </dl>
+        </p>
+        <p>
+            Dinge, die es zu <strong>beachten</strong> gilt:
+            <dl class="row">
+                <span class="col-sm-1"></span>
+                <dt class="col-sm-1">🌙</dt>
+                <dd class="col-sm-10">Deaktivieren Sie Ihren <strong>Nachtmodus, flux, ...</strong></dd>
+
+                <span class="col-sm-1"></span>
+                <dt class="col-sm-1">🤔</dt>
+                <dd class="col-sm-10"><strong>Nicht</strong> zu einer Meinung <strong>zwingen</strong>. Für schwierige
+                    Vergleiche gibt es einen extra Button unter den Bildern.
+                </dd>
+            </dl>
+        </p>
+    </div>
     <form action="/login" method="post">
         <label for="fusername">
             (optional) Benutzername
@@ -106,7 +155,7 @@
         </label>
         <input id="fpassword" type="password" name="password">
         <button type="submit" class="btn btn-outline-success ">
-            Los
+            Ich habe verstanden. Los geht's!
         </button>
     </form>
     <iframe src="/preprocess" width="0" height="0" frameborder="0" tabindex="-1" title="empty" class="hidden"

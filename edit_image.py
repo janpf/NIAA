@@ -141,3 +141,10 @@ if __name__ == "__main__":
     parser.add_argument("--out", type=str, help="dest for edited images", default="/data/output.jpg")
     args = parser.parse_args()
     edit_image(img_path=args.image, change=args.parameter, value=args.value).save(args.out)
+
+# darktable xmp crashkurs
+# to encode
+# "".join([ "%02x" % b for b in bytearray(pack("f", 10.0))])
+# to decode
+# unpack("f", b"\x00\x00\x96\x42")
+# unpack("f", bytes.fromhex("00009642"))

@@ -12,6 +12,7 @@ from flask.helpers import send_file, url_for
 from edit_image import edit_image, random_parameters
 
 app = Flask(__name__)
+# TODO log IP
 
 
 @app.route("/")
@@ -25,7 +26,7 @@ def survey():
     conn.commit()
     conn.close()
     logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['parameter']}:{[data['leftChanges'], data['rightChanges']]}; {session}")
-    return render_template("index.html", username=session["name"], count=session["count"], **data)
+    return render_template("index.html", count=session["count"], **data)
 
 
 @app.route("/poll", methods=["POST"])
@@ -171,7 +172,7 @@ def load_app(imgFile: str = "/data/train.txt", imageFolder: str = "/data/images"
     app.config["subDB"] = out / "submissions.db"
 
     app.config.get("editedImageFolder").mkdir(parents=True, exist_ok=True)
-    app.secret_key = "secr3t"  # TODO
+    app.secret_key = "secr3t"  # XXX
 
     with open(imgFile, "r") as f:
         app.imgs = [img.strip() for img in f.readlines()]
