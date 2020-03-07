@@ -24,8 +24,15 @@ app = Flask(__name__)
 def preprocessImages():  # TODO cleanup # TODO move to iframe or sth
     conn = sqlite3.connect(app.config["queueDB"])
     c = conn.cursor()
-    if c.execute("""SELECT * FROM queue""").fetchone()[0] < 20:
-        while c.execute("""SELECT * FROM queue""").fetchone()[0] < 40:  # preprocess 50 imagepairs, if less than 30 are already preprocessed
+    queueRanEmpty = False
+    try:
+        c.execute("""SELECT * FROM queue""").fetchone()[0]
+    except:
+        c.execute("""INSERT INTO queue VALUES (?,?,?,?,?)""", ("tmp", "tmp", "tmp", "tmp", "tmp"))
+        queueRanEmpty = True
+
+    if c.execute("""SELECT * FROM queue""").fetchone()[0] < 30:
+        while c.execute("""SELECT * FROM queue""").fetchone()[0] < 40:  # preprocess 40 imagepairs, if less than 30 are already preprocessed
             chosen_img = random.choice(app.imgs)
             image_file = Path(app.config.get("imageFolder")) / chosen_img
             img = f"/img/{chosen_img}"
@@ -43,6 +50,8 @@ def preprocessImages():  # TODO cleanup # TODO move to iframe or sth
             Process(target=edit_image, args=(str(image_file), parameter, leftChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_l.jpg"))).start()
             Process(target=edit_image, args=(str(image_file), parameter, rightChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_r.jpg"))).start()
 
+    if queueRanEmpty:
+        c.execute("""DELETE FROM queue WHERE img = tmp""")
     conn.commit()
     conn.close()
 
@@ -146,18 +155,10 @@ def load_app(imgFile="/data/train.txt", imageFolder="/data/images", out="/data/l
     app.config["imageFolder"] = imageFolder
     app.config["editedImageFolder"] = Path("/tmp/imgs/")
     app.config["TEMPLATES_AUTO_RELOAD"] = True
+    app.config["queueDB"] = "/data/logs/queue.db"
 
     app.config.get("editedImageFolder").mkdir(parents=True, exist_ok=True)
-
     app.secret_key = "secr3t"  # TODO
-
-    app.config["queueDB"] = "/data/logs/queue.db"
-    conn = sqlite3.connect(app.config["queueDB"])
-    c = conn.cursor()
-    c.execute("""DROP TABLE IF EXISTS queue""")
-    c.execute("""CREATE TABLE queue (id INTEGER PRIMARY KEY, img text, parameter text, leftChanges text, rightChanges text, hashval text)""")
-    conn.commit()
-    conn.close()
 
     with open(imgFile, "r") as f:
         app.imgs = [img.strip() for img in f.readlines()]

@@ -13,4 +13,5 @@ RUN pip install -r ./survey/requirements-flask.txt
 
 COPY . /app
 
-CMD ["gunicorn", "-w", "12", "-b", "0.0.0.0:5000", "survey.webserver:load_app()"]
+RUN chmod +x ./survey/start.sh
+CMD ["./survey/start.sh"]
