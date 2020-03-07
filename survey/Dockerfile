@@ -13,5 +13,5 @@ RUN pip install -r ./survey/requirements-flask.txt
 
 COPY . /app
 
-RUN chmod +x /app/survey/start.sh
-ENTRYPOINT "/app/survey/start.sh"
+RUN chmod a+x /app/survey/start.sh
+ENTRYPOINT ["sh", "/app/survey/start.sh"]
