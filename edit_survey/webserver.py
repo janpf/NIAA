@@ -14,6 +14,7 @@ from flask import Flask, abort, redirect, render_template, request, session
 from flask.helpers import send_file, url_for
 
 from edit_image import edit_image, random_parameters
+import sqlite3
 
 app = Flask(__name__)
 
@@ -21,31 +22,38 @@ app = Flask(__name__)
 
 
 def preprocessImages():  # TODO cleanup
-    with app.dictLock:
-        while len(app.queuedImageData) < 10:
-            print("images already qeueued", len(app.queuedImageData))
-            chosen_img = random.choice(app.imgs)
-            image_file = Path(app.config.get("imageFolder")) / chosen_img
-            img = f"/img/{chosen_img}"
+    conn = sqlite3.connect(app.config["queueDB"])
+    c = conn.cursor()
 
-            edits = random_parameters()
-            parameter, changes = edits[0], list(edits[1])
-            shuffle(changes)
-            leftChanges, rightChanges = changes
-            hashval = str(hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}"))
+    while c.execute("""SELECT * FROM queue""").fetchone()[0] < 10:  # preprocess 10 imagepairs at all times
+        chosen_img = random.choice(app.imgs)
+        image_file = Path(app.config.get("imageFolder")) / chosen_img
+        img = f"/img/{chosen_img}"
 
-            app.queuedImageData.appendleft({"img": img, "edits": edits, "parameter": parameter, "leftChanges": leftChanges, "rightChanges": rightChanges, "hashval": hashval})
+        edits = random_parameters()
+        parameter, changes = edits[0], list(edits[1])
+        shuffle(changes)
+        leftChanges, rightChanges = changes
+        hashval = str(hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}"))
 
-            Process(target=edit_image, args=(str(image_file), parameter, leftChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_l.jpg"))).start()
-            Process(target=edit_image, args=(str(image_file), parameter, rightChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_r.jpg"))).start()
+        data = (img, parameter, leftChanges, rightChanges, hashval)
+        c.execute("""INSERT INTO queue VALUES (?,?,?,?,?)""", data)
+
+        Process(target=edit_image, args=(str(image_file), parameter, leftChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_l.jpg"))).start()
+        Process(target=edit_image, args=(str(image_file), parameter, rightChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_r.jpg"))).start()
+
+    conn.commit()
+    conn.close()
 
 
 @app.route("/")
 def survey():
     preprocessImages()  # queue new images for preprocessing
 
-    with app.dictLock:
-        data = app.queuedImageData.pop()
+    conn = sqlite3.connect(app.config["queueDB"])
+    c = conn.cursor()
+    data = c.execute("""SELECT * FROM queue""").fetchone()
+    conn.close()
 
     logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['parameter']}:{[data['leftChanges'], data['rightChanges']]}; {session}")
     return render_template("index.html", username=session["name"], count=session["count"], **data)
@@ -141,8 +149,13 @@ def load_app(imgFile="/data/train.txt", imageFolder="/data/images", out="/data/l
 
     app.secret_key = "secr3t"  # TODO
 
-    app.dictLock = Lock()
-    app.queuedImageData = deque([])
+    app.config["queueDB"] = "/data/logs/queue.db"
+    conn = sqlite3.connect(app.config["queueDB"])
+    c = conn.cursor()
+    c.execute("""DROP TABLE IF EXISTS queue""")
+    c.execute("""CREATE TABLE queue (id INTEGER PRIMARY KEY, img text, parameter text, leftChanges text, rightChanges text, hashval text)""")
+    conn.commit()
+    conn.close()
 
     with open(imgFile, "r") as f:
         app.imgs = [img.strip() for img in f.readlines()]
