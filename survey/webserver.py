@@ -21,43 +21,8 @@ app = Flask(__name__)
 # TODO just write and log everything into a sqlite
 
 
-def preprocessImages():  # TODO cleanup # TODO move to iframe or sth
-    conn = sqlite3.connect(app.config["queueDB"], isolation_level=None)
-    c = conn.cursor()
-    queueRanEmpty = False
-    try:
-        c.execute("""SELECT COUNT(*) FROM queue""").fetchone()[0]
-    except:
-        c.execute("""INSERT INTO queue(img,parameter,leftChanges,rightChanges,hashval) VALUES (?,?,?,?,?)""", ("tmp", "tmp", "tmp", "tmp", "tmp"))
-        queueRanEmpty = True
-
-    if c.execute("""SELECT COUNT(*) FROM queue""").fetchone()[0] < 30:
-        while c.execute("""SELECT COUNT(*) FROM queue""").fetchone()[0] < 40:  # preprocess 40 imagepairs, if less than 30 are already preprocessed
-            chosen_img = random.choice(app.imgs)
-            image_file = Path(app.config.get("imageFolder")) / chosen_img
-            img = f"/img/{chosen_img}"
-
-            edits = random_parameters()
-            parameter, changes = edits[0], list(edits[1])
-            shuffle(changes)
-            leftChanges, rightChanges = changes
-            hashval = str(hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}"))
-
-            data = (img, parameter, leftChanges, rightChanges, hashval)
-            c.execute("""INSERT INTO queue(img,parameter,leftChanges,rightChanges,hashval) VALUES (?,?,?,?,?)""", data)
-
-            Process(target=edit_image, args=(str(image_file), parameter, leftChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_l.jpg"))).start()
-            Process(target=edit_image, args=(str(image_file), parameter, rightChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_r.jpg"))).start()
-
-    if queueRanEmpty:
-        c.execute("""DELETE FROM queue WHERE hashval = tmp""")
-    conn.close()
-
-
 @app.route("/")
 def survey():
-    preprocessImages()  # queue new images for preprocessing
-
     conn = sqlite3.connect(app.config["queueDB"], isolation_level="EXCLUSIVE")
     conn.row_factory = sqlite3.Row
     conn.execute("BEGIN EXCLUSIVE")
@@ -90,7 +55,6 @@ def img(image: str):
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    preprocessImages()  # queue new images for preprocessing
     if session.get("authorized", False):
         return redirect(url_for("survey"))
 
@@ -121,13 +85,48 @@ def logout():
     return redirect(url_for("login"))
 
 
+@app.route("/preprocess")
+def preprocessImages():
+    conn = sqlite3.connect(app.config["queueDB"], isolation_level=None)
+    c = conn.cursor()
+    queueRanEmpty = False
+    try:
+        c.execute("""SELECT COUNT(*) FROM queue""").fetchone()[0]
+    except:
+        c.execute("""INSERT INTO queue(img,parameter,leftChanges,rightChanges,hashval) VALUES (?,?,?,?,?)""", ("tmp", "tmp", "tmp", "tmp", "tmp"))
+        queueRanEmpty = True
+
+    if c.execute("""SELECT COUNT(*) FROM queue""").fetchone()[0] < 30:
+        while c.execute("""SELECT COUNT(*) FROM queue""").fetchone()[0] < 40:  # preprocess 40 imagepairs, if less than 30 are already preprocessed
+            chosen_img = random.choice(app.imgs)
+            image_file = Path(app.config.get("imageFolder")) / chosen_img
+            img = f"/img/{chosen_img}"
+
+            edits = random_parameters()
+            parameter, changes = edits[0], list(edits[1])
+            shuffle(changes)
+            leftChanges, rightChanges = changes
+            hashval = str(hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}"))
+
+            data = (img, parameter, leftChanges, rightChanges, hashval)
+            c.execute("""INSERT INTO queue(img,parameter,leftChanges,rightChanges,hashval) VALUES (?,?,?,?,?)""", data)
+
+            Process(target=edit_image, args=(str(image_file), parameter, leftChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_l.jpg"))).start()
+            Process(target=edit_image, args=(str(image_file), parameter, rightChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_r.jpg"))).start()
+
+    if queueRanEmpty:
+        c.execute("""DELETE FROM queue WHERE hashval = tmp""")
+    conn.close()
+    return ""
+
+
 @app.before_request
 def log_request_info():
     rlogger = logging.getLogger("requests")
     rlogger.info("Body: %s", request.get_data())
     rlogger.info("Headers: %s", request.headers)
     rlogger.info("Session: %s", session)
-    if not session.get("authorized", False) and request.endpoint != "login":
+    if not session.get("authorized", False) and not (request.endpoint == "login" or request.endpoint == "preprocess"):
         return redirect(url_for("login"))
 
 
@@ -142,8 +141,8 @@ def setup_logger(name, log_file, level=logging.INFO):
     return logger
 
 
-def load_app(imgFile="/data/train.txt", imageFolder="/data/images", out="/data/logs"):  # for gunicorn # https://github.com/benoitc/gunicorn/issues/135
-
+def load_app(imgFile="/data/train.txt", imageFolder="/data/images", out="/data/logs"):  # for gunicorn: https://github.com/benoitc/gunicorn/issues/135
+    # all variables will be forked, but not synchronized between gunicorn threads
     logging.basicConfig(filename=Path(out) / "flask.log", level=logging.DEBUG)
     app.logger.handlers.extend(logging.getLogger("gunicorn.error").handlers)
     app.logger.handlers.extend(logging.getLogger("gunicorn.warning").handlers)

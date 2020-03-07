@@ -79,7 +79,7 @@ parameter_range["contrast"]["max"] = 1
 parameter_range["brightness"] = parameter_range["contrast"]
 parameter_range["saturation"] = parameter_range["contrast"]
 
-parameter_range["shadows"]["min"] = -100  # wahrscheinlich 3. Packen # TODO FIXME shallow copy
+parameter_range["shadows"]["min"] = -100  # wahrscheinlich 3. Packen
 parameter_range["shadows"]["default"] = 50
 parameter_range["shadows"]["max"] = 100
 
