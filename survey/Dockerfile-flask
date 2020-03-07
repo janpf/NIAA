@@ -7,10 +7,10 @@ RUN apt-key add - < Release.key
 RUN apt-get update
 RUN apt-get install -y darktable
 
-COPY ./edit_survey/requirements-flask.txt /app/edit_survey/
+COPY ./survey/requirements-flask.txt /app/survey/
 WORKDIR /app
-RUN pip install -r ./edit_survey/requirements-flask.txt
+RUN pip install -r ./survey/requirements-flask.txt
 
 COPY . /app
 
-CMD ["gunicorn", "-w", "12", "-b", "0.0.0.0:5000", "edit_survey.webserver:load_app()"]
+CMD ["gunicorn", "-w", "12", "-b", "0.0.0.0:5000", "survey.webserver:load_app()"]

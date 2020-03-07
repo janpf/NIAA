@@ -21,26 +21,27 @@ app = Flask(__name__)
 # TODO just write and log everything into a sqlite
 
 
-def preprocessImages():  # TODO cleanup
+def preprocessImages():  # TODO cleanup # TODO move to iframe or sth
     conn = sqlite3.connect(app.config["queueDB"])
     c = conn.cursor()
+    if c.execute("""SELECT * FROM queue""").fetchone()[0] < 20:
+        while c.execute("""SELECT * FROM queue""").fetchone()[0] < 40:  # preprocess 50 imagepairs, if less than 30 are already preprocessed
+            chosen_img = random.choice(app.imgs)
+            image_file = Path(app.config.get("imageFolder")) / chosen_img
+            img = f"/img/{chosen_img}"
 
-    while c.execute("""SELECT * FROM queue""").fetchone()[0] < 10:  # preprocess 10 imagepairs at all times
-        chosen_img = random.choice(app.imgs)
-        image_file = Path(app.config.get("imageFolder")) / chosen_img
-        img = f"/img/{chosen_img}"
+            edits = random_parameters()
+            parameter, changes = edits[0], list(edits[1])
+            shuffle(changes)
+            leftChanges, rightChanges = changes
+            hashval = str(hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}"))
 
-        edits = random_parameters()
-        parameter, changes = edits[0], list(edits[1])
-        shuffle(changes)
-        leftChanges, rightChanges = changes
-        hashval = str(hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}"))
+            data = (img, parameter, leftChanges, rightChanges, hashval)
+            c.execute("""INSERT INTO queue VALUES (?,?,?,?,?)""", data)
+            conn.commit()  # instacommit, otherwise other threads could drastically overfill the queue
 
-        data = (img, parameter, leftChanges, rightChanges, hashval)
-        c.execute("""INSERT INTO queue VALUES (?,?,?,?,?)""", data)
-
-        Process(target=edit_image, args=(str(image_file), parameter, leftChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_l.jpg"))).start()
-        Process(target=edit_image, args=(str(image_file), parameter, rightChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_r.jpg"))).start()
+            Process(target=edit_image, args=(str(image_file), parameter, leftChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_l.jpg"))).start()
+            Process(target=edit_image, args=(str(image_file), parameter, rightChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_r.jpg"))).start()
 
     conn.commit()
     conn.close()
@@ -52,7 +53,7 @@ def survey():
 
     conn = sqlite3.connect(app.config["queueDB"])
     c = conn.cursor()
-    data = c.execute("""SELECT * FROM queue""").fetchone()
+    data = c.execute("""SELECT min(id) FROM queue""").fetchone()  # first inserted imagepair
     conn.close()
 
     logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['parameter']}:{[data['leftChanges'], data['rightChanges']]}; {session}")
@@ -79,6 +80,7 @@ def img(image: str):
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    preprocessImages()  # queue new images for preprocessing
     if session.get("authorized", False):
         return redirect(url_for("survey"))
 
