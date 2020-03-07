@@ -10,9 +10,8 @@ from flask.helpers import send_file, url_for
 
 from edit_image import edit_image, random_parameters
 
-app = Flask(__name__)
-
 # TODO just write and log everything into a sqlite
+app = Flask(__name__)
 
 
 @app.route("/")
@@ -91,7 +90,7 @@ def preprocessImages():
         queueRanEmpty = True
 
     if c.execute("""SELECT COUNT(*) FROM queue""").fetchone()[0] < 30:
-        while c.execute("""SELECT COUNT(*) FROM queue""").fetchone()[0] < 40:  # preprocess 40 imagepairs, if less than 30 are already preprocessed
+        while c.execute("""SELECT COUNT(*) FROM queue""").fetchone()[0] < 40:  # preprocess up to 40 imagepairs, if less than 30 are already preprocessed
             chosen_img = random.choice(app.imgs)
             image_file = Path(app.config.get("imageFolder")) / chosen_img
             img = f"/img/{chosen_img}"
@@ -136,20 +135,21 @@ def setup_logger(name, log_file, level=logging.INFO):
 
 
 def load_app(imgFile="/data/train.txt", imageFolder="/data/images", out="/data/logs"):  # for gunicorn: https://github.com/benoitc/gunicorn/issues/135
+    out = Path(out)
     # all variables will be forked, but not synchronized between gunicorn threads
-    logging.basicConfig(filename=Path(out) / "flask.log", level=logging.DEBUG)
+    logging.basicConfig(filename=out / "flask.log", level=logging.DEBUG)
     app.logger.handlers.extend(logging.getLogger("gunicorn.error").handlers)
     app.logger.handlers.extend(logging.getLogger("gunicorn.warning").handlers)
     app.logger.setLevel(logging.DEBUG)
 
-    setup_logger("compares", Path(out) / "compares.log")
-    setup_logger("forms", Path(out) / "forms.log")
-    setup_logger("requests", Path(out) / "requests.log")
+    setup_logger("compares", out / "compares.log")
+    setup_logger("forms", out / "forms.log")
+    setup_logger("requests", out / "requests.log")
 
     app.config["imageFolder"] = imageFolder
     app.config["editedImageFolder"] = Path("/tmp/imgs/")
     app.config["TEMPLATES_AUTO_RELOAD"] = True
-    app.config["queueDB"] = "/data/logs/queue.db"
+    app.config["queueDB"] = out / "queue.db"
 
     app.config.get("editedImageFolder").mkdir(parents=True, exist_ok=True)
     app.secret_key = "secr3t"  # TODO
