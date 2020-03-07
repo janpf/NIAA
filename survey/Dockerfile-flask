@@ -1,11 +1,11 @@
 FROM python:3.7
 
 # because debian only has v2.6: downloading v3
-RUN echo 'deb http://download.opensuse.org/repositories/graphics:/darktable/Debian_10/ /' > /etc/apt/sources.list.d/graphics:darktable.list
-RUN wget -nv https://download.opensuse.org/repositories/graphics:darktable/Debian_10/Release.key -O Release.key
-RUN apt-key add - < Release.key
+RUN wget -nv https://download.opensuse.org/repositories/graphics:/darktable/Debian_10/amd64/darktable_3.0.0-1.1_amd64.deb -O darktable.deb
 RUN apt-get update
-RUN apt-get install -y darktable
+RUN apt-get install -y packagename.deb
+# no dpkg, because dependency resolution
+RUN rm darktable.deb
 
 COPY ./survey/requirements-flask.txt /app/survey/
 WORKDIR /app
