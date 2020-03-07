@@ -63,7 +63,8 @@ def survey():
     conn.execute("BEGIN EXCLUSIVE")
     c = conn.cursor()
     data = c.execute("""SELECT * FROM queue ORDER BY id LIMIT 1""").fetchone()  # first inserted imagepair
-    c.execute("""DELETE FROM queue WHERE id = ?""", data["id"])
+    c.execute("""DELETE FROM queue WHERE id = ?""", (data["id"],))
+    conn.commit()
     conn.close()
     logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['parameter']}:{[data['leftChanges'], data['rightChanges']]}; {session}")
     return render_template("index.html", username=session["name"], count=session["count"], **data)
