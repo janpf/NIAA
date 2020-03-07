@@ -1,20 +1,14 @@
-import argparse
 import logging
 import random
 import secrets
-import tempfile
-from collections import deque
-from io import BytesIO
+import sqlite3
 from multiprocessing import Lock, Process, SimpleQueue
 from pathlib import Path
-from random import shuffle
-from typing import Any, Dict, Tuple
 
 from flask import Flask, abort, redirect, render_template, request, session
 from flask.helpers import send_file, url_for
 
 from edit_image import edit_image, random_parameters
-import sqlite3
 
 app = Flask(__name__)
 
@@ -104,7 +98,7 @@ def preprocessImages():
 
             edits = random_parameters()
             parameter, changes = edits[0], list(edits[1])
-            shuffle(changes)
+            random.shuffle(changes)
             leftChanges, rightChanges = changes
             hashval = str(hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}"))
 
@@ -164,15 +158,3 @@ def load_app(imgFile="/data/train.txt", imageFolder="/data/images", out="/data/l
         app.imgs = [img.strip() for img in f.readlines()]
         app.imgsSet = set(app.imgs)
     return app
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--imageFile", type=str, help="every line a file name", default="/scratch/stud/pfister/NIAA/pexels/train.txt")
-    parser.add_argument("--imageFolder", type=str, help="path to a folder of images", default="/scratch/stud/pfister/NIAA/pexels/images")
-    parser.add_argument("--out", type=str, help="path to log to", default="/scratch/stud/pfister/NIAA/pexels/logs")
-    args = parser.parse_args()
-
-    load_app(args.imageFile, args.imageFolder, args.out)
-
-    app.run(debug=True)
