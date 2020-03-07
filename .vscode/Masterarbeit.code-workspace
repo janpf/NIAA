@@ -1,29 +1,22 @@
 {
-	"folders": [
-		{
-			"name": "NIAA",
-			"uri": "vscode-remote://ssh-remote+vingilot/home/stud/pfister/eclipse-workspace/NIAA"
-		},
-		{
-			"name": "Masterarbeit",
-			"uri": "vscode-remote://ssh-remote+vingilot/home/stud/pfister/eclipse-workspace/Masterarbeit"
-		},
-		{
-			"name": "pexels-scraper",
-			"uri": "vscode-remote://ssh-remote+vingilot/home/stud/pfister/eclipse-workspace/pexels-scraper"
-		},
-		{
-			"name": "NIAA",
-			"uri": "vscode-remote://ssh-remote+vingilot/scratch/stud/pfister/NIAA"
-		}
-	],
-	"remoteAuthority": "ssh-remote+vingilot",
-	"settings": {
-		"logViewer.watch": [
-			{
-				"title": "Survey",
-				"pattern": "/scratch/stud/pfister/NIAA/pexels/logs/*.log"
-			}
-		]
-	}
+    "folders": [
+        {
+            "name": "NIAA",
+            "uri": "vscode-remote://ssh-remote+vingilot/home/stud/pfister/eclipse-workspace/NIAA"
+        },
+        {
+            "name": "Masterarbeit",
+            "uri": "vscode-remote://ssh-remote+vingilot/home/stud/pfister/eclipse-workspace/Masterarbeit"
+        },
+        {
+            "name": "pexels-scraper",
+            "uri": "vscode-remote://ssh-remote+vingilot/home/stud/pfister/eclipse-workspace/pexels-scraper"
+        },
+        {
+            "name": "NIAA",
+            "uri": "vscode-remote://ssh-remote+vingilot/scratch/stud/pfister/NIAA"
+        }
+    ],
+    "remoteAuthority": "ssh-remote+vingilot",
+    "settings": {}
 }

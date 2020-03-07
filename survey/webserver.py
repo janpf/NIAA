@@ -2,7 +2,8 @@ import logging
 import random
 import secrets
 import sqlite3
-from multiprocessing import Lock, Process, SimpleQueue
+import time
+from multiprocessing import Process
 from pathlib import Path
 
 from flask import Flask, abort, redirect, render_template, request, session
@@ -47,13 +48,20 @@ def poll():
     return redirect("/#left")
 
 
-@app.route("/img/<image>")  # TODO wait for first image
+@app.route("/img/<image>")
 def img(image: str):
     changes: Dict[str, float] = request.args.to_dict()
 
     if not image in app.imgsSet:
         abort(404)
+
     edited = image.split(".")[0] + f"_{changes['side']}.jpg"  # only works if one dot in imagepath :D
+
+    max_wait = 20
+    while not Path(edited).exists() and max_wait > 0:  # sometimes darktable takes reeeeaaally long
+        max_wait -= 1
+        time.sleep(1)
+
     return send_file(app.config.get("editedImageFolder") / edited, mimetype="image/jpeg")
 
 
