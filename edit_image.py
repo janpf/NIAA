@@ -8,7 +8,6 @@ from struct import pack, unpack
 from typing import Dict, Tuple
 
 import cv2
-import numpy as np
 from jinja2 import Template
 from PIL import Image
 
@@ -75,6 +74,7 @@ parameter_range = collections.defaultdict(dict)
 parameter_range["contrast"]["min"] = -1
 parameter_range["contrast"]["default"] = 0
 parameter_range["contrast"]["max"] = 1
+parameter_range["contrast"]["range"] = [-1.0, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
 parameter_range["brightness"] = parameter_range["contrast"]
 parameter_range["saturation"] = parameter_range["contrast"]
@@ -82,52 +82,52 @@ parameter_range["saturation"] = parameter_range["contrast"]
 parameter_range["shadows"]["min"] = -100  # wahrscheinlich 3. Packen
 parameter_range["shadows"]["default"] = 50
 parameter_range["shadows"]["max"] = 100
+parameter_range["shadows"]["range"] = [-100, -90, -80, -70, -60, -50, -40, -30, -20, -10, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+
 
 parameter_range["highlights"]["min"] = -100  # wahrscheinlich 5. Packen
 parameter_range["highlights"]["default"] = -50
 parameter_range["highlights"]["max"] = 100
+parameter_range["highlights"]["range"] = [-100, -90, -80, -70, -60, -50, -40, -30, -20, -10, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 
 parameter_range["exposure"]["min"] = -3  # wahrscheinlich 3. Packen
 parameter_range["exposure"]["default"] = 0
 parameter_range["exposure"]["max"] = 3
+parameter_range["exposure"]["range"] = [-3.0, -2.7, -2.4, -2.1, -1.8, -1.5, -1.2, -0.9, -0.6, -0.3, 0.0, 0.3, 0.6, 0.9, 1.2, 1.5, 1.8, 2.1, 2.4, 2.7, 3.0]
 
 parameter_range["vibrance"]["min"] = 0
 parameter_range["vibrance"]["default"] = 25
 parameter_range["vibrance"]["max"] = 100
+parameter_range["vibrance"]["range"] = [0, 5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100]
 
 # parameter_range["temperature"]["min"] = 1000
 # parameter_range["temperature"]["default"] = 6500
 # parameter_range["temperature"]["max"] = 12000
 
-parameter_range["lcontrast"]["min"] = 0
-parameter_range["lcontrast"]["default"] = 0  # i think default is impossible (possibly due to c bindings type conversions)
+parameter_range["lcontrast"]["min"] = 0  # I think minimum is impossible (possibly due to c bindings type conversions)
+parameter_range["lcontrast"]["default"] = 0
 parameter_range["lcontrast"]["max"] = 40
+parameter_range["lcontrast"]["range"] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40]
 
 
-def random_parameters() -> Tuple[str, Tuple[float, float]]:  # TODO redo for darktables
+def random_parameters() -> Tuple[str, Tuple[float, float]]:  # TODO test
     change = random.choice(list(parameter_range.keys()))
 
     if change == "lcontrast":
         pos_neg = random.choice(["positive", "interval"])
-        lcontrast_vals = [round(val, 1) for val in list(np.arange(0.1, 1, 0.1)) + list(range(1, 10)) + list(range(10, 41, 5))]  # [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40]
-        if pos_neg == "positive":
-            changeVal = (0, random.choice(lcontrast_vals))
-        else:
-            changeVal = (random.choice(lcontrast_vals), random.choice(lcontrast_vals))
-
     else:
         pos_neg = random.choice(["positive", "negative", "interval"])
-        if pos_neg == "positive":
-            changeVal = (parameter_range[change]["default"], random.choice(np.linspace(parameter_range[change]["default"], parameter_range[change]["max"], 10)))
-        elif pos_neg == "negative":
-            changeVal = (parameter_range[change]["default"], random.choice(np.linspace(parameter_range[change]["min"], parameter_range[change]["default"], 10)))
-        else:
-            changeVal = (random.choice(np.linspace(parameter_range[change]["min"], parameter_range[change]["max"], 20)), random.choice(np.linspace(parameter_range[change]["min"], parameter_range[change]["max"], 20)))
-            # make sure to not compare an image to another one, which has been edited in the other "direction
-            while (changeVal[0] < parameter_range[change]["default"] and changeVal[1] > parameter_range[change]["default"]) or (changeVal[0] > parameter_range[change]["default"] and changeVal[1] < parameter_range[change]["default"]):
-                changeVal = (changeVal[0], random.choice(np.linspace(parameter_range[change]["min"], parameter_range[change]["max"], 20)))
 
-        changeVal = (round(changeVal[0], 1), round(changeVal[1], 1))
+    if pos_neg == "positive":
+        changeVal = (parameter_range[change]["default"], random.choice([val for val in parameter_range[change]["range"] if val > parameter_range[change]["default"]]))
+    elif pos_neg == "negative":
+        changeVal = (parameter_range[change]["default"], random.choice([val for val in parameter_range[change]["range"] if val < parameter_range[change]["default"]]))
+    else:
+        changeVal = (random.choice(parameter_range[change]["range"]), random.choice(parameter_range[change]["range"]))
+        # make sure to not compare an image to another one, which has been edited in the other "direction
+        while (changeVal[0] < parameter_range[change]["default"] and changeVal[1] > parameter_range[change]["default"]) or (changeVal[0] > parameter_range[change]["default"] and changeVal[1] < parameter_range[change]["default"]):
+            changeVal = (changeVal[0], random.choice(parameter_range[change]["range"]))
+
     return change, changeVal
 
 
@@ -140,9 +140,4 @@ if __name__ == "__main__":
     parser.add_argument("--value", type=float, help="change value")
     parser.add_argument("--out", type=str, help="dest for edited images", default="/data/output.jpg")
     args = parser.parse_args()
-
-    # (Path(args.out) / args.parameter).mkdir(parents=True, exist_ok=True)
-    # outfile = Path(args.out) / args.parameter / f"{Path(args.image).stem}_{args.parameter}_{args.value}.jpg"
-
-    # print(outfile)
     edit_image(img_path=args.image, change=args.parameter, value=args.value).save(args.out)
