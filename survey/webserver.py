@@ -2,6 +2,7 @@ import logging
 import random
 import secrets
 import sqlite3
+import subprocess
 import time
 from multiprocessing import Process
 from pathlib import Path
@@ -122,7 +123,8 @@ def preprocessImages():
     if queueRanEmpty:
         c.execute("""DELETE FROM queue WHERE hashval = tmp""")
     conn.close()
-    # TODO delete old files
+
+    subprocess.Popen(f"ls -tp {app.config.get('editedImageFolder')} | grep -v '/$' | tail -n +201 | xargs -d '\n' -r rm --", shell=True)  # only keep 200 latest images
     return ""
 
 
