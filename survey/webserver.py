@@ -13,6 +13,7 @@ from edit_image import edit_image, random_parameters
 
 app = Flask(__name__)
 # TODO log IP
+# TODO darktable in feste dirs
 
 
 @app.route("/")
@@ -130,6 +131,7 @@ def preprocessImages():
     if queueRanEmpty:
         c.execute("""DELETE FROM queue WHERE hashval = tmp""")
     conn.close()
+    # TODO delete old files
     return ""
 
 
@@ -139,7 +141,8 @@ def log_request_info():
     rlogger.info("Headers: %s", request.headers)
     rlogger.info("Session: %s", session)
     if not session.get("authorized", False) and not (request.endpoint == "login" or request.endpoint == "preprocess"):
-        return redirect(url_for("login"))
+        pass
+        # return redirect(url_for("login"))
 
 
 def setup_logger(name: str, log_file: Path, level=logging.INFO) -> logging.Logger:
@@ -164,6 +167,8 @@ def load_app(imgFile: str = "/data/train.txt", imageFolder: str = "/data/images"
     setup_logger("compares", out / "compares.log")
     setup_logger("forms", out / "submissions.log")
     setup_logger("requests", out / "requests.log")
+
+    app.config["SERVER_NAME"] = None
 
     app.config["imageFolder"] = imageFolder
     app.config["editedImageFolder"] = Path("/tmp/imgs/")

@@ -11,6 +11,7 @@ import cv2
 from jinja2 import Template
 from PIL import Image
 
+# TODO temp tint
 
 def edit_image(img_path: str, change: str, value: float, out_path: str = None) -> Image:  # TODO alles mal checken
 

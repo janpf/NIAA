@@ -1,0 +1,33 @@
+# Query: (TODO|FIXME|XXX)
+# Flags: CaseSensitive RegExp
+# Including: \home\stud\pfister\eclipse-workspace\NIAA, ./Masterarbeit
+
+14 results - 7 files
+
+NIAA • annotate_image.py:
+  81:     gt = np.exp(gt) / sum(np.exp(gt))  # softmax # TODO stimmt das so?
+  95: if args.imageFolder:  # TODO batchprocessing
+
+NIAA • data_loader.py:
+  20:         self.annotations = pd.read_csv(csv_file, delimiter=" ")  # TODO rearrange according to expected csv
+
+NIAA • edit_image.py:
+  14: # TODO temp tint
+  16: def edit_image(img_path: str, change: str, value: float, out_path: str = None) -> Image:  # TODO alles mal checken
+  18:     if "lcontrast" == change:  # XXX localcontrast xmp in darktable is broken atm. no idea why
+  114: def random_parameters() -> Tuple[str, Tuple[float, float]]:  # TODO test
+
+NIAA • survey/webserver.py:
+  15: # TODO log IP
+  16: # TODO darktable in feste dirs
+  134:     # TODO delete old files
+  177:     app.secret_key = "secr3t"  # XXX
+
+NIAA • survey/templates/index.html:
+  17:             /* TODO 1279px */
+
+NIAA • survey/templates/login.html:
+  12:             /* TODO 1279px */
+
+Masterarbeit • .gitignore:
+  138: # TODO Comment the next line if you want to keep your tikz graphics files
