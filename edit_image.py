@@ -12,7 +12,7 @@ from jinja2 import Template
 from PIL import Image
 
 
-def edit_image(img_path: str, change: str, value: float, out_path: str = None) -> Image:  # TODO alles mal checken
+def edit_image(img_path: str, change: str, value: float, out_path: str = None) -> Image:  # TODO test
 
     if "lcontrast" == change:  # XXX localcontrast xmp in darktable is broken atm. no idea why
         img = cv2.imread(img_path)
@@ -25,7 +25,7 @@ def edit_image(img_path: str, change: str, value: float, out_path: str = None) -
         img = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
         return Image.fromarray(img)
 
-    with tempfile.TemporaryDirectory() as darktable_config:  # because otherwise darktable can't open more than one instance in parallel
+    with tempfile.TemporaryDirectory() as darktable_config:  # otherwise darktable can't open more than one instance in parallel
         edit_file = str(Path(darktable_config) / "edit.xmp")
         out_file = str(Path(darktable_config) / "out.jpg")
 
@@ -53,10 +53,7 @@ def edit_image(img_path: str, change: str, value: float, out_path: str = None) -
 
         if "temperature" == change or "tint" == change:
             template_file = "./darktable_xmp/temperature.xmp"
-            if "temperature" == change:
-                change_str = parameter_range["temperature"]["rangemapping"][change]
-            elif "tint" == change:
-                change_str = parameter_range["tint"]["rangemapping"][change]
+            change_str = parameter_range[change]["rangemapping"][value]
 
         with open(template_file) as template_file:
             Template(template_file.read()).stream(value=change_str).dump(edit_file)
