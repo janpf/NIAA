@@ -13,7 +13,6 @@ from flask.helpers import send_file, url_for
 from edit_image import edit_image, random_parameters
 
 app = Flask(__name__)
-# TODO log IP
 # TODO darktable in feste dirs
 
 
