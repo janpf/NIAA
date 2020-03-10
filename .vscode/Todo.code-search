@@ -20,14 +20,14 @@ NIAA • edit_image.py:
 NIAA • survey/webserver.py:
   15: # TODO log IP
   16: # TODO darktable in feste dirs
-  134:     # TODO delete old files
-  177:     app.secret_key = "secr3t"  # XXX
+  125:     # TODO delete old files
+  170:     app.secret_key = "secr3t"  # XXX
 
 NIAA • survey/templates/index.html:
   17:             /* TODO 1279px */
 
 NIAA • survey/templates/login.html:
-  12:             /* TODO 1279px */
+  13:             /* TODO 1279px */
 
 Masterarbeit • .gitignore:
   138: # TODO Comment the next line if you want to keep your tikz graphics files

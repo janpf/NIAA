@@ -1,4 +1,5 @@
 <head>
+    <title>Image Aesthetic Assessment</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
         integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
@@ -122,12 +123,9 @@
             Der Arbeitsauftrag ist sehr einfach: <strong>das Bild anklicken, welches...</strong>
             <dl class="row">
                 <span class="col-sm-1"></span>
-                <dt class="col-sm-1">🖼️</dt>
-                <dd class="col-sm-10">... Ihnen <strong>ästhetischer</strong> erscheint</dd>
-
-                <span class="col-sm-1"></span>
                 <dt class="col-sm-1">👨‍🎨</dt>
-                <dd class="col-sm-10">... <strong>professioneller bearbeitet</strong> aussieht</dd>
+                <dd class="col-sm-10">
+                    ... <strong>professioneller bearbeitet</strong> aussieht</dd>
             </dl>
         </p>
         <p>
@@ -135,27 +133,28 @@
             <dl class="row">
                 <span class="col-sm-1"></span>
                 <dt class="col-sm-1">🌙</dt>
-                <dd class="col-sm-10">Deaktivieren Sie Ihren <strong>Nachtmodus, flux, ...</strong></dd>
+                <dd class="col-sm-10">
+                    Deaktivieren Sie Ihren <strong>Nachtmodus, flux, ...</strong></dd>
+
+                <span class="col-sm-1"></span>
+                <dt class="col-sm-1">👀</dt>
+                <dd class="col-sm-10">
+                    Sollten Sie <strong>farbenblind</strong> sein, so können Sie leider <strong>nicht</strong> an dieser
+                    Umfrage <strong>teilnehmen</strong>.</dd>
 
                 <span class="col-sm-1"></span>
                 <dt class="col-sm-1">🤔</dt>
-                <dd class="col-sm-10"><strong>Nicht</strong> zu einer Meinung <strong>zwingen</strong>. Für schwierige
-                    Vergleiche gibt es einen extra Button unter den Bildern.
+                <dd class="col-sm-10"><strong>
+                        Nicht</strong> zu einer Meinung <strong>zwingen</strong>.
+                    Für schwierige Vergleiche gibt es einen extra Button unter den Bildern.
                 </dd>
             </dl>
         </p>
     </div>
     <form action="/login" method="post">
-        <label for="fusername">
-            (optional) Benutzername
-        </label>
-        <input id="fusername" type="text" name="username" value="{{ username }}">
-        <label for="fpassword">
-            Passwort
-        </label>
-        <input id="fpassword" type="password" name="password">
         <button type="submit" class="btn btn-outline-success ">
-            Ich habe verstanden. Los geht's!
+            Ich habe verstanden. <br>
+            Los geht's!
         </button>
     </form>
     <iframe src="/preprocess" width="0" height="0" frameborder="0" tabindex="-1" title="empty" class="hidden"

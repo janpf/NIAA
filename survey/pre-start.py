@@ -11,8 +11,6 @@ conn.close()
 queueDB = "/data/logs/submissions.db"
 conn = sqlite3.connect(queueDB)
 c = conn.cursor()
-c.execute(
-    """CREATE TABLE IF NOT EXISTS submissions (id INTEGER PRIMARY KEY, img text, parameter text, leftChanges text, rightChanges text, chosen text, hashval text, screenWidth text, screenHeight text, windowWidth text, windowHeight text, colorDepth text, userid text, username text, usersubs integer)"""
-)
+c.execute("""CREATE TABLE IF NOT EXISTS submissions (id INTEGER PRIMARY KEY, img text, parameter text, leftChanges text, rightChanges text, chosen text, hashval text, screenWidth text, screenHeight text, windowWidth text, windowHeight text, colorDepth text, userid text, usersubs integer)""")
 conn.commit()
 conn.close()

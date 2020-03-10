@@ -39,8 +39,8 @@ def poll():
     c = conn.cursor()
 
     c.execute(  # databasenormali...what?
-        """INSERT INTO submissions(img,parameter,leftChanges,rightChanges,chosen,hashval,screenWidth,screenHeight,windowWidth,windowHeight,colorDepth,userid,username,usersubs) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-        (data["img"], data["parameter"], data["leftChanges"], data["rightChanges"], data["chosen"], data["hashval"], data["screenWidth"], data["screenHeight"], data["windowWidth"], data["windowHeight"], data["colorDepth"], session["id"], session["name"], session["count"]),
+        """INSERT INTO submissions(img,parameter,leftChanges,rightChanges,chosen,hashval,screenWidth,screenHeight,windowWidth,windowHeight,colorDepth,userid,usersubs) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (data["img"], data["parameter"], data["leftChanges"], data["rightChanges"], data["chosen"], data["hashval"], data["screenWidth"], data["screenHeight"], data["windowWidth"], data["windowHeight"], data["colorDepth"], session["id"], session["count"]),
     )
 
     conn.commit()
@@ -75,22 +75,14 @@ def login():
     if not session.get("id", None):
         session["id"] = secrets.token_hex(nbytes=16)
 
-    if not session.get("name", None):
-        session["name"] = f"Anon#{secrets.token_hex(nbytes=4)}"
-
     if not session.get("count", None):
         session["count"] = 0
 
-    if request.method == "POST":
-        data = request.form.to_dict()
-        if data["username"]:
-            session["name"] = data["username"]
+    if request.method == "POST":  # "Ich habe verstanden"
+        session["authorized"] = True
+        return redirect(url_for("survey"))
 
-        if data["password"] == "lala":
-            session["authorized"] = True
-            return redirect(url_for("survey"))
-
-    return render_template("login.html", username=session["name"])
+    return render_template("login.html")
 
 
 @app.route("/logout", methods=["GET", "POST"])
@@ -110,23 +102,22 @@ def preprocessImages():
         c.execute("""INSERT INTO queue(img,parameter,leftChanges,rightChanges,hashval) VALUES (?,?,?,?,?)""", ("tmp", "tmp", "tmp", "tmp", "tmp"))
         queueRanEmpty = True
 
-    if c.execute("""SELECT COUNT(*) FROM queue""").fetchone()[0] < 30:
-        while c.execute("""SELECT COUNT(*) FROM queue""").fetchone()[0] < 40:  # preprocess up to 40 imagepairs, if less than 30 are already preprocessed
-            chosen_img = random.choice(app.imgs)
-            image_file = Path(app.config.get("imageFolder")) / chosen_img
-            img = f"/img/{chosen_img}"
+    while c.execute("""SELECT COUNT(*) FROM queue""").fetchone()[0] < 50:  # preprocess up to 50 imagepairs, if less than 30 are already preprocessed
+        chosen_img = random.choice(app.imgs)
+        image_file = Path(app.config.get("imageFolder")) / chosen_img
+        img = f"/img/{chosen_img}"
 
-            edits = random_parameters()
-            parameter, changes = edits[0], list(edits[1])
-            random.shuffle(changes)
-            leftChanges, rightChanges = changes
-            hashval = str(hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}"))
+        edits = random_parameters()
+        parameter, changes = edits[0], list(edits[1])
+        random.shuffle(changes)
+        leftChanges, rightChanges = changes
+        hashval = str(hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}"))
 
-            data = (img, parameter, leftChanges, rightChanges, hashval)
-            c.execute("""INSERT INTO queue(img,parameter,leftChanges,rightChanges,hashval) VALUES (?,?,?,?,?)""", data)
+        data = (img, parameter, leftChanges, rightChanges, hashval)
+        c.execute("""INSERT INTO queue(img,parameter,leftChanges,rightChanges,hashval) VALUES (?,?,?,?,?)""", data)
 
-            Process(target=edit_image, args=(str(image_file), parameter, leftChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_l.jpg"))).start()
-            Process(target=edit_image, args=(str(image_file), parameter, rightChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_r.jpg"))).start()
+        Process(target=edit_image, args=(str(image_file), parameter, leftChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_l.jpg"))).start()
+        Process(target=edit_image, args=(str(image_file), parameter, rightChanges, str(app.config.get("editedImageFolder") / f"{image_file.stem}_r.jpg"))).start()
 
     if queueRanEmpty:
         c.execute("""DELETE FROM queue WHERE hashval = tmp""")
@@ -141,8 +132,7 @@ def log_request_info():
     rlogger.info("Headers: %s", request.headers)
     rlogger.info("Session: %s", session)
     if not session.get("authorized", False) and not (request.endpoint == "login" or request.endpoint == "preprocess"):
-        pass
-        # return redirect(url_for("login"))
+        return redirect(url_for("login"))
 
 
 def setup_logger(name: str, log_file: Path, level=logging.INFO) -> logging.Logger:
