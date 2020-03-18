@@ -14,7 +14,7 @@ from edit_image import random_parameters
 
 app = Flask(__name__)
 
-# TODO status mit in SQL einbauen
+
 @app.route("/")
 def survey():
     conn = sqlite3.connect(app.config["queueDB"], isolation_level="EXCLUSIVE")  # completely locks down database for all other accesses
@@ -94,7 +94,7 @@ def preprocessImages():
             if count > 50:
                 break
         except:
-            pass
+            pass  # not a single item is queued
 
         chosen_img = random.choice(app.imgs)
         image_file = Path(app.config.get("imageFolder")) / chosen_img
@@ -106,12 +106,9 @@ def preprocessImages():
         leftChanges, rightChanges = changes
         hashval = str(hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}"))
 
-        data = (img, parameter, leftChanges, rightChanges, hashval)
-        c.execute("""INSERT INTO queue(img,parameter,leftChanges,rightChanges,hashval) VALUES (?,?,?,?,?)""", data)
+        c.execute("""INSERT INTO queue(img,parameter,leftChanges,rightChanges,hashval) VALUES (?,?,?,?,?)""", (img, parameter, leftChanges, rightChanges, hashval))
 
     conn.close()
-
-    subprocess.Popen(f"ls -tp {app.config.get('editedImageFolder')} | grep -v '/$' | tail -n +201 | xargs -d '\n' -r rm --", shell=True)  # only keep 200 latest images
     return ""
 
 

@@ -1,10 +1,13 @@
 import logging
+import subprocess
 import threading
 import time
 from pathlib import Path
+
 from edit_image import edit_image
 
 out = Path("/data/logs/")
+editedImageFolder = Path("/tmp/imgs/")
 
 
 def preprocessImage(name):
@@ -29,8 +32,8 @@ def preprocessImage(name):
             time.sleep(1)
             continue
 
-        edit_image(img_path=data["img"], change=data["parameter"], value=data["leftChanges"], out_path=Path("/tmp/imgs/") / f"{Path(data['img']).stem}_l.jpg", darktable_config=darktable_dir)
-        edit_image(img_path=data["img"], change=data["parameter"], value=data["rightChanges"], out_path=Path("/tmp/imgs/") / f"{Path(data['img']).stem}_r.jpg", darktable_config=darktable_dir)
+        edit_image(img_path=data["img"], change=data["parameter"], value=data["leftChanges"], out_path=editedImageFolder / f"{Path(data['img']).stem}_l.jpg", darktable_config=darktable_dir)
+        edit_image(img_path=data["img"], change=data["parameter"], value=data["rightChanges"], out_path=editedImageFolder / f"{Path(data['img']).stem}_r.jpg", darktable_config=darktable_dir)
 
         conn = sqlite3.connect(out / "queue.db", isolation_level="NONE")
         conn.row_factory = sqlite3.Row
@@ -46,8 +49,10 @@ if __name__ == "__main__":
     format = "%(asctime)s: %(message)s"
     logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
 
-    while threading.activeCount() < 4:  # um gestorbene Threads wieder zu starten
-        logging.info("Main    : creating one more thread")
-        threading.Thread(target=preprocessImage, args=(threading.activeCount(),)).start()
-        logging.info(f"Main    : {threading.activeCount()} Threads active")
-        time.sleep(1)
+    while True:  # um gestorbene Threads wieder zu starten
+        if threading.activeCount() < 4:
+            logging.info("Main    : creating one more thread")
+            threading.Thread(target=preprocessImage, args=(threading.activeCount(),)).start()
+            logging.info(f"Main    : {threading.activeCount()} Threads active")
+            subprocess.Popen(f"ls -tp {editedImageFolder} | grep -v '/$' | tail -n +201 | xargs -d '\n' -r rm --", shell=True)  # only keep 200 latest images
+            time.sleep(1)
