@@ -13,13 +13,12 @@ from PIL import Image
 
 
 def edit_image(img_path: str, change: str, value: float, out_path: str = None, darktable_config: str = None) -> Image:  # TODO test
-
     if "lcontrast" == change:  # XXX localcontrast xmp in darktable is broken atm. no idea why
         img = cv2.imread(img_path)
         img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
         l, a, b = cv2.split(img_lab)
 
-        cl = cv2.createCLAHE(clipLimit=value, tileGridSize=(8, 8)).apply(l)
+        cl = cv2.createCLAHE(clipLimit=float(value), tileGridSize=(8, 8)).apply(l)
 
         limg = cv2.merge((cl, a, b))
         img = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
@@ -37,23 +36,23 @@ def edit_image(img_path: str, change: str, value: float, out_path: str = None, d
         template_file = "./darktable_xmp/colisa.xmp"
         param_index = ["contrast", "brightness", "saturation"].index(change)
         default_str = "".join(["%02x" % b for b in bytearray(pack("f", 0))])
-        change_val_enc = "".join(["%02x" % b for b in bytearray(pack("f", value))])
+        change_val_enc = "".join(["%02x" % b for b in bytearray(pack("f", float(value)))])
         change_str = "".join([change_val_enc if _ == param_index else default_str for _ in range(3)])
 
     if "shadows" == change or "highlights" == change:
         template_file = "./darktable_xmp/shadhi.xmp"
         if "shadows" == change:
-            change_str = f"000000000000c842{''.join(['%02x' % b for b in bytearray(pack('f', value))])}000000000000c84200000000000048420000c842000048427f000000bd37863500000000"
+            change_str = f"000000000000c842{''.join(['%02x' % b for b in bytearray(pack('f', float(value)))])}000000000000c84200000000000048420000c842000048427f000000bd37863500000000"
         elif "highlights" == change:
-            change_str = f"000000000000c8420000484200000000{''.join(['%02x' % b for b in bytearray(pack('f', value))])}00000000000048420000c842000048427f000000bd37863500000000"
+            change_str = f"000000000000c8420000484200000000{''.join(['%02x' % b for b in bytearray(pack('f', float(value)))])}00000000000048420000c842000048427f000000bd37863500000000"
 
     if "exposure" == change:
         template_file = "./darktable_xmp/exposure.xmp"
-        change_str = f"0000000000000000{''.join(['%02x' % b for b in bytearray(pack('f', value))])}00004842000080c0"
+        change_str = f"0000000000000000{''.join(['%02x' % b for b in bytearray(pack('f', float(value)))])}00004842000080c0"
 
     if "vibrance" == change:
         template_file = "./darktable_xmp/vibrance.xmp"
-        change_str = "".join(["%02x" % b for b in bytearray(pack("f", value))])
+        change_str = "".join(["%02x" % b for b in bytearray(pack("f", float(value)))])
 
     if "temperature" == change or "tint" == change:
         template_file = "./darktable_xmp/temperature.xmp"

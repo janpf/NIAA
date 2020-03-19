@@ -20,12 +20,13 @@ def survey():
     conn = sqlite3.connect(app.config["queueDB"], isolation_level="EXCLUSIVE")  # completely locks down database for all other accesses
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    data = c.execute("""SELECT * FROM queue WHERE status = done ORDER BY id LIMIT 1""").fetchone()  # first inserted imagepair
+    data = c.execute("""SELECT * FROM queue WHERE status = "done" ORDER BY id LIMIT 1""").fetchone()  # first inserted imagepair
     c.execute("""DELETE FROM queue WHERE id = ?""", (data["id"],))
     conn.commit()
     conn.close()
-    logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['parameter']}:{[data['leftChanges'], data['rightChanges']]}; {session}")
-    return render_template("index.html", count=session["count"], **data)
+    logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['img']}:{data['parameter']}:{[data['leftChanges'], data['rightChanges']]}; {session}")
+
+    return render_template("index.html", count=session["count"], img=f"/img/{Path(data['img']).name}", parameter=data["parameter"], leftChanges=data["leftChanges"], rightChanges=data["rightChanges"], hashval=data["hashval"])
 
 
 @app.route("/poll", methods=["POST"])
@@ -37,7 +38,7 @@ def poll():
     c = conn.cursor()
 
     c.execute(  # databasenormali...what?
-        """INSERT INTO submissions(img,parameter,leftChanges,rightChanges,chosen,hashval,screenWidth,screenHeight,windowWidth,windowHeight,colorDepth,userid,usersubs) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        """INSERT INTO submissions(img,parameter,leftChanges,rightChanges,chosen,hashval,screenWidth,screenHeight,windowWidth,windowHeight,colorDepth,userid,usersubs) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
         (data["img"], data["parameter"], data["leftChanges"], data["rightChanges"], data["chosen"], data["hashval"], data["screenWidth"], data["screenHeight"], data["windowWidth"], data["windowHeight"], data["colorDepth"], session["id"], session["count"]),
     )
 
@@ -91,9 +92,9 @@ def preprocessImages():
     conn = sqlite3.connect(app.config["queueDB"], isolation_level=None)
     c = conn.cursor()
 
-    while True:  # preprocess up to 50 imagepairs
+    while True:  # preprocess up to 50 imagepairs # TODO count differently
         try:
-            count = c.execute("""SELECT COUNT(*) FROM queue WHERE status = queued""").fetchone()[0]
+            count = c.execute("""SELECT COUNT(*) FROM queue WHERE status = "queued" """).fetchone()[0]
             if count > 50:
                 break
         except:
@@ -101,15 +102,14 @@ def preprocessImages():
 
         chosen_img = random.choice(app.imgs)
         image_file = Path(app.config.get("imageFolder")) / chosen_img
-        img = f"/img/{chosen_img}"
 
         edits = random_parameters()
         parameter, changes = edits[0], list(edits[1])
         random.shuffle(changes)
         leftChanges, rightChanges = changes
-        hashval = str(hash(f"{random.randint(0, 50000)}{img}{parameter}{leftChanges}{rightChanges}"))
+        hashval = str(hash(f"{random.randint(0, 50000)}{chosen_img}{parameter}{leftChanges}{rightChanges}"))
 
-        c.execute("""INSERT INTO queue(img,parameter,leftChanges,rightChanges,hashval) VALUES (?,?,?,?,?)""", (img, parameter, leftChanges, rightChanges, hashval))
+        c.execute("""INSERT INTO queue(img,parameter,leftChanges,rightChanges,hashval) VALUES (?,?,?,?,?)""", (str(Path(app.config["imageFolder"]) / chosen_img), parameter, leftChanges, rightChanges, hashval))
 
     conn.close()
     return ""
@@ -120,8 +120,8 @@ def log_request_info():
     rlogger = logging.getLogger("requests")
     rlogger.info("Headers: %s", request.headers)
     rlogger.info("Session: %s", session)
-    if not session.get("authorized", False) and not (request.endpoint == "login" or request.endpoint == "preprocess"):
-        return redirect(url_for("login"))
+    # if (not session.get("authorized", False)) and not (request.endpoint == "login" or request.endpoint == "preprocess"):
+    #    return redirect(url_for("login"))
 
 
 def setup_logger(name: str, log_file: Path, level=logging.INFO) -> logging.Logger:
