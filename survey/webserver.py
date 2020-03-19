@@ -92,9 +92,9 @@ def preprocessImages():
     conn = sqlite3.connect(app.config["queueDB"], isolation_level=None)
     c = conn.cursor()
 
-    while True:  # preprocess up to 50 imagepairs # TODO count differently
+    while True:  # preprocess up to 50 imagepairs
         try:
-            count = c.execute("""SELECT COUNT(*) FROM queue WHERE status = "queued" """).fetchone()[0]
+            count = c.execute("""SELECT COUNT(*) FROM queue""").fetchone()[0]
             if count > 50:
                 break
         except:

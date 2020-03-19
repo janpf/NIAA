@@ -14,7 +14,7 @@ NIAA • data_loader.py:
 
 NIAA • edit_image.py:
   15: def edit_image(img_path: str, change: str, value: float, out_path: str = None, darktable_config: str = None) -> Image:  # TODO test
-  175: def random_parameters() -> Tuple[str, Tuple[float, float]]:  # TODO test
+  174: def random_parameters() -> Tuple[str, Tuple[float, float]]:  # TODO test
 
 NIAA • survey/webserver.py:
   18: @app.route("/")  # TODO add pageloadtime to forms?
