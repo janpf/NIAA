@@ -15,7 +15,7 @@ from edit_image import random_parameters
 app = Flask(__name__)
 
 
-@app.route("/")
+@app.route("/")  # TODO add pageloadtime to forms?
 def survey():
     conn = sqlite3.connect(app.config["queueDB"], isolation_level="EXCLUSIVE")  # completely locks down database for all other accesses
     conn.row_factory = sqlite3.Row
@@ -61,6 +61,9 @@ def img(image: str):
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    if request.headers.get("kubernetes"):
+        return "all good. kthxbai"
+
     if session.get("authorized", False):
         return redirect(url_for("survey"))
 

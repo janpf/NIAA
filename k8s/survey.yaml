@@ -19,6 +19,15 @@ spec:
           imagePullPolicy: "Always"
           ports:
             - containerPort: 5000
+          livenessProbe:
+            httpGet:
+              path: /login
+              port: 5000
+              httpHeaders:
+                - name: kubernetes
+                  value: livenessProbe
+            initialDelaySeconds: 15
+            periodSeconds: 10
           env:
             - name: HOME
               value: "/tmp"
