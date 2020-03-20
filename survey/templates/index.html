@@ -112,7 +112,7 @@
             <h1 class="display-4 mobile" style="width: 100%;">
                 Vielen Dank für die Teilnahme an meiner Studie</h1>
             <p id="nah" class="lead mobile" style="width: 100%;">
-                Leider muss ich dich bitten auf einen Desktopbrowser zu wechseln, oder zumindest ein Gerät mit einem
+                Leider muss ich Sie bitten auf einen Desktopbrowser zu wechseln, oder zumindest ein Gerät mit einem
                 großen Bildschirm zu verwenden
             </p>
             <img class="mobile" src="https://discordemoji.com/assets/emoji/ppHop.gif" />
@@ -183,6 +183,7 @@
         <input type="hidden" name="leftChanges" value="{{ leftChanges }}">
         <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
         <input type="hidden" name="chosen" value="leftImage">
+        <input type="hidden" name="loadTime" value="{{ loadTime }}">
         <input type="image" src="{{img}}?{{parameter}}={{leftChanges}}&side=l&hashval={{hashval}}">
 
         <input type="hidden" name="hashval" value="{{ hashval }}">
@@ -198,6 +199,7 @@
         <input type="hidden" name="leftChanges" value="{{ leftChanges }}">
         <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
         <input type="hidden" name="chosen" value="rightImage">
+        <input type="hidden" name="loadTime" value="{{ loadTime }}">
         <input type="image" src="{{img}}?{{parameter}}={{rightChanges}}&side=r&hashval={{hashval}}">
 
         <input type="hidden" name="hashval" value="{{ hashval }}">
@@ -215,6 +217,7 @@
         <input type="hidden" name="leftChanges" value="{{ leftChanges }}">
         <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
         <input type="hidden" name="chosen" value="unsure">
+        <input type="hidden" name="loadTime" value="{{ loadTime }}">
         <button type="submit" class="btn btn-outline-secondary btn-lg btn-block">
             🤷 bin mir unsicher / kann nicht entscheiden
         </button>
@@ -232,6 +235,7 @@
         <input type="hidden" name="leftChanges" value="{{ leftChanges }}">
         <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
         <input type="hidden" name="chosen" value="error">
+        <input type="hidden" name="loadTime" value="{{ loadTime }}">
         <button id="errorbtn" type="submit" class="btn btn-outline-secondary btn-lg btn-block">
             hier stimmt etwas nicht
         </button>

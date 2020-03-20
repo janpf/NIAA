@@ -15,18 +15,22 @@ from edit_image import random_parameters
 app = Flask(__name__)
 
 
-@app.route("/")  # TODO add pageloadtime to forms?
+@app.route("/")
 def survey():
     conn = sqlite3.connect(app.config["queueDB"], isolation_level="EXCLUSIVE")  # completely locks down database for all other accesses
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    data = c.execute("""SELECT * FROM queue WHERE status = "done" ORDER BY id LIMIT 1""").fetchone()  # first inserted imagepair
+    try:
+        data = c.execute("""SELECT * FROM queue WHERE status = "done" ORDER BY id LIMIT 1""").fetchone()  # first inserted imagepair
+    except:
+        preprocessImages()  # at this point we could throw a 503, or we try to fix the situation
+        return redirect(url_for("login"))
     c.execute("""DELETE FROM queue WHERE id = ?""", (data["id"],))
     conn.commit()
     conn.close()
     logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['img']}:{data['parameter']}:{[data['leftChanges'], data['rightChanges']]}; {session}")
 
-    return render_template("index.html", count=session["count"], img=f"/img/{Path(data['img']).name}", parameter=data["parameter"], leftChanges=data["leftChanges"], rightChanges=data["rightChanges"], hashval=data["hashval"])
+    return render_template("index.html", count=session["count"], img=f"/img/{Path(data['img']).name}", parameter=data["parameter"], leftChanges=data["leftChanges"], rightChanges=data["rightChanges"], hashval=data["hashval"], loadTime=time.asctime())
 
 
 @app.route("/poll", methods=["POST"])
@@ -38,8 +42,24 @@ def poll():
     c = conn.cursor()
 
     c.execute(  # databasenormali...what?
-        """INSERT INTO submissions(img,parameter,leftChanges,rightChanges,chosen,hashval,screenWidth,screenHeight,windowWidth,windowHeight,colorDepth,userid,usersubs) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-        (data["img"], data["parameter"], data["leftChanges"], data["rightChanges"], data["chosen"], data["hashval"], data["screenWidth"], data["screenHeight"], data["windowWidth"], data["windowHeight"], data["colorDepth"], session["id"], session["count"]),
+        """INSERT INTO submissions(loadTime,img,parameter,leftChanges,rightChanges,chosen,hashval,screenWidth,screenHeight,windowWidth,windowHeight,colorDepth,userid,usersubs,useragent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (
+            data["loadTime"],
+            data["img"],
+            data["parameter"],
+            data["leftChanges"],
+            data["rightChanges"],
+            data["chosen"],
+            data["hashval"],
+            data["screenWidth"],
+            data["screenHeight"],
+            data["windowWidth"],
+            data["windowHeight"],
+            data["colorDepth"],
+            session["id"],
+            session["count"],
+            request.headers.get("User-Agent"),
+        ),
     )
 
     conn.commit()
