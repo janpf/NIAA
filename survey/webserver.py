@@ -113,16 +113,16 @@ def preprocessImages():
     conn = sqlite3.connect(app.config["queueDB"])
     c = conn.cursor()
 
-    while True:  # preprocess up to 50 imagepairs
+    while True:  # preprocess up to 1000 imagepairs
         try:
             count = c.execute("""SELECT COUNT(*) FROM queue""").fetchone()[0]
-            if count >= 50:
+            if count >= 1000:
                 break
         except:
             pass  # not a single item is queued
 
         newPairs = []
-        for _ in range(20):
+        for _ in range(50):
             chosen_img = random.choice(app.imgs)
             image_file = Path(app.config.get("imageFolder")) / chosen_img
 

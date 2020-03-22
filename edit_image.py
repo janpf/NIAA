@@ -21,7 +21,7 @@ def edit_image(img_path: str, change: str, value: float, out_path: str = None, d
         else:
             return Image.open(img_path)
 
-    if "lcontrast" == change:  # XXX localcontrast xmp in darktable is broken atm. no idea why
+    if "lcontrast" == change:  # XXX: not my fault: localcontrast xmp in darktable is broken atm. no idea why
         img = cv2.imread(img_path)
         img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
         l, a, b = cv2.split(img_lab)
