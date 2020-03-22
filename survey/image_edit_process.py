@@ -19,25 +19,27 @@ def preprocessImage(name: int, q: SimpleQueue):
 
     darktable_dir = f"/tmp/darktable/{name}"
     Path(darktable_dir).mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(queueDB)
+    c = conn.cursor()
 
     while True:
         data = q.get()
         print(f"Thread {name} received {data}")
         edit_image(img_path=data["img"], change=data["parameter"], value=data["leftChanges"], out_path=editedImageFolder / f"{Path(data['img']).stem}_l.jpg", darktable_config=darktable_dir)
         edit_image(img_path=data["img"], change=data["parameter"], value=data["rightChanges"], out_path=editedImageFolder / f"{Path(data['img']).stem}_r.jpg", darktable_config=darktable_dir)
-
-        conn = sqlite3.connect(queueDB, isolation_level=None)
-        c = conn.cursor()
-        c.execute("""UPDATE queue SET status = "done" WHERE id = ?""", (data["id"],))
-        conn.commit()
-        conn.close()
+        try:
+            c.execute("""UPDATE queue SET status = "done" WHERE id = ?""", (data["id"],))
+            conn.commit()
+        except:
+            conn.close()
+            break
 
 
 if __name__ == "__main__":
     format = "%(asctime)s: %(message)s"
     logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
     q = SimpleQueue()
-    conn = sqlite3.connect(queueDB, isolation_level=None)
+    conn = sqlite3.connect(queueDB)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
 
@@ -48,10 +50,11 @@ if __name__ == "__main__":
             logging.info(f"Main    : {threading.activeCount()-1} Threads active")
 
         try:
-            data = c.execute("""SELECT * FROM queue WHERE status = "queued" ORDER BY id LIMIT 1""").fetchone()  # first inserted imagepair
-            c.execute("""UPDATE queue SET status = "working" WHERE id = ?""", (data["id"],))
+            data = c.execute("""SELECT * FROM queue WHERE status = "queued" ORDER BY id""").fetchall()
+            c.executemany("""UPDATE queue SET status = "working" WHERE id = ?""", [(row["id"],) for row in data])
             conn.commit()
-            print("queuing", data)
-            q.put(data)
+            for row in data:
+                print("queuing", row)
+                q.put(row)
         except Exception as e:
             time.sleep(1)

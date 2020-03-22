@@ -17,17 +17,18 @@ app = Flask(__name__)
 
 @app.route("/")
 def survey():
-    conn = sqlite3.connect(app.config["queueDB"], isolation_level="EXCLUSIVE")  # completely locks down database for all other accesses
+    conn = sqlite3.connect(app.config["queueDB"], isolation_level=None)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     try:
-        data = c.execute("""SELECT * FROM queue WHERE status = "done" ORDER BY id LIMIT 1""").fetchone()  # first inserted imagepair
+        chosen_img = secrets.token_hex(nbytes=4)
+        c.execute("""UPDATE queue SET status = ? WHERE status = "done" ORDER BY id LIMIT 1""", (chosen_img,))  # first inserted imagepair
+        data = c.execute("""SELECT * FROM queue WHERE status = ?""", (chosen_img,)).fetchone()  # if none found -> except
     except:
         conn.close()
         preprocessImages()  # at this point we could throw a 503, or we try to fix the situation
         return redirect(url_for("login"))
     c.execute("""DELETE FROM queue WHERE id = ?""", (data["id"],))
-    conn.commit()
     conn.close()
     logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['img']}:{data['parameter']}:{[data['leftChanges'], data['rightChanges']]}; {session}")
 
@@ -62,7 +63,6 @@ def poll():
             request.headers.get("User-Agent"),
         ),
     )
-
     conn.commit()
     conn.close()
 
@@ -110,7 +110,7 @@ def logout():
 
 @app.route("/preprocess")
 def preprocessImages():
-    conn = sqlite3.connect(app.config["queueDB"], isolation_level=None)
+    conn = sqlite3.connect(app.config["queueDB"])
     c = conn.cursor()
 
     while True:  # preprocess up to 50 imagepairs
@@ -121,17 +121,20 @@ def preprocessImages():
         except:
             pass  # not a single item is queued
 
-        chosen_img = random.choice(app.imgs)
-        image_file = Path(app.config.get("imageFolder")) / chosen_img
+        newPairs = []
+        for _ in range(20):
+            chosen_img = random.choice(app.imgs)
+            image_file = Path(app.config.get("imageFolder")) / chosen_img
 
-        edits = random_parameters()
-        parameter, changes = edits[0], list(edits[1])
-        random.shuffle(changes)
-        leftChanges, rightChanges = changes
-        hashval = str(hash(f"{random.randint(0, 50000)}{chosen_img}{parameter}{leftChanges}{rightChanges}"))
+            edits = random_parameters()
+            parameter, changes = edits[0], list(edits[1])
+            random.shuffle(changes)
+            leftChanges, rightChanges = changes
+            hashval = str(hash(f"{random.randint(0, 50000)}{chosen_img}{parameter}{leftChanges}{rightChanges}"))
+            newPairs.append((str(Path(app.config["imageFolder"]) / chosen_img), parameter, leftChanges, rightChanges, hashval))
 
-        c.execute("""INSERT INTO queue(img,parameter,leftChanges,rightChanges,hashval) VALUES (?,?,?,?,?)""", (str(Path(app.config["imageFolder"]) / chosen_img), parameter, leftChanges, rightChanges, hashval))
-
+        c.executemany("""INSERT INTO queue(img,parameter,leftChanges,rightChanges,hashval) VALUES (?,?,?,?,?)""", newPairs)
+        conn.commit()
     conn.close()
     return ""
 

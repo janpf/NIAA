@@ -27,7 +27,7 @@ spec:
                 - name: kubernetes
                   value: livenessProbe
             initialDelaySeconds: 15
-            periodSeconds: 10
+            periodSeconds: 60
           env:
             - name: HOME
               value: "/tmp"

@@ -14,7 +14,7 @@ from PIL import Image
 
 def edit_image(img_path: str, change: str, value: float, out_path: str = None, darktable_config: str = None) -> Image:
     if math.isclose(parameter_range[change]["default"], float(value)):
-        print("default called")
+        print(f"default called: {change}: {value}")
         if out_path:
             Image.open(img_path).save(out_path)
             return out_path
@@ -29,12 +29,14 @@ def edit_image(img_path: str, change: str, value: float, out_path: str = None, d
         cl = cv2.createCLAHE(clipLimit=float(value), tileGridSize=(8, 8)).apply(l)
 
         limg = cv2.merge((cl, a, b))
+
+        img = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
+        img = Image.fromarray(img)
+
         if out_path:
-            img = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
-            cv2.imwrite(out_path, img)
+            img.save(out_path)
             return out_path
         else:
-            img = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
             return Image.fromarray(img)
 
     darktable_config_obj = None
