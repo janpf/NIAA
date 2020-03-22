@@ -3,7 +3,7 @@
 # Including: \home\stud\pfister\eclipse-workspace\NIAA, ./Masterarbeit
 # Excluding: .gitignore
 
-5 results - 3 files
+3 results - 2 files
 
 NIAA • annotate_image.py:
   81:     gt = np.exp(gt) / sum(np.exp(gt))  # softmax # TODO stimmt das so?
@@ -11,7 +11,3 @@ NIAA • annotate_image.py:
 
 NIAA • data_loader.py:
   20:         self.annotations = pd.read_csv(csv_file, delimiter=" ")  # TODO rearrange according to expected csv
-
-NIAA • edit_image.py:
-  15: def edit_image(img_path: str, change: str, value: float, out_path: str = None, darktable_config: str = None) -> Image:  # TODO test
-  174: def random_parameters() -> Tuple[str, Tuple[float, float]]:  # TODO test
