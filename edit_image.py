@@ -93,7 +93,7 @@ parameter_range = collections.defaultdict(dict)
 parameter_range["contrast"]["min"] = -1
 parameter_range["contrast"]["default"] = 0
 parameter_range["contrast"]["max"] = 1
-parameter_range["contrast"]["range"] = [-1.0, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+parameter_range["contrast"]["range"] = [-1.0, -0.8, -0.6, -0.4, -0.2, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
 
 parameter_range["brightness"] = parameter_range["contrast"]
 parameter_range["saturation"] = parameter_range["contrast"]
@@ -101,28 +101,28 @@ parameter_range["saturation"] = parameter_range["contrast"]
 parameter_range["shadows"]["min"] = -100  # wahrscheinlich 3. Packen
 parameter_range["shadows"]["default"] = 50
 parameter_range["shadows"]["max"] = 100
-parameter_range["shadows"]["range"] = [-100, -90, -80, -70, -60, -50, -40, -30, -20, -10, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+parameter_range["shadows"]["range"] = [-100, -80, -60, -40, -20, 0, 20, 40, 60, 80, 100]
 
 
 parameter_range["highlights"]["min"] = -100  # wahrscheinlich 5. Packen
 parameter_range["highlights"]["default"] = -50
 parameter_range["highlights"]["max"] = 100
-parameter_range["highlights"]["range"] = [-100, -90, -80, -70, -60, -50, -40, -30, -20, -10, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+parameter_range["highlights"]["range"] = [-100, -80, -60, -40, -20, 0, 20, 40, 60, 80, 100]
 
 parameter_range["exposure"]["min"] = -3  # wahrscheinlich 3. Packen
 parameter_range["exposure"]["default"] = 0
 parameter_range["exposure"]["max"] = 3
-parameter_range["exposure"]["range"] = [-3.0, -2.7, -2.4, -2.1, -1.8, -1.5, -1.2, -0.9, -0.6, -0.3, 0.0, 0.3, 0.6, 0.9, 1.2, 1.5, 1.8, 2.1, 2.4, 2.7, 3.0]
+parameter_range["exposure"]["range"] = [-3.0, -2.4, -1.8, -1.2, -0.6, 0.0, 0.6, 1.2, 1.8, 2.4, 3.0]
 
 parameter_range["vibrance"]["min"] = 0
 parameter_range["vibrance"]["default"] = 25
 parameter_range["vibrance"]["max"] = 100
-parameter_range["vibrance"]["range"] = [0, 5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100]
+parameter_range["vibrance"]["range"] = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 
 parameter_range["temperature"]["min"] = 1000
 parameter_range["temperature"]["default"] = 6500
 parameter_range["temperature"]["max"] = 25000
-parameter_range["temperature"]["range"] = [2000, 3000, 4000, 5000, 6000, 6500, 7000, 8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000, 21000, 22000, 23000, 24000, 25000]
+parameter_range["temperature"]["range"] = [2000, 3000, 5000, 6500, 8000, 10000, 12000, 14000, 16000, 18000, 20000, 22000, 24000, 25000]
 parameter_range["temperature"]["rangemapping"] = {  # encoded RGB values, since darktable can't save temperature directly
     "2000": "6c71833e0000803f495cfd410000807f",
     "3000": "a623f43e0000803f9b9446400000807f",
@@ -154,7 +154,7 @@ parameter_range["temperature"]["rangemapping"] = {  # encoded RGB values, since 
 parameter_range["tint"]["min"] = 0.2
 parameter_range["tint"]["default"] = 1.0
 parameter_range["tint"]["max"] = 2.3
-parameter_range["tint"]["range"] = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 2.2, 2.3]
+parameter_range["tint"]["range"] = [0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.3]
 parameter_range["tint"]["rangemapping"] = {  # encoded RGB values, since darktable can't save tint directly
     "0.2": "f16ad3bf0000803f79fd38420000807f",
     "0.3": "020b05c00000803f063824410000807f",
@@ -183,7 +183,7 @@ parameter_range["tint"]["rangemapping"] = {  # encoded RGB values, since darktab
 parameter_range["lcontrast"]["min"] = 0
 parameter_range["lcontrast"]["default"] = 0
 parameter_range["lcontrast"]["max"] = 40
-parameter_range["lcontrast"]["range"] = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40]
+parameter_range["lcontrast"]["range"] = [0.0, 0.2, 0.4, 0.6, 0.8, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40]
 
 
 def random_parameters() -> Tuple[str, Tuple[float, float]]:

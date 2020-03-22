@@ -54,7 +54,6 @@ if __name__ == "__main__":
             c.executemany("""UPDATE queue SET status = "working" WHERE id = ?""", [(row["id"],) for row in data])
             conn.commit()
             for row in data:
-                print("queuing", row)
                 q.put(row)
         except Exception as e:
             time.sleep(1)
