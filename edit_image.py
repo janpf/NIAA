@@ -22,7 +22,11 @@ def edit_image(img_path: str, change: str, value: float, out_path: str = None, d
 
         limg = cv2.merge((cl, a, b))
         img = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
-        return Image.fromarray(img)
+        if out_path:
+            cv2.imwrite(out_path, img)
+            return out_path
+        else:
+            return Image.fromarray(img)
 
     darktable_config_obj = None
     if not darktable_config:  # otherwise darktable can't open more than one instance in parallel

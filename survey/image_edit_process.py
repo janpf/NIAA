@@ -1,6 +1,5 @@
 import logging
 import sqlite3
-import subprocess
 import sys
 import threading
 import time
@@ -9,7 +8,6 @@ from queue import SimpleQueue
 
 sys.path.insert(0, ".")
 from edit_image import edit_image
-
 
 
 queueDB = "/data/logs/queue.db"
@@ -50,7 +48,6 @@ if __name__ == "__main__":
             logging.info(f"Main    : {threading.activeCount()-1} Threads active")
 
         try:
-            subprocess.Popen(f"ls -tp {editedImageFolder} | grep -v '/$' | tail -n +201 | xargs -d '\n' -r rm --", shell=True)  # only keep 200 latest images
             data = c.execute("""SELECT * FROM queue WHERE status = "queued" ORDER BY id LIMIT 1""").fetchone()  # first inserted imagepair
             c.execute("""UPDATE queue SET status = "working" WHERE id = ?""", (data["id"],))
             conn.commit()

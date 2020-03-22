@@ -115,7 +115,7 @@ def preprocessImages():
     while True:  # preprocess up to 50 imagepairs
         try:
             count = c.execute("""SELECT COUNT(*) FROM queue""").fetchone()[0]
-            if count > 50:
+            if count >= 50:
                 break
         except:
             pass  # not a single item is queued

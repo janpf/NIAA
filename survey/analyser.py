@@ -22,6 +22,9 @@ working = sum([1 for row in qdata if row["status"] == "working"])
 done = sum([1 for row in qdata if row["status"] == "done"])
 
 print(f"preprocessing: done: {done} | working: {working} | queued: {queued}")
+print()
+print(f"{len(sdata)} images compared")
 
-for row in sdata:
+print("5 most recent comparisons:")
+for row in sdata[-5:]:
     print(tuple(row))
