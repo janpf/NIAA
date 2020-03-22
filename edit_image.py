@@ -21,11 +21,16 @@ def edit_image(img_path: str, change: str, value: float, out_path: str = None, d
         cl = cv2.createCLAHE(clipLimit=float(value), tileGridSize=(8, 8)).apply(l)
 
         limg = cv2.merge((cl, a, b))
-        img = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
         if out_path:
+            if value == "0.0":
+                return img_path
+            img = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
             cv2.imwrite(out_path, img)
             return out_path
         else:
+            if value == "0.0":
+                return Image.open(img_path)
+            img = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
             return Image.fromarray(img)
 
     darktable_config_obj = None
@@ -169,10 +174,10 @@ parameter_range["tint"]["rangemapping"] = {  # encoded RGB values, since darktab
     "2.3": "4c3404bd0000803f0c825dbd000080ff",
 }
 
-parameter_range["lcontrast"]["min"] = 0  # I think minimum is impossible (possibly due to c bindings type conversions)
+parameter_range["lcontrast"]["min"] = 0
 parameter_range["lcontrast"]["default"] = 0
 parameter_range["lcontrast"]["max"] = 40
-parameter_range["lcontrast"]["range"] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40]
+parameter_range["lcontrast"]["range"] = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40]
 
 
 def random_parameters() -> Tuple[str, Tuple[float, float]]:  # TODO test

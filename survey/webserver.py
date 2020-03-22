@@ -23,6 +23,7 @@ def survey():
     try:
         data = c.execute("""SELECT * FROM queue WHERE status = "done" ORDER BY id LIMIT 1""").fetchone()  # first inserted imagepair
     except:
+        conn.close()
         preprocessImages()  # at this point we could throw a 503, or we try to fix the situation
         return redirect(url_for("login"))
     c.execute("""DELETE FROM queue WHERE id = ?""", (data["id"],))
