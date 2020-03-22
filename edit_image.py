@@ -12,7 +12,15 @@ from jinja2 import Template
 from PIL import Image
 
 
-def edit_image(img_path: str, change: str, value: float, out_path: str = None, darktable_config: str = None) -> Image:  # TODO test
+def edit_image(img_path: str, change: str, value: float, out_path: str = None, darktable_config: str = None) -> Image:
+    if math.isclose(parameter_range[change]["default"], float(value)):
+        print("default called")
+        if out_path:
+            Image.open(img_path).save(out_path)
+            return out_path
+        else:
+            return Image.open(img_path)
+
     if "lcontrast" == change:  # XXX localcontrast xmp in darktable is broken atm. no idea why
         img = cv2.imread(img_path)
         img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
@@ -22,14 +30,10 @@ def edit_image(img_path: str, change: str, value: float, out_path: str = None, d
 
         limg = cv2.merge((cl, a, b))
         if out_path:
-            if value == "0.0":
-                return img_path
             img = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
             cv2.imwrite(out_path, img)
             return out_path
         else:
-            if value == "0.0":
-                return Image.open(img_path)
             img = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
             return Image.fromarray(img)
 
