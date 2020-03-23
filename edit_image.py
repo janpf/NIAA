@@ -16,7 +16,7 @@ def edit_image(img_path: str, change: str, value: float, out_path: str = None, d
     if math.isclose(parameter_range[change]["default"], float(value)):
         print(f"default called: {change}: {value}")
         if out_path:
-            Image.open(img_path).save(out_path)
+            Image.open(img_path).convert("RGB").save(out_path)
             return out_path
         else:
             return Image.open(img_path)

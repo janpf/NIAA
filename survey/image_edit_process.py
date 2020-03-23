@@ -24,7 +24,6 @@ def preprocessImage(name: int, q: SimpleQueue):
 
     while True:
         data = q.get()
-        print(f"Thread {name} received {data}")
         edit_image(img_path=data["img"], change=data["parameter"], value=data["leftChanges"], out_path=editedImageFolder / f"{Path(data['img']).stem}_l.jpg", darktable_config=darktable_dir)
         edit_image(img_path=data["img"], change=data["parameter"], value=data["rightChanges"], out_path=editedImageFolder / f"{Path(data['img']).stem}_r.jpg", darktable_config=darktable_dir)
         try:

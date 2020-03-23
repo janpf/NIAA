@@ -6,6 +6,7 @@ import subprocess
 import time
 from multiprocessing import Process
 from pathlib import Path
+from threading import Thread
 
 from flask import Flask, abort, redirect, render_template, request, session
 from flask.helpers import send_file, url_for
@@ -17,18 +18,20 @@ app = Flask(__name__)
 
 @app.route("/")
 def survey():
-    conn = sqlite3.connect(app.config["queueDB"], isolation_level=None)
+    conn = sqlite3.connect(app.config["queueDB"])
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     try:
         chosen_img = secrets.token_hex(nbytes=4)
         c.execute("""UPDATE queue SET status = ? WHERE status = "done" ORDER BY id LIMIT 1""", (chosen_img,))  # first inserted imagepair
+        conn.commit()
         data = c.execute("""SELECT * FROM queue WHERE status = ?""", (chosen_img,)).fetchone()  # if none found -> except
     except:
         conn.close()
         preprocessImages()  # at this point we could throw a 503, or we try to fix the situation
         return redirect(url_for("login"))
     c.execute("""DELETE FROM queue WHERE id = ?""", (data["id"],))
+    conn.commit()
     conn.close()
     logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['img']}:{data['parameter']}:{[data['leftChanges'], data['rightChanges']]}; {session}")
 
@@ -40,33 +43,37 @@ def poll():
     data = request.form.to_dict()
     logging.getLogger("forms").info(f"submit: {data}; {session}")
 
-    conn = sqlite3.connect(app.config["subDB"])
-    c = conn.cursor()
+    def write_poll_to_db():
+        conn = sqlite3.connect(app.config["subDB"])
+        c = conn.cursor()
 
-    c.execute(  # databasenormali...what?
-        """INSERT INTO submissions(loadTime,img,parameter,leftChanges,rightChanges,chosen,hashval,screenWidth,screenHeight,windowWidth,windowHeight,colorDepth,userid,usersubs,useragent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-        (
-            data["loadTime"],
-            data["img"],
-            data["parameter"],
-            data["leftChanges"],
-            data["rightChanges"],
-            data["chosen"],
-            data["hashval"],
-            data["screenWidth"],
-            data["screenHeight"],
-            data["windowWidth"],
-            data["windowHeight"],
-            data["colorDepth"],
-            session["id"],
-            session["count"],
-            request.headers.get("User-Agent"),
-        ),
-    )
-    conn.commit()
-    conn.close()
+        c.execute(  # databasenormali...what?
+            """INSERT INTO submissions(loadTime,img,parameter,leftChanges,rightChanges,chosen,hashval,screenWidth,screenHeight,windowWidth,windowHeight,colorDepth,userid,usersubs,useragent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (
+                data["loadTime"],
+                data["img"],
+                data["parameter"],
+                data["leftChanges"],
+                data["rightChanges"],
+                data["chosen"],
+                data["hashval"],
+                data["screenWidth"],
+                data["screenHeight"],
+                data["windowWidth"],
+                data["windowHeight"],
+                data["colorDepth"],
+                session["id"],
+                session["count"],
+                request.headers.get("User-Agent"),
+            ),
+        )
+        conn.commit()
+        conn.close()
 
-    session["count"] += 1
+        Thread(target=write_poll_to_db).start()
+
+        session["count"] += 1
+
     return redirect("/#left")
 
 

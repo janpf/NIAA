@@ -33,11 +33,11 @@ spec:
               value: "/tmp"
           resources:
             limits:
-              cpu: "8"
-              memory: "8Gi"
+              cpu: "12"
+              memory: "12Gi"
             requests:
-              cpu: "8"
-              memory: "8Gi"
+              cpu: "12"
+              memory: "12Gi"
           volumeMounts:
             - mountPath: /app
               name: code
