@@ -1,24 +1,23 @@
+import json
 import logging
 import random
 import secrets
-import redis
 import time
+from io import BytesIO
 from pathlib import Path
-import json
 
-from flask import Flask, abort, redirect, render_template, request, session
+import redis
+from flask import Flask, abort, g, redirect, render_template, request, session
 from flask.helpers import send_file, url_for
 
 from edit_image import random_parameters
-from io import BytesIO
 
 app = Flask(__name__)
 
 
 @app.route("/")
 def survey():
-    r = redis.Redis(host="survey-redis")
-    data = r.lpop("pairs")
+    data = g.r.lpop("pairs")
     data = json.loads(data)
 
     logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['img']}:{data['parameter']}:{[data['leftChanges'], data['rightChanges']]}; {session}")
@@ -28,8 +27,6 @@ def survey():
 
 @app.route("/poll", methods=["POST"])
 def poll():
-    r = redis.Redis(host="survey-redis")
-
     data = request.form.to_dict()
     logging.getLogger("forms").info(f"submit: {data}; {session}")
     # FIXME push data to redis
@@ -39,16 +36,14 @@ def poll():
 
 @app.route("/img/<image>")
 def img(image: str):
-    r = redis.StrictRedis(host="survey-redis")
-
     changes: Dict[str, float] = request.args.to_dict()
 
     if not image in app.imgsSet:
         abort(404)
 
     edited = image.split(".")[0] + f"_{changes['side']}.jpg"  # only works if one dot in imagepath :D
-    img = r.hmget("imgs", edited)[0]  # should only be one
-    r.hdel("imgs", edited)
+    img = g.r.hmget("imgs", edited)[0]  # should only be one
+    g.r.hdel("imgs", edited)
 
     img = BytesIO(img)
     img.seek(0)
@@ -81,9 +76,7 @@ def logout():
 
 @app.route("/preprocess")
 def preprocessImages():
-    r = redis.Redis(host="survey-redis")
-
-    while r.llen("q") + r.llen("pairs") <= 10:  # preprocess up to 1000 imagepairs
+    while g.r.llen("q") + g.r.llen("pairs") <= 10:  # preprocess up to 1000 imagepairs
 
         newPairs = []
         for _ in range(10):
@@ -98,19 +91,27 @@ def preprocessImages():
             newPairs.append({"img": str(Path(app.config["imageFolder"]) / chosen_img), "parameter": parameter, "leftChanges": leftChanges, "rightChanges": rightChanges, "hashval": hashval})
 
         newPairs = [json.dumps(val) for val in newPairs]
-        r.rpush("q", *newPairs)
+        g.r.rpush("q", *newPairs)
     return ""
 
 
 @app.before_request
-def log_request_info():
+def before_request():
     if "kube-probe" in request.headers.get("User-Agent"):
         return "all good. kthxbai"
     rlogger = logging.getLogger("requests")
     rlogger.info("Headers: %s", request.headers)
     rlogger.info("Session: %s", session)
+    g.r = redis.Redis(host="survey-redis")
     # if (not session.get("authorized", False)) and not (request.endpoint == "login" or request.endpoint == "preprocess"):
     #    return redirect(url_for("login"))
+
+
+@app.after_request
+def after_request(response):
+    if g.r:
+        g.r.close()
+    return response
 
 
 def setup_logger(name: str, log_file: Path, level=logging.INFO) -> logging.Logger:
