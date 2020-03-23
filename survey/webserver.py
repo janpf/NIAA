@@ -93,10 +93,10 @@ def logout():
 
 @app.route("/preprocess")
 def preprocessImages():
-    while g.r.llen("q") + g.r.llen("pairs") <= 10:  # preprocess up to 1000 imagepairs
+    while g.r.llen("q") + g.r.llen("pairs") <= 500:  # preprocess up to 1000 imagepairs
 
         newPairs = []
-        for _ in range(10):
+        for _ in range(50):
             chosen_img = random.choice(app.imgs)
             image_file = Path(app.config.get("imageFolder")) / chosen_img
 
@@ -126,8 +126,12 @@ def before_request():
 
 @app.after_request
 def after_request(response):
-    if g.r is not None:
-        g.r.close()
+    try:
+        if g.r is not None:
+            g.r.close()
+    except:
+        pass  # dann halt nicht
+
     return response
 
 

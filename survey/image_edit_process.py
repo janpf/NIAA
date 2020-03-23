@@ -33,11 +33,11 @@ def preprocessImage(name: int):
         right = edit_image(img_path=data["img"], change=data["parameter"], value=data["rightChanges"], darktable_config=darktable_dir)
 
         with BytesIO() as output:
-            left.save(output, format="GIF")
+            left.save(output, format="JPEG")
             leftImg = output.getvalue()
 
         with BytesIO() as output:
-            right.save(output, format="GIF")
+            right.save(output, format="JPEG")
             rightImg = output.getvalue()
 
         r.hmset("imgs", {f"{Path(data['img']).stem}_l.jpg": leftImg, f"{Path(data['img']).stem}_r.jpg": rightImg})
