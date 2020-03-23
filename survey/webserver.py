@@ -29,8 +29,25 @@ def survey():
 def poll():
     data = request.form.to_dict()
     logging.getLogger("forms").info(f"submit: {data}; {session}")
-    # FIXME push data to redis
+    data = {
+        "loadTime:": data["loadTime"],
+        "img": data["img"],
+        "parameter": data["parameter"],
+        "leftChanges": data["leftChanges"],
+        "rightChanges": data["rightChanges"],
+        "chosen": data["chosen"],
+        "hashval": data["hashval"],
+        "screenWidth": data["screenWidth"],
+        "screenHeight": data["screenHeight"],
+        "windowWidth": data["windowWidth"],
+        "windowHeight": data["windowHeight"],
+        "colorDepth": data["colorDepth"],
+        "id": session["id"],
+        "count": session["count"],
+        "useragent": request.headers.get("User-Agent"),
+    }
     session["count"] += 1
+    g.r.rpush("submissions", json.dumps(data))
     return redirect("/#left")
 
 
@@ -102,7 +119,7 @@ def before_request():
     rlogger = logging.getLogger("requests")
     rlogger.info("Headers: %s", request.headers)
     rlogger.info("Session: %s", session)
-    g.r = redis.Redis(host="survey-redis")
+    g.r = redis.Redis(host="survey-redis")  # type: redis.Redis
     # if (not session.get("authorized", False)) and not (request.endpoint == "login" or request.endpoint == "preprocess"):
     #    return redirect(url_for("login"))
 
