@@ -23,9 +23,6 @@ spec:
             httpGet:
               path: /login
               port: 5000
-              httpHeaders:
-                - name: kubernetes
-                  value: livenessProbe
             initialDelaySeconds: 15
             periodSeconds: 60
           env:

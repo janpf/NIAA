@@ -57,9 +57,6 @@ def img(image: str):
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.headers.get("kubernetes"):
-        return "all good. kthxbai"
-
     if session.get("authorized", False):
         return redirect(url_for("survey"))
 
@@ -107,6 +104,8 @@ def preprocessImages():
 
 @app.before_request
 def log_request_info():
+    if "kube-probe" in request.headers.get("User-Agent"):
+        return "all good. kthxbai"
     rlogger = logging.getLogger("requests")
     rlogger.info("Headers: %s", request.headers)
     rlogger.info("Session: %s", session)
