@@ -92,7 +92,7 @@ def preprocessImages():
 
         newPairs = [json.dumps(val) for val in newPairs]
         g.r.rpush("q", *newPairs)
-    return ""
+    return "ok"
 
 
 @app.before_request
