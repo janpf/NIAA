@@ -1,5 +1,6 @@
 import collections
 import math
+import os
 import random
 import subprocess
 import tempfile
@@ -37,7 +38,7 @@ def edit_image(img_path: str, change: str, value: float, out_path: str = None, d
             img.save(out_path)
             return out_path
         else:
-            return Image.fromarray(img)
+            return img
 
     darktable_config_obj = None
     if not darktable_config:  # otherwise darktable can't open more than one instance in parallel
@@ -71,7 +72,7 @@ def edit_image(img_path: str, change: str, value: float, out_path: str = None, d
 
     if "temperature" == change or "tint" == change:
         template_file = "./darktable_xmp/temperature.xmp"
-        change_str = parameter_range[change]["rangemapping"][value]
+        change_str = parameter_range[change]["rangemapping"][str(value)]
 
     with open(template_file) as template_file:
         Template(template_file.read()).stream(value=change_str).dump(edit_file)
@@ -84,6 +85,7 @@ def edit_image(img_path: str, change: str, value: float, out_path: str = None, d
     else:
         subprocess.run(["darktable-cli", img_path, edit_file, out_file, "--core", "--library", ":memory:", "--configdir", darktable_config])
         img = Image.open(out_file)
+        os.remove(out_file)
         if darktable_config_obj:
             darktable_config_obj.cleanup()
         return img

@@ -19,9 +19,6 @@ app = Flask(__name__)
 def survey():
     r = redis.Redis(host="survey-redis")
     data = r.lpop("pairs")
-    if not data:
-        preprocessImages()
-        return redirect(url_for("login"))
     data = json.loads(data)
 
     logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['img']}:{data['parameter']}:{[data['leftChanges'], data['rightChanges']]}; {session}")
@@ -50,8 +47,9 @@ def img(image: str):
         abort(404)
 
     edited = image.split(".")[0] + f"_{changes['side']}.jpg"  # only works if one dot in imagepath :D
-    img = r.hmget("imgs", edited)
+    img = r.hmget("imgs", edited)[0]  # should only be one
     r.hdel("imgs", edited)
+
     img = BytesIO(img)
     img.seek(0)
     return send_file(img, mimetype="image/jpeg")
@@ -88,10 +86,10 @@ def logout():
 def preprocessImages():
     r = redis.Redis(host="survey-redis")
 
-    while r.llen("q") <= 1000:  # preprocess up to 1000 imagepairs
+    while r.llen("q") + r.llen("pairs") <= 10:  # preprocess up to 1000 imagepairs
 
         newPairs = []
-        for _ in range(50):
+        for _ in range(10):
             chosen_img = random.choice(app.imgs)
             image_file = Path(app.config.get("imageFolder")) / chosen_img
 
@@ -103,7 +101,7 @@ def preprocessImages():
             newPairs.append({"img": str(Path(app.config["imageFolder"]) / chosen_img), "parameter": parameter, "leftChanges": leftChanges, "rightChanges": rightChanges, "hashval": hashval})
 
         newPairs = [json.dumps(val) for val in newPairs]
-        r.rpush("q", newPairs)
+        r.rpush("q", *newPairs)
     return ""
 
 

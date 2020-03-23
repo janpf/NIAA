@@ -1,3 +1,4 @@
+from io import BytesIO
 import json
 import logging
 import sys
@@ -11,11 +12,10 @@ sys.path.insert(0, ".")
 from edit_image import edit_image
 
 
-queueDB = "/data/logs/queue.db"
 editedImageFolder = Path("/tmp/imgs/")
 
 
-def preprocessImage(name: int, q: SimpleQueue):
+def preprocessImage(name: int):
     logging.info(f"Thread {name}: starting")
 
     darktable_dir = f"/tmp/darktable/{name}"
@@ -32,14 +32,16 @@ def preprocessImage(name: int, q: SimpleQueue):
         left = edit_image(img_path=data["img"], change=data["parameter"], value=data["leftChanges"], darktable_config=darktable_dir)
         right = edit_image(img_path=data["img"], change=data["parameter"], value=data["rightChanges"], darktable_config=darktable_dir)
 
-        with io.BytesIO() as output:
+        with BytesIO() as output:
             left.save(output, format="GIF")
             leftImg = output.getvalue()
 
-        with io.BytesIO() as output:
+        with BytesIO() as output:
             right.save(output, format="GIF")
             rightImg = output.getvalue()
-        r.hmset("imgs", {f"{Path(data['img']).stem}_l.jpg": leftImg, f"{Path(data['img']).stem}_r.jpg": rightImg})  # FIXME encode images
+
+        r.hmset("imgs", {f"{Path(data['img']).stem}_l.jpg": leftImg, f"{Path(data['img']).stem}_r.jpg": rightImg})
+        r.rpush("pairs", json.dumps(data))
 
 
 if __name__ == "__main__":
