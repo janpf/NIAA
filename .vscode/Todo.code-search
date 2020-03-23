@@ -3,7 +3,7 @@
 # Including: \home\stud\pfister\eclipse-workspace\NIAA, ./Masterarbeit
 # Excluding: .gitignore
 
-6 results - 5 files
+4 results - 3 files
 
 NIAA • annotate_image.py:
   81:     gt = np.exp(gt) / sum(np.exp(gt))  # softmax # TODO stimmt das so?
@@ -12,11 +12,5 @@ NIAA • annotate_image.py:
 NIAA • data_loader.py:
   20:         self.annotations = pd.read_csv(csv_file, delimiter=" ")  # TODO rearrange according to expected csv
 
-NIAA • edit_image.py:
-  159: parameter_range["tint"]["range"] = [0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25]  # FIXME missing values in rangemapping
-
 NIAA • survey/image_edit_process.py:
   57:         time.sleep(1)  # FIXME commit redis to sqlite
-
-NIAA • survey/webserver.py:
-  35:     # FIXME push data to redis

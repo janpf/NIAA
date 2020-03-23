@@ -126,7 +126,7 @@ def before_request():
 
 @app.after_request
 def after_request(response):
-    if g.r:
+    if g.r is not None:
         g.r.close()
     return response
 

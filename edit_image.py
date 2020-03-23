@@ -27,7 +27,7 @@ def edit_image(img_path: str, change: str, value: float, out_path: str = None, d
         img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
         l, a, b = cv2.split(img_lab)
 
-        cl = cv2.createCLAHE(clipLimit=float(value), tileGridSize=(8, 8)).apply(l)
+        cl = cv2.createCLAHE(clipLimit=value, tileGridSize=(8, 8)).apply(l)
 
         limg = cv2.merge((cl, a, b))
 
@@ -52,27 +52,27 @@ def edit_image(img_path: str, change: str, value: float, out_path: str = None, d
         template_file = "./darktable_xmp/colisa.xmp"
         param_index = ["contrast", "brightness", "saturation"].index(change)
         default_str = "".join(["%02x" % b for b in bytearray(pack("f", 0))])
-        change_val_enc = "".join(["%02x" % b for b in bytearray(pack("f", float(value)))])
+        change_val_enc = "".join(["%02x" % b for b in bytearray(pack("f", value))])
         change_str = "".join([change_val_enc if _ == param_index else default_str for _ in range(3)])
 
     if "shadows" == change or "highlights" == change:
         template_file = "./darktable_xmp/shadhi.xmp"
         if "shadows" == change:
-            change_str = f"000000000000c842{''.join(['%02x' % b for b in bytearray(pack('f', float(value)))])}000000000000c84200000000000048420000c842000048427f000000bd37863500000000"
+            change_str = f"000000000000c842{''.join(['%02x' % b for b in bytearray(pack('f', value))])}000000000000c84200000000000048420000c842000048427f000000bd37863500000000"
         elif "highlights" == change:
             change_str = f"000000000000c8420000484200000000{''.join(['%02x' % b for b in bytearray(pack('f', float(value)))])}00000000000048420000c842000048427f000000bd37863500000000"
 
     if "exposure" == change:
         template_file = "./darktable_xmp/exposure.xmp"
-        change_str = f"0000000000000000{''.join(['%02x' % b for b in bytearray(pack('f', float(value)))])}00004842000080c0"
+        change_str = f"0000000000000000{''.join(['%02x' % b for b in bytearray(pack('f', value))])}00004842000080c0"
 
     if "vibrance" == change:
         template_file = "./darktable_xmp/vibrance.xmp"
-        change_str = "".join(["%02x" % b for b in bytearray(pack("f", float(value)))])
+        change_str = "".join(["%02x" % b for b in bytearray(pack("f", value))])
 
     if "temperature" == change or "tint" == change:
         template_file = "./darktable_xmp/temperature.xmp"
-        change_str = parameter_range[change]["rangemapping"][str(value)]
+        change_str = parameter_range[change]["rangemapping"][value]
 
     with open(template_file) as template_file:
         Template(template_file.read()).stream(value=change_str).dump(edit_file)
@@ -156,7 +156,7 @@ parameter_range["temperature"]["rangemapping"] = {  # encoded RGB values, since 
 parameter_range["tint"]["min"] = 0.2
 parameter_range["tint"]["default"] = 1.0
 parameter_range["tint"]["max"] = 2.3
-parameter_range["tint"]["range"] = [0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25]  # FIXME missing values in rangemapping
+parameter_range["tint"]["range"] = [0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25]
 parameter_range["tint"]["rangemapping"] = {  # encoded RGB values, since darktable can't save tint directly
     0.2: "f16ad3bf0000803f79fd38420000807f",
     0.3: "020b05c00000803f063824410000807f",
