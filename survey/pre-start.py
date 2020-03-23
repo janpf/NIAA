@@ -1,13 +1,5 @@
 import sqlite3
 
-queueDB = "/data/logs/queue.db"
-conn = sqlite3.connect(queueDB)
-c = conn.cursor()
-c.execute("""DROP TABLE IF EXISTS queue""")
-c.execute("""CREATE TABLE IF NOT EXISTS queue (id INTEGER PRIMARY KEY, time DATETIME DEFAULT CURRENT_TIMESTAMP, status TEXT DEFAULT "queued", img TEXT, parameter TEXT, leftChanges TEXT, rightChanges TEXT, hashval TEXT)""")
-conn.commit()
-conn.close()
-
 queueDB = "/data/logs/submissions.db"
 conn = sqlite3.connect(queueDB)
 c = conn.cursor()

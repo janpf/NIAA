@@ -1,38 +1,29 @@
 import logging
 import random
 import secrets
-import sqlite3
-import subprocess
+import redis
 import time
-from multiprocessing import Process
 from pathlib import Path
-from threading import Thread
+import json
 
 from flask import Flask, abort, redirect, render_template, request, session
 from flask.helpers import send_file, url_for
 
 from edit_image import random_parameters
+from io import BytesIO
 
 app = Flask(__name__)
 
 
 @app.route("/")
 def survey():
-    conn = sqlite3.connect(app.config["queueDB"])
-    conn.row_factory = sqlite3.Row
-    c = conn.cursor()
-    try:
-        chosen_img = secrets.token_hex(nbytes=4)
-        c.execute("""UPDATE queue SET status = ? WHERE status = "done" ORDER BY id LIMIT 1""", (chosen_img,))  # first inserted imagepair
-        conn.commit()
-        data = c.execute("""SELECT * FROM queue WHERE status = ?""", (chosen_img,)).fetchone()  # if none found -> except
-    except:
-        conn.close()
-        preprocessImages()  # at this point we could throw a 503, or we try to fix the situation
+    r = redis.Redis(host="survey-redis")
+    data = r.lpop("pairs")
+    if not data:
+        preprocessImages()
         return redirect(url_for("login"))
-    c.execute("""DELETE FROM queue WHERE id = ?""", (data["id"],))
-    conn.commit()
-    conn.close()
+    data = json.loads(data)
+
     logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['img']}:{data['parameter']}:{[data['leftChanges'], data['rightChanges']]}; {session}")
 
     return render_template("index.html", count=session["count"], img=f"/img/{Path(data['img']).name}", parameter=data["parameter"], leftChanges=data["leftChanges"], rightChanges=data["rightChanges"], hashval=data["hashval"], loadTime=time.strftime("%Y-%m-%d %H:%M:%S"))
@@ -40,52 +31,30 @@ def survey():
 
 @app.route("/poll", methods=["POST"])
 def poll():
+    r = redis.Redis(host="survey-redis")
+
     data = request.form.to_dict()
     logging.getLogger("forms").info(f"submit: {data}; {session}")
-
-    def write_poll_to_db():
-        conn = sqlite3.connect(app.config["subDB"])
-        c = conn.cursor()
-
-        c.execute(  # databasenormali...what?
-            """INSERT INTO submissions(loadTime,img,parameter,leftChanges,rightChanges,chosen,hashval,screenWidth,screenHeight,windowWidth,windowHeight,colorDepth,userid,usersubs,useragent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-            (
-                data["loadTime"],
-                data["img"],
-                data["parameter"],
-                data["leftChanges"],
-                data["rightChanges"],
-                data["chosen"],
-                data["hashval"],
-                data["screenWidth"],
-                data["screenHeight"],
-                data["windowWidth"],
-                data["windowHeight"],
-                data["colorDepth"],
-                session["id"],
-                session["count"],
-                request.headers.get("User-Agent"),
-            ),
-        )
-        conn.commit()
-        conn.close()
-
-        Thread(target=write_poll_to_db).start()
-
-        session["count"] += 1
-
+    # FIXME push data to redis
+    session["count"] += 1
     return redirect("/#left")
 
 
 @app.route("/img/<image>")
 def img(image: str):
+    r = redis.StrictRedis(host="survey-redis")
+
     changes: Dict[str, float] = request.args.to_dict()
 
     if not image in app.imgsSet:
         abort(404)
 
     edited = image.split(".")[0] + f"_{changes['side']}.jpg"  # only works if one dot in imagepath :D
-    return send_file(app.config.get("editedImageFolder") / edited, mimetype="image/jpeg")
+    img = r.hmget("imgs", edited)
+    r.hdel("imgs", edited)
+    img = BytesIO(img)
+    img.seek(0)
+    return send_file(img, mimetype="image/jpeg")
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -117,16 +86,9 @@ def logout():
 
 @app.route("/preprocess")
 def preprocessImages():
-    conn = sqlite3.connect(app.config["queueDB"])
-    c = conn.cursor()
+    r = redis.Redis(host="survey-redis")
 
-    while True:  # preprocess up to 1000 imagepairs
-        try:
-            count = c.execute("""SELECT COUNT(*) FROM queue""").fetchone()[0]
-            if count >= 1000:
-                break
-        except:
-            pass  # not a single item is queued
+    while r.llen("q") <= 1000:  # preprocess up to 1000 imagepairs
 
         newPairs = []
         for _ in range(50):
@@ -138,11 +100,10 @@ def preprocessImages():
             random.shuffle(changes)
             leftChanges, rightChanges = changes
             hashval = str(hash(f"{random.randint(0, 50000)}{chosen_img}{parameter}{leftChanges}{rightChanges}"))
-            newPairs.append((str(Path(app.config["imageFolder"]) / chosen_img), parameter, leftChanges, rightChanges, hashval))
+            newPairs.append({"img": str(Path(app.config["imageFolder"]) / chosen_img), "parameter": parameter, "leftChanges": leftChanges, "rightChanges": rightChanges, "hashval": hashval})
 
-        c.executemany("""INSERT INTO queue(img,parameter,leftChanges,rightChanges,hashval) VALUES (?,?,?,?,?)""", newPairs)
-        conn.commit()
-    conn.close()
+        newPairs = [json.dumps(val) for val in newPairs]
+        r.rpush("q", newPairs)
     return ""
 
 
@@ -183,11 +144,9 @@ def load_app(imgFile: str = "/data/train.txt", imageFolder: str = "/data/images"
     app.config["imageFolder"] = imageFolder
     app.config["editedImageFolder"] = Path("/tmp/imgs/")
     app.config["TEMPLATES_AUTO_RELOAD"] = True
-    app.config["queueDB"] = out / "queue.db"
-    app.config["subDB"] = out / "submissions.db"
 
     app.config.get("editedImageFolder").mkdir(parents=True, exist_ok=True)
-    app.secret_key = "secr3t"  # XXX
+    app.secret_key = "secr3t"  # WONTFIX
 
     with open(imgFile, "r") as f:
         app.imgs = [img.strip() for img in f.readlines()]

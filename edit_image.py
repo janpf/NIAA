@@ -21,7 +21,7 @@ def edit_image(img_path: str, change: str, value: float, out_path: str = None, d
         else:
             return Image.open(img_path)
 
-    if "lcontrast" == change:  # XXX: not my fault: localcontrast xmp in darktable is broken atm. no idea why
+    if "lcontrast" == change:  # not my fault: localcontrast xmp in darktable is broken atm. no idea why
         img = cv2.imread(img_path)
         img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
         l, a, b = cv2.split(img_lab)
@@ -117,7 +117,7 @@ parameter_range["exposure"]["range"] = [-3.0, -2.4, -1.8, -1.2, -0.6, 0.0, 0.6, 
 parameter_range["vibrance"]["min"] = 0
 parameter_range["vibrance"]["default"] = 25
 parameter_range["vibrance"]["max"] = 100
-parameter_range["vibrance"]["range"] = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+parameter_range["vibrance"]["range"] = [0, 20, 40, 60, 80, 100]
 
 parameter_range["temperature"]["min"] = 1000
 parameter_range["temperature"]["default"] = 6500
@@ -154,7 +154,7 @@ parameter_range["temperature"]["rangemapping"] = {  # encoded RGB values, since 
 parameter_range["tint"]["min"] = 0.2
 parameter_range["tint"]["default"] = 1.0
 parameter_range["tint"]["max"] = 2.3
-parameter_range["tint"]["range"] = [0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.3]
+parameter_range["tint"]["range"] = [0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25]  # FIXME missing values in rangemapping
 parameter_range["tint"]["rangemapping"] = {  # encoded RGB values, since darktable can't save tint directly
     "0.2": "f16ad3bf0000803f79fd38420000807f",
     "0.3": "020b05c00000803f063824410000807f",

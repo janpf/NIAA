@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: survey-redis
+spec:
+  selector:
+    matchLabels:
+      app: survey-redis
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: survey-redis
+    spec:
+      restartPolicy: "Always"
+      containers:
+        - name: survey-redis
+          image: redis:latest
+          imagePullPolicy: "Always"
+          ports:
+            - containerPort: 6379
+          resources:
+            limits:
+              cpu: "4"
+              memory: "4Gi"
+            requests:
+              cpu: "4"
+              memory: "4Gi"
+          volumeMounts:
+            - mountPath: /app
+              name: code
+            - mountPath: /data
+              name: scratch
+      volumes:
+        - name: code
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studpfister
+            path: "/home/stud/pfister/eclipse-workspace/NIAA"
+            secretRef:
+              name: studpfister-secret
+        - name: scratch
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studpfister
+            path: "/scratch/stud/pfister/NIAA/pexels"
+            secretRef:
+              name: studpfister-secret

@@ -1,16 +1,8 @@
 import sqlite3
+import redis
 
+r = redis.Redis(host="redis")
 # httpagentparser?
-
-
-conn = sqlite3.connect("/scratch/stud/pfister/NIAA/pexels/logs/queue.db")
-# conn = sqlite3.connect("/data/logs/queue.db")
-conn.row_factory = sqlite3.Row
-c = conn.cursor()
-qdata = c.execute("""SELECT * FROM queue ORDER BY id""").fetchall()
-qstatus = c.execute("""SELECT status, COUNT(id) as count FROM queue GROUP BY status ORDER BY status DESC""").fetchall()
-conn.commit()
-conn.close()
 
 conn = sqlite3.connect("/scratch/stud/pfister/NIAA/pexels/logs/submissions.db")
 # conn = sqlite3.connect("/data/logs/queue.db")
@@ -23,8 +15,7 @@ conn.commit()
 conn.close()
 
 print("preprocessing:")
-for row in qstatus:
-    print(f"\t{row['status']}: {row['count']}")
+print(f"queued: {r.llen('q')}")
 print("---")
 print()
 
