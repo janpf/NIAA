@@ -45,7 +45,7 @@ def preprocessImage(name: int):
 
 
 def redis_to_sqlite():
-    r = redis.StrictRedis(host="survey-redis")
+    r = redis.Redis(host="survey-redis")
     conn = sqlite3.connect("/data/logs/submissions.db", isolation_level=None)
     c = conn.cursor()
 
