@@ -1,24 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: survey
+  name: survey-gunicorn
 spec:
   selector:
     matchLabels:
-      app: survey
+      app: survey-gunicorn
   replicas: 1
   template:
     metadata:
       labels:
-        app: survey
+        app: survey-gunicorn
     spec:
       restartPolicy: "Always"
       containers:
-        - name: survey
+        - name: survey-gunicorn
           image: janpf/niaa:flask-latest
           imagePullPolicy: "Always"
           ports:
             - containerPort: 5000
+          command: ["/bin/sh"]
+          args: ["survey/webserver.sh"]
           livenessProbe:
             httpGet:
               path: /login
@@ -30,11 +32,11 @@ spec:
               value: "/tmp"
           resources:
             limits:
-              cpu: "12"
-              memory: "12Gi"
+              cpu: "4"
+              memory: "4Gi"
             requests:
-              cpu: "12"
-              memory: "12Gi"
+              cpu: "4"
+              memory: "4Gi"
           volumeMounts:
             - mountPath: /app
               name: code

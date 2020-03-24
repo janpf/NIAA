@@ -117,7 +117,7 @@ def before_request():
     rlogger = logging.getLogger("requests")
     rlogger.info("Headers: %s", request.headers)
     rlogger.info("Session: %s", session)
-    g.r = redis.Redis(host="survey-redis")  # type: redis.Redis
+    g.r = redis.Redis(host="redis")  # type: redis.Redis
     # if (not session.get("authorized", False)) and not (request.endpoint == "login" or request.endpoint == "preprocess"):
     #    return redirect(url_for("login"))
 

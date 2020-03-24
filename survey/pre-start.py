@@ -1,8 +1,4 @@
 import sqlite3
-import redis
-
-r = redis.Redis(host="survey-redis")
-r.flushall()
 
 queueDB = "/data/logs/submissions.db"
 conn = sqlite3.connect(queueDB)

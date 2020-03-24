@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: survey-dbMover
+spec:
+  selector:
+    matchLabels:
+      app: survey-dbMover
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: survey-dbMover
+    spec:
+      restartPolicy: "Always"
+      containers:
+        - name: survey-dbMover
+          image: janpf/niaa:flask-latest
+          imagePullPolicy: "Always"
+          command: ["/bin/sh"]
+          args: ["survey/dbMover.sh"]
+          env:
+            - name: HOME
+              value: "/tmp"
+          resources:
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+            requests:
+              cpu: "1"
+              memory: "1Gi"
+          volumeMounts:
+            - mountPath: /app
+              name: code
+            - mountPath: /data
+              name: scratch
+      volumes:
+        - name: code
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studpfister
+            path: "/home/stud/pfister/eclipse-workspace/NIAA"
+            secretRef:
+              name: studpfister-secret
+        - name: scratch
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studpfister
+            path: "/scratch/stud/pfister/NIAA/pexels"
+            secretRef:
+              name: studpfister-secret

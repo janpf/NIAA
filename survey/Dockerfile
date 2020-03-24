@@ -12,6 +12,3 @@ WORKDIR /app
 RUN pip install -r ./survey/requirements-flask.txt
 
 COPY . /app
-
-RUN chmod a+x /app/survey/start.sh
-ENTRYPOINT ["sh", "/app/survey/start.sh"]
