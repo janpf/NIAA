@@ -21,7 +21,6 @@ def survey():
     data = json.loads(data)
 
     logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['img']}:{data['parameter']}:{[data['leftChanges'], data['rightChanges']]}; {session}")
-
     return render_template("index.html", count=session["count"], img=f"/img/{Path(data['img']).name}", parameter=data["parameter"], leftChanges=data["leftChanges"], rightChanges=data["rightChanges"], hashval=data["hashval"], loadTime=time.strftime("%Y-%m-%d %H:%M:%S"))
 
 
@@ -53,11 +52,10 @@ def poll():
 
 @app.route("/img/<image>")
 def img(image: str):
-    changes: Dict[str, float] = request.args.to_dict()
-
     if not image in app.imgsSet:
         abort(404)
 
+    changes: Dict[str, float] = request.args.to_dict()
     edited = image.split(".")[0] + f"_{changes['side']}.jpg"  # only works if one dot in imagepath :D
     img = g.r.hmget("imgs", edited)[0]  # should only be one
     g.r.hdel("imgs", edited)

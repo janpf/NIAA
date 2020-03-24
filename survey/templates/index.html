@@ -173,8 +173,8 @@
         <p>
             Die Datenerhebungserklärung befindet sich am Ende der Seite.
         </p>
-        {% if count != 0 %}<p>Sie haben bereits <b>{{ count }}</b> {% if count == 1 %} Bild{% else %} Bilder {% endif %}
-            bearbeitet! Vielen Dank!</b></p>{% endif %}
+        {% if count != 0 %}<p>Sie haben bereits <b>{{ count }}</b> {% if count == 1 %} Bildpaar{% else %} Bildpaare
+            {% endif %} bewertet! Vielen Dank!</b></p>{% endif %}
     </div>
 
     <form id="left" class="left" action="/poll" method="post">
