@@ -1,3 +1,3 @@
 #!/bin/bash
-echo "starting background threads for image editing"
+echo "editing images on redis"
 python survey/backgroundworker.py imagePreprocessor

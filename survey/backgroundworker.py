@@ -47,7 +47,6 @@ def redis_to_sqlite():
     r = redis.Redis(host="redis")
     conn = sqlite3.connect("/data/logs/submissions.db", isolation_level=None)
     c = conn.cursor()
-    logging.info("connected to DBs")
 
     while True:
         data = r.lpop("submissions")
