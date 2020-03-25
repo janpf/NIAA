@@ -16,6 +16,7 @@ spec:
       containers:
         - name: redis
           image: redis:latest
+          args: ["--save"]
           imagePullPolicy: "Always"
           ports:
             - containerPort: 6379

@@ -4,8 +4,8 @@ import redis
 r = redis.Redis(host="redis")
 # httpagentparser?
 
-conn = sqlite3.connect("/scratch/stud/pfister/NIAA/pexels/logs/submissions.db")
-# conn = sqlite3.connect("/data/logs/queue.db")
+# conn = sqlite3.connect("/scratch/stud/pfister/NIAA/pexels/logs/submissions.db")
+conn = sqlite3.connect("/data/logs/submissions.db")
 conn.row_factory = sqlite3.Row
 c = conn.cursor()
 sdata = c.execute("""SELECT * FROM submissions ORDER BY id""").fetchall()
@@ -16,6 +16,9 @@ conn.close()
 
 print("preprocessing:")
 print(f"queued: {r.llen('q')}")
+print(f"prepared: {r.llen('pairs')}")
+if r.hlen("imgs") / 2 != r.llen("pairs"):
+    print(f"imgs:{r.hlen('imgs')}")
 print("---")
 print()
 

@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: survey-dbMover
+  name: survey-dbmover
 spec:
   selector:
     matchLabels:
-      app: survey-dbMover
+      app: survey-dbmover
   replicas: 1
   template:
     metadata:
       labels:
-        app: survey-dbMover
+        app: survey-dbmover
     spec:
       restartPolicy: "Always"
       containers:
-        - name: survey-dbMover
+        - name: survey-dbmover
           image: janpf/niaa:flask-latest
           imagePullPolicy: "Always"
           command: ["/bin/sh"]

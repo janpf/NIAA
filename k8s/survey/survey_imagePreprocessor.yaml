@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: survey-imagePreprocessor
+  name: survey-imagepreprocessor
 spec:
   selector:
     matchLabels:
-      app: survey-imagePreprocessor
+      app: survey-imagepreprocessor
   replicas: 5
   template:
     metadata:
       labels:
-        app: survey-imagePreprocessor
+        app: survey-imagepreprocessor
     spec:
       restartPolicy: "Always"
       containers:
-        - name: survey-imagePreprocessor
+        - name: survey-imagepreprocessor
           image: janpf/niaa:flask-latest
           imagePullPolicy: "Always"
           command: ["/bin/sh"]

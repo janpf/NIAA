@@ -29,7 +29,8 @@ def poll():
     data = request.form.to_dict()
     logging.getLogger("forms").info(f"submit: {data}; {session}")
     data = {
-        "loadTime:": data["loadTime"],
+        "loadTime": data["loadTime"],
+        "submitTime": time.strftime("%Y-%m-%d %H:%M:%S"),
         "img": data["img"],
         "parameter": data["parameter"],
         "leftChanges": data["leftChanges"],
@@ -118,7 +119,7 @@ def before_request():
     rlogger.info("Headers: %s", request.headers)
     rlogger.info("Session: %s", session)
     g.r = redis.Redis(host="redis")  # type: redis.Redis
-    # if (not session.get("authorized", False)) and not (request.endpoint == "login" or request.endpoint == "preprocess"):
+    # if (not session.get("authorized", False)) and not (request.endpoint == "login" or request.endpoint == "preprocess"): # FIXME
     #    return redirect(url_for("login"))
 
 

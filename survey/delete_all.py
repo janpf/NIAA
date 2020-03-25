@@ -1,7 +1,7 @@
 import sqlite3
 import redis
 
-r = redis.Redis(host="survey-redis")
+r = redis.Redis(host="redis")
 r.flushall()
 
 queueDB = "/data/logs/submissions.db"

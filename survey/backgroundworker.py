@@ -18,11 +18,6 @@ editedImageFolder = Path("/tmp/imgs/")
 
 
 def preprocessImage():
-    workerID = secrets.token_hex(nbytes=4)
-    logging.info(f"worker {workerID} started")
-
-    darktable_dir = f"/tmp/darktable/{workerID}"
-    Path(darktable_dir).mkdir(parents=True, exist_ok=True)
     r = redis.Redis(host="redis")
 
     data = r.lpop("q")
@@ -30,8 +25,10 @@ def preprocessImage():
         return
     data = json.loads(data)
 
-    left = edit_image(img_path=data["img"], change=data["parameter"], value=data["leftChanges"], darktable_config=darktable_dir)
-    right = edit_image(img_path=data["img"], change=data["parameter"], value=data["rightChanges"], darktable_config=darktable_dir)
+    logging.info(f"got: {data}")
+
+    left = edit_image(img_path=data["img"], change=data["parameter"], value=data["leftChanges"])
+    right = edit_image(img_path=data["img"], change=data["parameter"], value=data["rightChanges"])
 
     with BytesIO() as output:
         left.save(output, format="JPEG")
@@ -59,8 +56,25 @@ def redis_to_sqlite():
         data = json.loads(data)
         logging.info(f"got: {data}")
         c.execute(  # databasenormali...what?
-            """INSERT INTO submissions(loadTime,img,parameter,leftChanges,rightChanges,chosen,hashval,screenWidth,screenHeight,windowWidth,windowHeight,colorDepth,userid,usersubs,useragent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-            (data["loadTime"], data["img"], data["parameter"], data["leftChanges"], data["rightChanges"], data["chosen"], data["hashval"], data["screenWidth"], data["screenHeight"], data["windowWidth"], data["windowHeight"], data["colorDepth"], data["id"], data["count"], data["useragent"]),
+            """INSERT INTO submissions(loadTime,submitTime,img,parameter,leftChanges,rightChanges,chosen,hashval,screenWidth,screenHeight,windowWidth,windowHeight,colorDepth,userid,usersubs,useragent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (
+                data["loadTime"],
+                data["submitTime"],
+                data["img"],
+                data["parameter"],
+                data["leftChanges"],
+                data["rightChanges"],
+                data["chosen"],
+                data["hashval"],
+                data["screenWidth"],
+                data["screenHeight"],
+                data["windowWidth"],
+                data["windowHeight"],
+                data["colorDepth"],
+                data["id"],
+                data["count"],
+                data["useragent"],
+            ),
         )
 
     conn.close()
@@ -69,7 +83,7 @@ def redis_to_sqlite():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("job", type=str, dest="job")
+    parser.add_argument("job", type=str)
     args = parser.parse_args()
 
     format = "%(asctime)s: %(message)s"

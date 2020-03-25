@@ -1,0 +1,12 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: survey-ingress
+spec:
+  rules:
+    - host: image-survey.professor-x.de
+      http:
+        paths:
+          - backend:
+              serviceName: survey-gunicorn
+              servicePort: 5000

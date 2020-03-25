@@ -13,14 +13,10 @@ from jinja2 import Template
 from PIL import Image
 
 
-def edit_image(img_path: str, change: str, value: float, out_path: str = None, darktable_config: str = None) -> Image:
+def edit_image(img_path: str, change: str, value: float) -> Image:
     if math.isclose(parameter_range[change]["default"], value):
         print(f"default called: {change}: {value}")
-        if out_path:
-            Image.open(img_path).convert("RGB").save(out_path)
-            return out_path
-        else:
-            return Image.open(img_path)
+        return Image.open(img_path)
 
     if "lcontrast" == change:  # not my fault: localcontrast xmp in darktable is broken atm. no idea why
         img = cv2.imread(img_path)
@@ -33,20 +29,10 @@ def edit_image(img_path: str, change: str, value: float, out_path: str = None, d
 
         img = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
         img = Image.fromarray(img)
+        return img
 
-        if out_path:
-            img.save(out_path)
-            return out_path
-        else:
-            return img
-
-    darktable_config_obj = None
-    if not darktable_config:  # otherwise darktable can't open more than one instance in parallel
-        darktable_config_obj = tempfile.TemporaryDirectory()
-        darktable_config = darktable_config_obj.name
-
-    edit_file = str(Path(darktable_config) / "edit.xmp")
-    out_file = str(Path(darktable_config) / "out.jpg")
+    edit_file = "/tmp/edit.xmp"
+    out_file = "/tmp/out.jpg"
 
     if "contrast" == change or "brightness" == change or "saturation" == change:
         template_file = "./darktable_xmp/colisa.xmp"
@@ -77,18 +63,10 @@ def edit_image(img_path: str, change: str, value: float, out_path: str = None, d
     with open(template_file) as template_file:
         Template(template_file.read()).stream(value=change_str).dump(edit_file)
 
-    if out_path:
-        subprocess.run(["darktable-cli", img_path, edit_file, out_path, "--core", "--library", ":memory:", "--configdir", darktable_config])
-        if darktable_config_obj:
-            darktable_config_obj.cleanup()
-        return out_path
-    else:
-        subprocess.run(["darktable-cli", img_path, edit_file, out_file, "--core", "--library", ":memory:", "--configdir", darktable_config])
-        img = Image.open(out_file)
-        os.remove(out_file)
-        if darktable_config_obj:
-            darktable_config_obj.cleanup()
-        return img
+    subprocess.run(["darktable-cli", img_path, edit_file, out_file, "--core", "--library", ":memory:"])
+    img = Image.open(out_file)
+    os.remove(out_file)
+    return img
 
 
 parameter_range = collections.defaultdict(dict)
