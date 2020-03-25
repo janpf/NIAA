@@ -1,7 +1,7 @@
 import sqlite3
 import redis
 
-r = redis.Redis(host="redis")
+r = redis.Redis(host="redis")  # TODO redis memory
 # httpagentparser?
 
 # conn = sqlite3.connect("/scratch/stud/pfister/NIAA/pexels/logs/submissions.db")

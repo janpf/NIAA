@@ -48,7 +48,7 @@ def redis_to_sqlite():
     conn = sqlite3.connect("/data/logs/submissions.db", isolation_level=None)
     c = conn.cursor()
 
-    while True:
+    while True:  # TODO nochmal gesamte /poll -> sqlite pipeline checken
         data = r.lpop("submissions")
         if not data:
             break

@@ -119,8 +119,9 @@ def before_request():
     rlogger.info("Headers: %s", request.headers)
     rlogger.info("Session: %s", session)
     g.r = redis.Redis(host="redis")  # type: redis.Redis
-    # if (not session.get("authorized", False)) and not (request.endpoint == "login" or request.endpoint == "preprocess"): # FIXME
-    #    return redirect(url_for("login"))
+    if not session.get("authorized", False):
+        if not (request.endpoint == "login" or request.endpoint == "preprocessImages"):
+            return redirect(url_for("login"))
 
 
 @app.after_request

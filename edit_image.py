@@ -28,7 +28,7 @@ def edit_image(img_path: str, change: str, value: float) -> Image:
         limg = cv2.merge((cl, a, b))
 
         img = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
-        img = Image.fromarray(img)
+        img = Image.fromarray(img).convert("RGB")
         return img
 
     edit_file = "/tmp/edit.xmp"
