@@ -44,7 +44,7 @@ def preprocessImage():
         right.save(output, format="JPEG")
         rightImg = output.getvalue()
 
-    r.hmset("imgs", {f"{Path(data['img']).stem}_l.jpg": leftImg, f"{Path(data['img']).stem}_r.jpg": rightImg})
+    r.hmset("imgs", {f"{Path(data['img']).stem}_l.jpg/{data['hashval']}": leftImg, f"{Path(data['img']).stem}_r.jpg/{data['hashval']}": rightImg})
     r.rpush("pairs", json.dumps(data))
 
 

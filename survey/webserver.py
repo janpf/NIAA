@@ -57,7 +57,7 @@ def img(image: str):
         abort(404)
 
     changes: Dict[str, float] = request.args.to_dict()
-    edited = image.split(".")[0] + f"_{changes['side']}.jpg"  # only works if one dot in imagepath :D
+    edited = image.split(".")[0] + f"_{changes['side']}.jpg/{changes['hashval']}"  # only works if one dot in imagepath :D
     img = g.r.hmget("imgs", edited)[0]  # should only be one
     g.r.hdel("imgs", edited)
 
@@ -92,7 +92,7 @@ def logout():
 
 @app.route("/preprocess")
 def preprocessImages():
-    while g.r.llen("q") + g.r.llen("pairs") <= 5000:  # preprocess up to x imagepairs
+    while g.r.llen("q") + g.r.llen("pairs") < 5000:  # preprocess up to x imagepairs
 
         newPairs = []
         for _ in range(50):

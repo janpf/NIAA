@@ -1,11 +1,11 @@
 import sqlite3
 import redis
 
-r = redis.Redis(host="redis")
+r = redis.Redis(host="localhost", port=7000)
 # httpagentparser?
 
-# conn = sqlite3.connect("/scratch/stud/pfister/NIAA/pexels/logs/submissions.db")
-conn = sqlite3.connect("/data/logs/submissions.db")
+conn = sqlite3.connect("/scratch/stud/pfister/NIAA/pexels/logs/submissions.db")
+#conn = sqlite3.connect("/data/logs/submissions.db")
 conn.row_factory = sqlite3.Row
 c = conn.cursor()
 sdata = c.execute("""SELECT * FROM submissions ORDER BY id""").fetchall()
@@ -25,14 +25,14 @@ if r.hlen("imgs") / 2 != r.llen("pairs"):
 print("---")
 print()
 
-print(f"{len(sdata)} images compared by {len(usercount)} users")
+print(f"{len(sdata)} images compared in {len(usercount)} sessions")
 print("overall distribution:")
 for row in choicecount:
     print(f"\t{row['chosen']}: {row['count']}")
 print("---")
 print()
 
-print("Top 5 leaderboard:")
+print("Top 5 longest sessions:")
 for row in usercount[-5:]:
     print(f"{row[0]}: {row[1]}")
 print("---")
