@@ -20,7 +20,7 @@ def survey():
     data = g.r.lpop("pairs")
     data = json.loads(data)
 
-    logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['img']}:{data['parameter']}:{[data['leftChanges'], data['rightChanges']]}; {session}")
+    logging.getLogger("compares").info(f"{data['img']}:{data['parameter']}:{[data['leftChanges'], data['rightChanges']]}; {data['hashval']} | {session}")
     return render_template("index.html", count=session["count"], img=f"/img/{Path(data['img']).name}", parameter=data["parameter"], leftChanges=data["leftChanges"], rightChanges=data["rightChanges"], hashval=data["hashval"], userID=session["id"], loadTime=time.strftime("%Y-%m-%d %H:%M:%S"))
 
 
@@ -28,7 +28,6 @@ def survey():
 def poll():
     data = request.form.to_dict()
     session["count"] += 1
-    logging.getLogger("forms").info(f"submit: {data}; {session}")
     data = {
         "loadTime": data["loadTime"],
         "submitTime": time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -47,6 +46,7 @@ def poll():
         "count": session["count"],
         "useragent": request.headers.get("User-Agent"),
     }
+    logging.getLogger("forms").info(f"submit: {data}")
     g.r.rpush("submissions", json.dumps(data))
     return redirect("/#left")
 
@@ -115,9 +115,11 @@ def preprocessImages():
 def before_request():
     if "kube-probe" in request.headers.get("User-Agent"):
         return "all good. kthxbai"
+
     rlogger = logging.getLogger("requests")
-    rlogger.info("Headers: %s", request.headers)
     rlogger.info("Session: %s", session)
+    rlogger.info("Headers: %s", request.headers)
+
     g.r = redis.Redis(host="redis")  # type: redis.Redis
     if not session.get("authorized", False):
         if not (request.endpoint == "login" or request.endpoint == "preprocessImages"):

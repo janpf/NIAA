@@ -18,10 +18,10 @@ memdata = r.info("memory")
 print(f"redis: used mem/peak: {memdata['used_memory_human']}/{memdata['used_memory_peak_human']} used rss: {memdata['used_memory_rss_human']}")
 
 print("preprocessing:")
-print(f"queued: {r.llen('q')}")
-print(f"prepared: {r.llen('pairs')}")
+print(f"\tqueued: {r.llen('q')}")
+print(f"\tprepared: {r.llen('pairs')}")
 if r.hlen("imgs") / 2 != r.llen("pairs"):
-    print(f"imgs:{r.hlen('imgs')}")
+    print(f"\timgs:{r.hlen('imgs')}")
 print("---")
 print()
 
