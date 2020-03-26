@@ -16,9 +16,12 @@ from edit_image import edit_image
 
 editedImageFolder = Path("/tmp/imgs/")
 
+r = redis.Redis(host="redis")
+conn = sqlite3.connect("/data/logs/submissions.db")
+c = conn.cursor()
+
 
 def preprocessImage():
-    r = redis.Redis(host="redis")
 
     data = r.lpop("q")
     if not data:
@@ -30,6 +33,9 @@ def preprocessImage():
     left = edit_image(img_path=data["img"], change=data["parameter"], value=data["leftChanges"])
     right = edit_image(img_path=data["img"], change=data["parameter"], value=data["rightChanges"])
 
+    if not left or not right:
+        return
+
     with BytesIO() as output:
         left.save(output, format="JPEG")
         leftImg = output.getvalue()
@@ -40,15 +46,10 @@ def preprocessImage():
 
     r.hmset("imgs", {f"{Path(data['img']).stem}_l.jpg": leftImg, f"{Path(data['img']).stem}_r.jpg": rightImg})
     r.rpush("pairs", json.dumps(data))
-    r.close()
 
 
 def redis_to_sqlite():
-    r = redis.Redis(host="redis")
-    conn = sqlite3.connect("/data/logs/submissions.db", isolation_level=None)
-    c = conn.cursor()
-
-    while True:  # TODO nochmal gesamte /poll -> sqlite pipeline checken
+    while True:
         data = r.lpop("submissions")
         if not data:
             break
@@ -75,9 +76,7 @@ def redis_to_sqlite():
                 data["useragent"],
             ),
         )
-
-    conn.close()
-    r.close()
+        conn.commit()
 
 
 if __name__ == "__main__":

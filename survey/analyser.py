@@ -1,7 +1,7 @@
 import sqlite3
 import redis
 
-r = redis.Redis(host="redis")  # TODO redis memory
+r = redis.Redis(host="redis")
 # httpagentparser?
 
 # conn = sqlite3.connect("/scratch/stud/pfister/NIAA/pexels/logs/submissions.db")
@@ -13,6 +13,9 @@ usercount = c.execute("""SELECT userid, COUNT(id) FROM submissions GROUP BY user
 choicecount = c.execute("""SELECT chosen, COUNT(id) as count FROM submissions GROUP BY chosen ORDER BY chosen""").fetchall()
 conn.commit()
 conn.close()
+
+memdata = r.info("memory")
+print(f"redis: used mem/peak: {memdata['used_memory_human']}/{memdata['used_memory_peak_human']} used rss: {memdata['used_memory_rss_human']}")
 
 print("preprocessing:")
 print(f"queued: {r.llen('q')}")

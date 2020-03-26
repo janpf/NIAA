@@ -21,12 +21,13 @@ def survey():
     data = json.loads(data)
 
     logging.getLogger("compares").info(f"{session.get('name', 'Unknown')}:{data['img']}:{data['parameter']}:{[data['leftChanges'], data['rightChanges']]}; {session}")
-    return render_template("index.html", count=session["count"], img=f"/img/{Path(data['img']).name}", parameter=data["parameter"], leftChanges=data["leftChanges"], rightChanges=data["rightChanges"], hashval=data["hashval"], loadTime=time.strftime("%Y-%m-%d %H:%M:%S"))
+    return render_template("index.html", count=session["count"], img=f"/img/{Path(data['img']).name}", parameter=data["parameter"], leftChanges=data["leftChanges"], rightChanges=data["rightChanges"], hashval=data["hashval"], userID=session["id"], loadTime=time.strftime("%Y-%m-%d %H:%M:%S"))
 
 
 @app.route("/poll", methods=["POST"])
 def poll():
     data = request.form.to_dict()
+    session["count"] += 1
     logging.getLogger("forms").info(f"submit: {data}; {session}")
     data = {
         "loadTime": data["loadTime"],
@@ -46,7 +47,6 @@ def poll():
         "count": session["count"],
         "useragent": request.headers.get("User-Agent"),
     }
-    session["count"] += 1
     g.r.rpush("submissions", json.dumps(data))
     return redirect("/#left")
 
@@ -92,7 +92,7 @@ def logout():
 
 @app.route("/preprocess")
 def preprocessImages():
-    while g.r.llen("q") + g.r.llen("pairs") <= 500:  # preprocess up to 1000 imagepairs
+    while g.r.llen("q") + g.r.llen("pairs") <= 5000:  # preprocess up to x imagepairs
 
         newPairs = []
         for _ in range(50):

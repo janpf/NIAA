@@ -16,7 +16,7 @@ from PIL import Image
 def edit_image(img_path: str, change: str, value: float) -> Image:
     if math.isclose(parameter_range[change]["default"], value):
         print(f"default called: {change}: {value}")
-        return Image.open(img_path)
+        return Image.open(img_path).convert("RGB")
 
     if "lcontrast" == change:  # not my fault: localcontrast xmp in darktable is broken atm. no idea why
         img = cv2.imread(img_path)
@@ -28,7 +28,7 @@ def edit_image(img_path: str, change: str, value: float) -> Image:
         limg = cv2.merge((cl, a, b))
 
         img = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
-        img = Image.fromarray(img).convert("RGB")
+        img = Image.fromarray(img)
         return img
 
     edit_file = "/tmp/edit.xmp"
@@ -64,7 +64,7 @@ def edit_image(img_path: str, change: str, value: float) -> Image:
         Template(template_file.read()).stream(value=change_str).dump(edit_file)
 
     subprocess.run(["darktable-cli", img_path, edit_file, out_file, "--core", "--library", ":memory:"])
-    img = Image.open(out_file)
+    img = Image.open(out_file).convert("RGB")
     os.remove(out_file)
     return img
 
@@ -81,13 +81,12 @@ parameter_range["saturation"] = parameter_range["contrast"]
 parameter_range["shadows"]["min"] = -100  # wahrscheinlich 3. Packen
 parameter_range["shadows"]["default"] = 50
 parameter_range["shadows"]["max"] = 100
-parameter_range["shadows"]["range"] = [-100, -80, -60, -40, -20, 0, 20, 40, 60, 80, 100]
-
+parameter_range["shadows"]["range"] = [-100, -80, -60, -40, -20, 0, 20, 40, 50, 60, 80, 100]
 
 parameter_range["highlights"]["min"] = -100  # wahrscheinlich 5. Packen
 parameter_range["highlights"]["default"] = -50
 parameter_range["highlights"]["max"] = 100
-parameter_range["highlights"]["range"] = [-100, -80, -60, -40, -20, 0, 20, 40, 60, 80, 100]
+parameter_range["highlights"]["range"] = [-100, -80, -60, -50, -40, -20, 0, 20, 40, 60, 80, 100]
 
 parameter_range["exposure"]["min"] = -3  # wahrscheinlich 3. Packen
 parameter_range["exposure"]["default"] = 0
@@ -169,7 +168,7 @@ parameter_range["tint"]["rangemapping"] = {  # encoded RGB values, since darktab
 parameter_range["lcontrast"]["min"] = 0
 parameter_range["lcontrast"]["default"] = 0
 parameter_range["lcontrast"]["max"] = 40
-parameter_range["lcontrast"]["range"] = [0.0, 0.2, 0.4, 0.6, 0.8, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40]
+parameter_range["lcontrast"]["range"] = [0, 0.2, 0.4, 0.6, 0.8, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40]
 
 
 def random_parameters() -> Tuple[str, Tuple[float, float]]:

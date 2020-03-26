@@ -115,11 +115,9 @@
                 Leider muss ich Sie bitten auf einen Desktopbrowser zu wechseln, oder zumindest ein Gerät mit einem
                 großen Bildschirm zu verwenden
             </p>
-            <img class="mobile" src="https://discordemoji.com/assets/emoji/ppHop.gif" />
             <button type="button" onclick="switchDesktop(this)" class="btn btn-lg btn-info mobile">
                 Ok, mach ich!
             </button>
-            <img class="mobile" src="https://discordemoji.com/assets/emoji/ppHop.gif" />
             <script>
                 function switchDesktop(btn) {
                     btn.innerText = "Danke!";
@@ -184,7 +182,7 @@
         <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
         <input type="hidden" name="chosen" value="leftImage">
         <input type="hidden" name="loadTime" value="{{ loadTime }}">
-        <input type="image" src="{{img}}?{{parameter}}={{leftChanges}}&side=l&hashval={{hashval}}">
+        <input type="image" src="{{img}}?side=l&hashval={{hashval}}">
 
         <input type="hidden" name="hashval" value="{{ hashval }}">
         <input type="hidden" name="screenWidth" value="js-disabled?">
@@ -200,7 +198,7 @@
         <input type="hidden" name="rightChanges" value="{{ rightChanges }}">
         <input type="hidden" name="chosen" value="rightImage">
         <input type="hidden" name="loadTime" value="{{ loadTime }}">
-        <input type="image" src="{{img}}?{{parameter}}={{rightChanges}}&side=r&hashval={{hashval}}">
+        <input type="image" src="{{img}}?side=r&hashval={{hashval}}">
 
         <input type="hidden" name="hashval" value="{{ hashval }}">
         <input type="hidden" name="screenWidth" value="js-disabled?">

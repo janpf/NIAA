@@ -3,4 +3,4 @@ echo "creating/resetting database"
 python survey/pre-start.py
 
 echo "starting webserver"
-gunicorn -w 5 -b 0.0.0.0:5000 --reload --access-logfile "-" "survey.webserver:load_app()"
+gunicorn -w 9 -b 0.0.0.0:5000 --reload --access-logfile "-" "survey.webserver:load_app()"

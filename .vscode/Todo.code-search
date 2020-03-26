@@ -3,7 +3,7 @@
 # Including: \home\stud\pfister\eclipse-workspace\NIAA, ./Masterarbeit
 # Excluding: .gitignore
 
-5 results - 4 files
+3 results - 2 files
 
 NIAA • annotate_image.py:
   81:     gt = np.exp(gt) / sum(np.exp(gt))  # softmax # TODO stimmt das so?
@@ -11,9 +11,3 @@ NIAA • annotate_image.py:
 
 NIAA • data_loader.py:
   20:         self.annotations = pd.read_csv(csv_file, delimiter=" ")  # TODO rearrange according to expected csv
-
-NIAA • survey/analyser.py:
-  4: r = redis.Redis(host="redis")  # TODO redis memory
-
-NIAA • survey/backgroundworker.py:
-  51:     while True:  # TODO nochmal gesamte /poll -> sqlite pipeline checken
