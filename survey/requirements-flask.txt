@@ -1,5 +1,6 @@
 flask
 gunicorn
+httpagentparser
 numpy
 opencv-python-headless
 Pillow
