@@ -1,6 +1,8 @@
 import math
 import collections
 from dateutil import parser
+import matplotlib.pyplot as plt
+from pathlib import Path
 import sqlite3
 import sys
 import httpagentparser
@@ -9,14 +11,16 @@ import redis
 sys.path.insert(0, ".")
 from edit_image import parameter_range
 
-# httpagentparser?
+sqlite_db = "/scratch/stud/pfister/NIAA/pexels/logs/submissions.db"  # "/data/logs/submissions.db"
+plot_dir = Path.home() / "eclipse-workspace" / "NIAA" / "analysis" / "survey"  # type: Path
 
-conn = sqlite3.connect("/scratch/stud/pfister/NIAA/pexels/logs/submissions.db")
-# conn = sqlite3.connect("/data/logs/submissions.db")
+plot_dir.mkdir(parents=True, exist_ok=True)
+
+conn = sqlite3.connect(sqlite_db)
 conn.row_factory = sqlite3.Row
 c = conn.cursor()
 sdata = c.execute("""SELECT * FROM submissions ORDER BY id""").fetchall()
-usercount = c.execute("""SELECT userid, COUNT(id) FROM submissions GROUP BY userid ORDER BY COUNT(id) DESC""").fetchall()
+usercount = c.execute("""SELECT userid, COUNT(id), useragent FROM submissions GROUP BY userid ORDER BY COUNT(id) DESC""").fetchall()
 choicecount = c.execute("""SELECT chosen, COUNT(id) as count FROM submissions GROUP BY chosen ORDER BY chosen""").fetchall()
 conn.commit()
 conn.close()
@@ -109,7 +113,7 @@ for row in sdata:
 
 params = sorted(parameter_range.keys(), key=lambda k: chosenDict[k]["bigger"] / chosenDict[k]["smaller"])
 for key in params:
-    print(f"{key}:")
+    print(f"{key}:\t{'{:.1f}%'.format(sum(chosenDict[key].values()) / sum([sum(val.values()) for val in chosenDict.values()])*100)}\t| {sum(chosenDict[key].values())}")
     print(f"\tsmaller edit:\t\t{'{:.1f}%'.format(chosenDict[key]['smaller'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['smaller']}")
     print(f"\tbigger edit:\t\t{'{:.1f}%'.format(chosenDict[key]['bigger'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['bigger']}")
     print(f"\tunsure and equal:\t{'{:.1f}%'.format(chosenDict[key]['unsure_eq'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['unsure_eq']}")
@@ -125,18 +129,23 @@ for row in sdata:
     loadTime = parser.parse(row["loadTime"])
     submTime = parser.parse(row["submitTime"])
     duration = (submTime - loadTime).total_seconds()
-    if duration > 30:  # most likely afk
-        continue
     durations.append(duration)
 
-print(f"average time for decision: {sum(durations)/len(durations)} seconds")
+no_afk_durations = [val for val in durations if val < 60]
+print(f"average time for decision: {'{:.1f}'.format(sum(no_afk_durations)/len(no_afk_durations))} seconds")
+
+plt.hist(durations, bins=range(0, int(max([val for val in durations if val < 60])) + 1))
+plt.ylim(bottom=0)
+plt.savefig(plot_dir / "decision-duration.png")
+plt.clf()
+
 print("---")
 print()
 
 
 print("useragent distribution:")
 useragents = []
-for row in sdata:
+for row in usercount:
     useragents.append(httpagentparser.detect(row["useragent"]))
 
 browser_count = collections.Counter([val["browser"]["name"] for val in useragents])
@@ -153,6 +162,12 @@ print()
 print("Top 5 longest sessions:")
 for row in usercount[:5]:
     print(f"\t{row[0]}: {row[1]}")
+
+plt.hist([val[1] for val in usercount], bins=range(0, max([val[1] for val in usercount]) + 1, 10))
+plt.ylim(bottom=0)
+plt.savefig(plot_dir / "session-duration.png")
+plt.clf()
+
 print("---")
 print()
 
