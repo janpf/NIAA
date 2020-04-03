@@ -1,9 +1,9 @@
 import math
 import collections
-from dateutil import parser
+import json
 import matplotlib.pyplot as plt
 from pathlib import Path
-import sqlite3
+import pandas as pd
 import sys
 import httpagentparser
 import redis
@@ -11,19 +11,10 @@ import redis
 sys.path.insert(0, ".")
 from edit_image import parameter_range
 
-sqlite_db = "/scratch/stud/pfister/NIAA/pexels/logs/submissions.db"  # "/data/logs/submissions.db"
+submission_log = "/scratch/stud/pfister/NIAA/pexels/logs/submissions.log"
 plot_dir = Path.home() / "eclipse-workspace" / "NIAA" / "analysis" / "survey"  # type: Path
 
 plot_dir.mkdir(parents=True, exist_ok=True)
-
-conn = sqlite3.connect(sqlite_db)
-conn.row_factory = sqlite3.Row
-c = conn.cursor()
-sdata = c.execute("""SELECT * FROM submissions ORDER BY id""").fetchall()
-usercount = c.execute("""SELECT userid, COUNT(id), useragent FROM submissions GROUP BY userid ORDER BY COUNT(id) DESC""").fetchall()
-choicecount = c.execute("""SELECT chosen, COUNT(id) as count FROM submissions GROUP BY chosen ORDER BY chosen""").fetchall()
-conn.commit()
-conn.close()
 
 try:
     r = redis.Redis(host="localhost", port=7000)
@@ -41,24 +32,31 @@ except:
     print("no redis connection available => 'kctl port-forward svc/redis 7000:6379'")
 
 
-print(f"{len(sdata)} images compared in {len(usercount)} sessions")
-print("overall distribution:")
-for row in choicecount:
-    print(f"\t{row['chosen']}: {row['count']}")
+with open(submission_log, mode="r") as subs_file:
+    subs = subs_file.readlines()
+
+subs = (row.strip() for row in subs)
+subs = (row.split("submit:")[1] for row in subs)
+subs = (row.strip() for row in subs)
+subs = (row.replace("'id':", "'userid':") for row in subs)
+subs = (row.replace("'", '"') for row in subs)
+subs = [json.loads(row) for row in subs]
+
+sub_df = pd.read_json(json.dumps(subs), orient="records", convert_dates=["loadTime", "submitTime"])  # type: pd.DataFrame
+# data reading done
+
+print()
+print(f"{sub_df.hashval.count()} images compared in {sub_df.groupby('userid').userid.count().count()} sessions")
+print(sub_df.groupby("chosen").chosen.count().to_string())
 print("---")
 print()
 
-
-for row in sdata:
-    if row["chosen"] == "error":
-        break
-        print(tuple(row))
 
 chosenDict = dict()
 for key in parameter_range.keys():
     chosenDict[key] = collections.defaultdict(lambda: 0)
 
-for row in sdata:
+for _, row in sub_df.iterrows():
     if row["chosen"] == "error":
         continue
 
@@ -123,18 +121,13 @@ print("---")
 print()
 
 
-print("decision duration")
-durations = []
-for row in sdata:
-    loadTime = parser.parse(row["loadTime"])
-    submTime = parser.parse(row["submitTime"])
-    duration = (submTime - loadTime).total_seconds()
-    durations.append(duration)
+print("decision duration:")
+durations = (sub_df.submitTime - sub_df.loadTime).astype("timedelta64[s]")
 
-no_afk_durations = [val for val in durations if val < 60]
-print(f"average time for decision: {'{:.1f}'.format(sum(no_afk_durations)/len(no_afk_durations))} seconds")
+no_afk_durations = durations[durations < 60]
+print(f"average time for decision: {'{:.1f}'.format(no_afk_durations.mean())} seconds")
 
-plt.hist(durations, bins=range(0, int(max([val for val in durations if val < 60])) + 1))
+plt.hist(durations.values, bins=range(0, int(no_afk_durations.max()) + 1))
 plt.ylim(bottom=0)
 plt.savefig(plot_dir / "decision-duration.png")
 plt.clf()
@@ -145,7 +138,7 @@ print()
 
 print("useragent distribution:")
 useragents = []
-for row in usercount:
+for _, row in sub_df.iterrows():
     useragents.append(httpagentparser.detect(row["useragent"]))
 
 browser_count = collections.Counter([val["browser"]["name"] for val in useragents])
@@ -160,10 +153,10 @@ print()
 
 
 print("Top 5 longest sessions:")
-for row in usercount[:5]:
-    print(f"\t{row[0]}: {row[1]}")
+usercount = sub_df[["userid", "hashval"]].rename(columns={"hashval": "count"}).groupby("userid").count()
+print(usercount.nlargest(5, "count"))
 
-plt.hist([val[1] for val in usercount], bins=range(0, max([val[1] for val in usercount]) + 1, 10))
+plt.hist(usercount.values, bins=range(0, int(usercount.max()) + 1, 10))
 plt.ylim(bottom=0)
 plt.savefig(plot_dir / "session-duration.png")
 plt.clf()
@@ -173,8 +166,7 @@ print()
 
 
 print("3 most recent comparisons:")
-for row in sdata[-3:]:
-    print(tuple(row))
+print(sub_df.tail(3))
 
 print("---")
 print()
