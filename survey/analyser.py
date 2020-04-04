@@ -51,16 +51,18 @@ print(sub_df.groupby("chosen").chosen.count().to_string())
 print("---")
 print()
 
-
+chosenDist = dict()
 chosenDict = dict()
 for key in parameter_range.keys():
     chosenDict[key] = collections.defaultdict(lambda: 0)
+    chosenDist[key] = collections.defaultdict(lambda: 0)
 
 for _, row in sub_df.iterrows():
     if row["chosen"] == "error":
         continue
 
-    paramData = parameter_range[row["parameter"]]
+    parameter = row["parameter"]
+    paramData = parameter_range[parameter]
     lChange = float(row["leftChanges"])
     rChange = float(row["rightChanges"])
     chosen = row["chosen"]
@@ -74,40 +76,46 @@ for _, row in sub_df.iterrows():
 
     if math.isclose(lChange, rChange):
         if chosen == "unsure":
-            chosenDict[row["parameter"]]["unsure_eq"] += 1
+            chosenDict[parameter]["unsure_eq"] += 1
         else:
-            chosenDict[row["parameter"]]["not_unsure_eq"] += 1
+            chosenDict[parameter]["not_unsure_eq"] += 1
     else:
         if chosen == "unsure":
-            chosenDict[row["parameter"]]["unsure_not_eq"] += 1
+            chosenDict[parameter]["unsure_not_eq"] += 1
 
     if chosen == "unsure":
         pass
     elif chosen == "leftImage":
         if lChange < paramData["default"]:
             if lChange < rChange:
-                chosenDict[row["parameter"]]["bigger"] += 1
+                chosenDict[parameter]["bigger"] += 1
             else:
-                chosenDict[row["parameter"]]["smaller"] += 1
+                chosenDict[parameter]["smaller"] += 1
         else:
             if lChange < rChange:
-                chosenDict[row["parameter"]]["smaller"] += 1
+                chosenDict[parameter]["smaller"] += 1
             else:
-                chosenDict[row["parameter"]]["bigger"] += 1
+                chosenDict[parameter]["bigger"] += 1
 
     elif chosen == "rightImage":
         if lChange < paramData["default"]:
             if lChange < rChange:
-                chosenDict[row["parameter"]]["smaller"] += 1
+                chosenDict[parameter]["smaller"] += 1
             else:
-                chosenDict[row["parameter"]]["bigger"] += 1
+                chosenDict[parameter]["bigger"] += 1
         else:
             if lChange < rChange:
-                chosenDict[row["parameter"]]["bigger"] += 1
+                chosenDict[parameter]["bigger"] += 1
             else:
-                chosenDict[row["parameter"]]["smaller"] += 1
+                chosenDict[parameter]["smaller"] += 1
     else:
         raise ("wait, that's illegal")
+
+    if chosen != "unsure" and not math.isclose(lChange, rChange):
+        if chosen == "leftImage":
+            chosenDist[parameter][lChange] += 1
+        else:
+            chosenDist[parameter][rChange] += 1
 
 params = sorted(parameter_range.keys(), key=lambda k: chosenDict[k]["bigger"] / chosenDict[k]["smaller"])
 for key in params:
@@ -117,6 +125,15 @@ for key in params:
     print(f"\tunsure and equal:\t{'{:.1f}%'.format(chosenDict[key]['unsure_eq'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['unsure_eq']}")
     print(f"\tunsure but not equal:\t{'{:.1f}%'.format(chosenDict[key]['unsure_not_eq'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['unsure_not_eq']}")
     print(f"\tnot unsure but equal:\t{'{:.1f}%'.format(chosenDict[key]['not_unsure_eq'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['not_unsure_eq']}")
+
+    vals = []
+    for k, v in chosenDist[key].items():
+        vals.extend([k] * v)
+    plt.hist(vals, bins=parameter_range[key]["range"], align="left")
+    plt.ylim(bottom=0)
+    plt.savefig(plot_dir / f"{key}_dist.png")
+    plt.clf()
+    # print(sorted(list(chosenDist[key].items()), key=lambda k: k[0]))
 print("---")
 print()
 
@@ -127,7 +144,7 @@ durations = (sub_df.submitTime - sub_df.loadTime).astype("timedelta64[s]")
 no_afk_durations = durations[durations < 60]
 print(f"average time for decision: {'{:.1f}'.format(no_afk_durations.mean())} seconds")
 
-plt.hist(durations.values, bins=range(0, int(no_afk_durations.max()) + 1))
+plt.hist(durations.values, bins=range(0, int(no_afk_durations.max()) + 1), align="left")
 plt.ylim(bottom=0)
 plt.savefig(plot_dir / "decision-duration.png")
 plt.clf()
@@ -156,7 +173,7 @@ print("Top 5 longest sessions:")
 usercount = sub_df[["userid", "hashval"]].rename(columns={"hashval": "count"}).groupby("userid").count()
 print(usercount.nlargest(5, "count"))
 
-plt.hist(usercount.values, bins=range(0, int(usercount.max()) + 1, 10))
+plt.hist(usercount.values, bins=range(0, int(usercount.max()) + 1, 10), align="left")
 plt.ylim(bottom=0)
 plt.savefig(plot_dir / "session-duration.png")
 plt.clf()
