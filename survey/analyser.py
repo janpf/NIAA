@@ -55,7 +55,9 @@ chosenDist = dict()
 chosenDict = dict()
 for key in parameter_range.keys():
     chosenDict[key] = collections.defaultdict(lambda: 0)
-    chosenDist[key] = collections.defaultdict(lambda: 0)
+    chosenDist[key] = dict()
+    chosenDist[key]["chosen"] = collections.defaultdict(lambda: 0)
+    chosenDist[key]["displayed"] = collections.defaultdict(lambda: 0)
 
 for _, row in sub_df.iterrows():
     if row["chosen"] == "error":
@@ -112,10 +114,13 @@ for _, row in sub_df.iterrows():
         raise ("wait, that's illegal")
 
     if chosen != "unsure" and not math.isclose(lChange, rChange):
+        chosenDist[parameter]["displayed"][lChange] += 1
+        chosenDist[parameter]["displayed"][rChange] += 1
+
         if chosen == "leftImage":
-            chosenDist[parameter][lChange] += 1
+            chosenDist[parameter]["chosen"][lChange] += 1
         else:
-            chosenDist[parameter][rChange] += 1
+            chosenDist[parameter]["chosen"][rChange] += 1
 
 params = sorted(parameter_range.keys(), key=lambda k: chosenDict[k]["bigger"] / chosenDict[k]["smaller"])
 for key in params:
@@ -126,10 +131,13 @@ for key in params:
     print(f"\tunsure but not equal:\t{'{:.1f}%'.format(chosenDict[key]['unsure_not_eq'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['unsure_not_eq']}")
     print(f"\tnot unsure but equal:\t{'{:.1f}%'.format(chosenDict[key]['not_unsure_eq'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['not_unsure_eq']}")
 
-    vals = []
-    for k, v in chosenDist[key].items():
-        vals.extend([k] * v)
-    plt.hist(vals, bins=parameter_range[key]["range"], align="left")
+    x = []
+    y = []
+    for k, v in sorted(chosenDist[key]["chosen"].items(), key=lambda k: k[0]):
+        x.append(k)
+        y.append((chosenDist[key]["chosen"][k] / chosenDist[key]["displayed"][k]) * 100)
+    plt.plot(x, y, "-x")
+    plt.axvline(x=parameter_range[key]["default"], linestyle="--", color="orange")
     plt.ylim(bottom=0)
     plt.savefig(plot_dir / f"{key}_dist.png")
     plt.clf()
