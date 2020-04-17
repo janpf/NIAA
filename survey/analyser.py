@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import pandas as pd
 import sys
+from scipy.stats import pearsonr, spearmanr, wilcoxon, linregress
 import httpagentparser
 import redis
 
@@ -12,6 +13,7 @@ sys.path.insert(0, ".")
 from edit_image import parameter_range
 
 submission_log = "/scratch/stud/pfister/NIAA/pexels/logs/submissions.log"
+#submission_log = "/home/stud/pfister/random.log"
 plot_dir = Path.home() / "eclipse-workspace" / "NIAA" / "analysis" / "survey"  # type: Path
 
 plot_dir.mkdir(parents=True, exist_ok=True)
@@ -58,14 +60,18 @@ for key in parameter_range.keys():
     chosenDist[key] = dict()
     chosenDist[key]["chosen"] = collections.defaultdict(lambda: 0)
     chosenDist[key]["displayed"] = collections.defaultdict(lambda: 0)
+    chosenDist[key]["posCorrelationBase"] = []  #  type: List[Tuple[float, int]]
+    chosenDist[key]["negCorrelationBase"] = []  #  type: List[Tuple[float, int]]
+    chosenDist[key]["posCorrelation"] = []  #  type: List[Tuple[float, int]]
+    chosenDist[key]["negCorrelation"] = []  #  type: List[Tuple[float, int]]
 
-for _, row in sub_df.iterrows():
+for _, row in sub_df.iterrows():  # TODO feste variablen zuweisen innerhalb der schleife "smallerEdit", "largerEdit"
     if row["chosen"] == "error":
         continue
 
     parameter = row["parameter"]
     paramData = parameter_range[parameter]
-    lChange = float(row["leftChanges"])
+    lChange = float(row["leftChanges"])  # TODO bei vergleichen immer "and not isclose"
     rChange = float(row["rightChanges"])
     chosen = row["chosen"]
 
@@ -122,14 +128,53 @@ for _, row in sub_df.iterrows():
         else:
             chosenDist[parameter]["chosen"][rChange] += 1
 
+    if not math.isclose(lChange, rChange):
+        if not (math.isclose(lChange, paramData["default"]) or math.isclose(rChange, paramData["default"])):
+            continue
+        if lChange > paramData["default"]:
+            if lChange < rChange:
+                if chosen == "leftImage":
+                    chosenDist[parameter]["posCorrelation"].append((abs(rChange - lChange), 1))
+                elif chosen == "rightImage":
+                    chosenDist[parameter]["posCorrelation"].append((abs(rChange - lChange), 0))
+            else:
+                if chosen == "leftImage":
+                    chosenDist[parameter]["posCorrelation"].append((abs(rChange - lChange), 0))
+                elif chosen == "rightImage":
+                    chosenDist[parameter]["posCorrelation"].append((abs(rChange - lChange), 1))
+        elif lChange < paramData["default"]:
+            if lChange < rChange:
+                if chosen == "leftImage":
+                    chosenDist[parameter]["negCorrelation"].append((abs(rChange - lChange), 0))
+                elif chosen == "rightImage":
+                    chosenDist[parameter]["negCorrelation"].append((abs(rChange - lChange), 1))
+            else:
+                if chosen == "leftImage":
+                    chosenDist[parameter]["negCorrelation"].append((abs(rChange - lChange), 1))
+                elif chosen == "rightImage":
+                    chosenDist[parameter]["negCorrelation"].append((abs(rChange - lChange), 0))
+
 params = sorted(parameter_range.keys(), key=lambda k: chosenDict[k]["bigger"] / chosenDict[k]["smaller"])
 for key in params:
     print(f"{key}:\t{'{:.1f}%'.format(sum(chosenDict[key].values()) / sum([sum(val.values()) for val in chosenDict.values()])*100)}\t| {sum(chosenDict[key].values())}")
     print(f"\tsmaller edit:\t\t{'{:.1f}%'.format(chosenDict[key]['smaller'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['smaller']}")
-    print(f"\tbigger edit:\t\t{'{:.1f}%'.format(chosenDict[key]['bigger'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['bigger']}")
+    print(f"\tlarger edit:\t\t{'{:.1f}%'.format(chosenDict[key]['bigger'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['bigger']}")
     print(f"\tunsure and equal:\t{'{:.1f}%'.format(chosenDict[key]['unsure_eq'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['unsure_eq']}")
     print(f"\tunsure but not equal:\t{'{:.1f}%'.format(chosenDict[key]['unsure_not_eq'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['unsure_not_eq']}")
     print(f"\tnot unsure but equal:\t{'{:.1f}%'.format(chosenDict[key]['not_unsure_eq'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['not_unsure_eq']}")
+
+    try:
+        print("\tcorr. for pos. changes | one image original | bigger changes == more clicks for original image?:")
+        print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*chosenDist[key]["posCorrelation"])))))
+        print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*chosenDist[key]["posCorrelation"])))))
+        print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*chosenDist[key]["posCorrelation"])))))
+    except:
+        print(chosenDist[key]["posCorrelation"])
+    if len(chosenDist[key]["negCorrelation"]) != 0:
+        print("\tcorr. for neg. changes | one image original | bigger changes == more clicks for original image?:")
+        print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*chosenDist[key]["negCorrelation"])))))
+        print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*chosenDist[key]["negCorrelation"])))))
+        print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*chosenDist[key]["negCorrelation"])))))
 
     x = []
     y = []
@@ -142,6 +187,7 @@ for key in params:
     plt.savefig(plot_dir / f"{key}_dist.png")
     plt.clf()
     # print(sorted(list(chosenDist[key].items()), key=lambda k: k[0]))
+    print()
 print("---")
 print()
 
