@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import pandas as pd
 import sys
-from scipy.stats import pearsonr, spearmanr, wilcoxon, linregress
+from scipy.stats import pearsonr, spearmanr, wilcoxon, linregress, binom_test
 import httpagentparser
 import redis
 
@@ -139,12 +139,18 @@ for _, row in sub_df.iterrows():
             elif chosen == "rightImage":
                 smallerChosen = False
                 largerChosen = True
+            else:
+                smallerChosen = False
+                largerChosen = False
         elif math.isclose(rChange, smallChange):
             if chosen == "leftImage":
                 smallerChosen = False
                 largerChosen = True
             elif chosen == "rightImage":
                 smallerChosen = True
+                largerChosen = False
+            else:
+                smallerChosen = False
                 largerChosen = False
         else:
             raise ("hä")
@@ -200,10 +206,11 @@ for _, row in sub_df.iterrows():
                 elif changeSign == "-":
                     chosenDist[parameter]["negCorrelation"].append((abs(largeChange - smallChange), 0))
 
-params = sorted(parameter_range.keys(), key=lambda k: chosenDict[k]["larger"] / chosenDict[k]["smaller"])
+params = sorted(parameter_range.keys(), key=lambda k: binom_test(chosenDict[k]["smaller"], n=chosenDict[k]["smaller"] + chosenDict[k]["larger"]))
 for key in params:
-
-    print(f"{key}:\t{'{:.1f}%'.format(sum(chosenDict[key].values()) / sum([sum(val.values()) for val in chosenDict.values()])*100)}\t| {sum(chosenDict[key].values())}")
+    print(f"{key}:\t{'{:.1f}%'.format(sum(chosenDict[key].values()) / sum([sum(val.values()) for val in chosenDict.values()])*100)}\t| {sum(chosenDict[key].values())})")
+    print("\tbinomial test w/ unsure:\tp: {:05.4f}".format(binom_test(chosenDict[key]["smaller"], n=sum(chosenDict[key].values()))), f"(x={chosenDict[key]['smaller']} | n={sum(chosenDict[key].values())})")
+    print("\tbinomial test w/o unsure:\tp: {:05.4f}".format(binom_test(chosenDict[key]["smaller"], n=chosenDict[key]["smaller"] + chosenDict[key]["larger"])), f"(x={chosenDict[key]['smaller']} | n={chosenDict[key]['smaller'] + chosenDict[key]['larger']}")
     print(f"\tsmaller edit:\t\t{'{:.1f}%'.format(chosenDict[key]['smaller'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['smaller']}")
     print(f"\tlarger edit:\t\t{'{:.1f}%'.format(chosenDict[key]['larger'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['larger']}")
     print(f"\tunsure and equal:\t{'{:.1f}%'.format(chosenDict[key]['unsure_eq'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['unsure_eq']}")
