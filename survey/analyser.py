@@ -206,26 +206,26 @@ for _, row in sub_df.iterrows():
                 elif changeSign == "-":
                     chosenDist[parameter]["negCorrelation"].append((abs(largeChange - smallChange), 0))
 
-params = sorted(parameter_range.keys(), key=lambda k: binom_test(chosenDict[k]["smaller"], n=chosenDict[k]["smaller"] + chosenDict[k]["larger"]))
+params = sorted(parameter_range.keys(), key=lambda k: binom_test(chosenDict[k]["smaller"], n=chosenDict[k]["smaller"] + chosenDict[k]["larger"] + chosenDict[k]["unsure_eq"] + chosenDict[k]["unsure_not_eq"]))
 for key in params:
-    print(f"{key}:\t{'{:.1f}%'.format(sum(chosenDict[key].values()) / sum([sum(val.values()) for val in chosenDict.values()])*100)}\t| {sum(chosenDict[key].values())})")
-    print("\tbinomial test w/ unsure:\tp: {:05.4f}".format(binom_test(chosenDict[key]["smaller"], n=sum(chosenDict[key].values()))), f"(x={chosenDict[key]['smaller']} | n={sum(chosenDict[key].values())})")
-    print("\tbinomial test w/o unsure:\tp: {:05.4f}".format(binom_test(chosenDict[key]["smaller"], n=chosenDict[key]["smaller"] + chosenDict[key]["larger"])), f"(x={chosenDict[key]['smaller']} | n={chosenDict[key]['smaller'] + chosenDict[key]['larger']}")
+    print(f"{key}:\t{'{:.1f}%'.format(sum(chosenDict[key].values()) / sum([sum(val.values()) for val in chosenDict.values()])*100)}\t| {sum(chosenDict[key].values())}")
+    print(
+        "\tbinomial test w/ unsure:\tp: {:05.4f}".format(binom_test(chosenDict[key]["smaller"], n=chosenDict[key]["smaller"] + chosenDict[key]["larger"] + chosenDict[key]["unsure_eq"] + chosenDict[key]["unsure_not_eq"])),
+        f"(x={chosenDict[key]['smaller']} | n={chosenDict[key]['smaller'] + chosenDict[key]['larger'] + chosenDict[key]['unsure_eq'] + chosenDict[key]['unsure_not_eq']})",
+    )
+    print("\tbinomial test w/o unsure:\tp: {:05.4f}".format(binom_test(chosenDict[key]["smaller"], n=chosenDict[key]["smaller"] + chosenDict[key]["larger"])), f"(x={chosenDict[key]['smaller']} | n={chosenDict[key]['smaller'] + chosenDict[key]['larger']})")
     print(f"\tsmaller edit:\t\t{'{:.1f}%'.format(chosenDict[key]['smaller'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['smaller']}")
     print(f"\tlarger edit:\t\t{'{:.1f}%'.format(chosenDict[key]['larger'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['larger']}")
     print(f"\tunsure and equal:\t{'{:.1f}%'.format(chosenDict[key]['unsure_eq'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['unsure_eq']}")
     print(f"\tunsure but not equal:\t{'{:.1f}%'.format(chosenDict[key]['unsure_not_eq'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['unsure_not_eq']}")
     print(f"\tnot unsure but equal:\t{'{:.1f}%'.format(chosenDict[key]['not_unsure_eq'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['not_unsure_eq']}")
 
-    # FIXME PearsonRConstantInputWarning: An input array is constant; the correlation coefficent is not defined.
-    # FIXME RuntimeWarning: invalid value encountered in double_scalars
-    # FIXME RuntimeWarning: divide by zero encountered in double_scalars
     print("\tcorr. for pos. changes | one image original | larger changes == more clicks for original image?:")
     print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*chosenDist[key]["posCorrelationBase"])))))
     print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*chosenDist[key]["posCorrelationBase"])))))
     print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*chosenDist[key]["posCorrelationBase"])))))
 
-    if len(chosenDist[key]["negCorrelationBase"]) != 0:
+    if len(chosenDist[key]["negCorrelationBase"]) != 0 and key != "vibrance":
         print("\tcorr. for neg. changes | one image original | larger changes == more clicks for original image?:")
         print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*chosenDist[key]["negCorrelationBase"])))))
         print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*chosenDist[key]["negCorrelationBase"])))))
@@ -236,12 +236,11 @@ for key in params:
     print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*chosenDist[key]["posCorrelation"])))))
     print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*chosenDist[key]["posCorrelation"])))))
 
-    if len(chosenDist[key]["negCorrelation"]) != 0:
+    if len(chosenDist[key]["negCorrelation"]) != 0 and key != "vibrance":
         print("\tcorr. for neg. changes | all | larger changes == more clicks for original image?:")
         print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*chosenDist[key]["negCorrelation"])))))
         print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*chosenDist[key]["negCorrelation"])))))
         print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*chosenDist[key]["negCorrelation"])))))
-
     x = []
     y = []
     x_pos = []
@@ -259,14 +258,16 @@ for key in params:
         if k <= parameter_range[key]["default"] or math.isclose(k, parameter_range[key]["default"]):
             x_neg.append(k)
             y_neg.append((chosenDist[key]["chosen"][k] / chosenDist[key]["displayed"][k]) * 100)
-    slope_pos, intercept_pos, _, _, stderr_pos = linregress(x_pos, y_pos)
-    slope_neg, intercept_neg, _, _, stderr_neg = linregress(x_neg, y_neg)
 
     plt.plot(x, y, "-x", label="probability of chosen if displayed")
     plt.axvline(x=parameter_range[key]["default"], linestyle="--", color="orange", label="original image")
 
+    slope_pos, intercept_pos, _, _, stderr_pos = linregress(x_pos, y_pos)
     plt.plot(x_pos, [intercept_pos + slope_pos * val for val in x_pos], linestyle="-", color="orange", label="linreg")
-    plt.plot(x_neg, [intercept_neg + slope_neg * val for val in x_neg], linestyle="-", color="orange")
+
+    if len(x_neg) > 1:
+        slope_neg, intercept_neg, _, _, stderr_neg = linregress(x_neg, y_neg)
+        plt.plot(x_neg, [intercept_neg + slope_neg * val for val in x_neg], linestyle="-", color="orange")
 
     # plt.errorbar(x_pos, [intercept_pos + slope_pos * val for val in x_pos], yerr=len(x_pos) * [stderr_pos], fmt="orange", label="linreg")
     # plt.errorbar(x_neg, [intercept_neg + slope_neg * val for val in x_neg], yerr=len(x_neg) * [stderr_neg], fmt="orange")
