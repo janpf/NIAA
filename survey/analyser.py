@@ -1,16 +1,20 @@
-import math
 import collections
 import json
-import matplotlib.pyplot as plt
-from pathlib import Path
-import pandas as pd
+import math
 import sys
-from scipy.stats import pearsonr, spearmanr, wilcoxon, linregress, binom_test
+from pathlib import Path
+
 import httpagentparser
+import matplotlib.pyplot as plt
+import pandas as pd
 import redis
+import seaborn as sns
+from scipy.stats import binom_test, linregress, pearsonr, spearmanr, wilcoxon
 
 sys.path.insert(0, ".")
 from edit_image import parameter_range
+
+sns.set(style="whitegrid")
 
 submission_log = "/scratch/stud/pfister/NIAA/pexels/logs/submissions.log"
 # submission_log = "/home/stud/pfister/random.log"
@@ -60,10 +64,10 @@ for key in parameter_range.keys():
     chosenDist[key] = dict()
     chosenDist[key]["chosen"] = collections.defaultdict(lambda: 0)
     chosenDist[key]["displayed"] = collections.defaultdict(lambda: 0)
-    chosenDist[key]["posCorrelationBase"] = []  #  type: List[Tuple[float, int]]
-    chosenDist[key]["negCorrelationBase"] = []  #  type: List[Tuple[float, int]]
-    chosenDist[key]["posCorrelation"] = []  #  type: List[Tuple[float, int]]
-    chosenDist[key]["negCorrelation"] = []  #  type: List[Tuple[float, int]]
+    chosenDist[key]["posCorrelationBase"] = collections.defaultdict(lambda: 0)
+    chosenDist[key]["negCorrelationBase"] = collections.defaultdict(lambda: 0)
+    chosenDist[key]["posCorrelation"] = collections.defaultdict(lambda: 0)
+    chosenDist[key]["negCorrelation"] = collections.defaultdict(lambda: 0)
 
 for _, row in sub_df.iterrows():
     if row["chosen"] == "error":
@@ -169,8 +173,12 @@ for _, row in sub_df.iterrows():
     if not bothSame and chosen != "unsure":
         if smallerChosen:
             chosenDict[parameter]["smaller"] += 1
+            if smallChangeIsOriginal:
+                chosenDict[parameter]["origsmaller"] += 1
         elif largerChosen:
             chosenDict[parameter]["larger"] += 1
+            if smallChangeIsOriginal:
+                chosenDict[parameter]["origlarger"] += 1
         else:
             raise ("hä")
 
@@ -186,34 +194,24 @@ for _, row in sub_df.iterrows():
         if smallChangeIsOriginal:
             if smallerChosen:
                 if changeSign == "+":
-                    chosenDist[parameter]["posCorrelationBase"].append((abs(largeChange), 1))
+                    chosenDist[parameter]["posCorrelationBase"][abs(largeChange)] += 1
                 elif changeSign == "-":
-                    chosenDist[parameter]["negCorrelationBase"].append((abs(largeChange), 1))
-            else:
-                if changeSign == "+":
-                    chosenDist[parameter]["posCorrelationBase"].append((abs(largeChange), 0))
-                elif changeSign == "-":
-                    chosenDist[parameter]["negCorrelationBase"].append((abs(largeChange), 0))
+                    chosenDist[parameter]["negCorrelationBase"][abs(largeChange)] += 1
         else:
             if smallerChosen:
                 if changeSign == "+":
-                    chosenDist[parameter]["posCorrelation"].append((abs(largeChange - smallChange), 1))
+                    chosenDist[parameter]["posCorrelation"][abs(largeChange - smallChange)] += 1
                 elif changeSign == "-":
-                    chosenDist[parameter]["negCorrelation"].append((abs(largeChange - smallChange), 1))
-            else:
-                if changeSign == "+":
-                    chosenDist[parameter]["posCorrelation"].append((abs(largeChange - smallChange), 0))
-                elif changeSign == "-":
-                    chosenDist[parameter]["negCorrelation"].append((abs(largeChange - smallChange), 0))
+                    chosenDist[parameter]["negCorrelation"][abs(largeChange - smallChange)] += 1
 
+f, axs = plt.subplots(3, 4, sharey=True, figsize=(20, 10))
+axs = [x for sublist in axs for x in sublist]  # flatten
 params = sorted(parameter_range.keys(), key=lambda k: binom_test(chosenDict[k]["smaller"], n=chosenDict[k]["smaller"] + chosenDict[k]["larger"]))
-for key in params:
+for i, key in enumerate(params):
     print(f"{key}:\t{'{:.1f}%'.format(sum(chosenDict[key].values()) / sum([sum(val.values()) for val in chosenDict.values()])*100)}\t| {sum(chosenDict[key].values())}")
-    print("\tbinomial test w/o unsure:\tp: {:05.4f}".format(binom_test(chosenDict[key]["smaller"], n=chosenDict[key]["smaller"] + chosenDict[key]["larger"])), f"(x={chosenDict[key]['smaller']} | n={chosenDict[key]['smaller'] + chosenDict[key]['larger']})")
-    print(
-        "\tbinomial test w/ unsure:\tp: {:05.4f}".format(binom_test(chosenDict[key]["smaller"], n=chosenDict[key]["smaller"] + chosenDict[key]["larger"] + chosenDict[key]["unsure_eq"] + chosenDict[key]["unsure_not_eq"])),
-        f"(x={chosenDict[key]['smaller']} | n={chosenDict[key]['smaller'] + chosenDict[key]['larger'] + chosenDict[key]['unsure_eq'] + chosenDict[key]['unsure_not_eq']})",
-    )
+    print("\tbinomial test overall w/o unsure:\tp: {:05.4f}".format(binom_test(chosenDict[key]["smaller"], n=chosenDict[key]["smaller"] + chosenDict[key]["larger"])), f"(x={chosenDict[key]['smaller']} | n={chosenDict[key]['smaller'] + chosenDict[key]['larger']})")
+    print("\tbinomial test w/ orig. img. w/o unsure:\tp: {:05.4f}".format(binom_test(chosenDict[key]["origsmaller"], n=chosenDict[key]["origsmaller"] + chosenDict[key]["origlarger"])), f"(x={chosenDict[key]['origsmaller']} | n={chosenDict[key]['origsmaller'] + chosenDict[key]['origlarger']})")
+
     print(f"\tsmaller edit:\t\t{'{:.1f}%'.format(chosenDict[key]['smaller'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['smaller']}")
     print(f"\tlarger edit:\t\t{'{:.1f}%'.format(chosenDict[key]['larger'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['larger']}")
     print(f"\tunsure and equal:\t{'{:.1f}%'.format(chosenDict[key]['unsure_eq'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['unsure_eq']}")
@@ -221,32 +219,35 @@ for key in params:
     print(f"\tnot unsure but equal:\t{'{:.1f}%'.format(chosenDict[key]['not_unsure_eq'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['not_unsure_eq']}")
 
     print("\tcorr. for pos. changes | one image original | larger changes == more clicks for original image?:")
-    print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*chosenDist[key]["posCorrelationBase"])))))
-    print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*chosenDist[key]["posCorrelationBase"])))))
-    print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*chosenDist[key]["posCorrelationBase"])))))
+    print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*chosenDist[key]["posCorrelationBase"].items())))))
+    print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*chosenDist[key]["posCorrelationBase"].items())))))
+    print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*chosenDist[key]["posCorrelationBase"].items())))))
 
     if len(chosenDist[key]["negCorrelationBase"]) != 0 and key != "vibrance":
         print("\tcorr. for neg. changes | one image original | larger changes == more clicks for original image?:")
-        print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*chosenDist[key]["negCorrelationBase"])))))
-        print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*chosenDist[key]["negCorrelationBase"])))))
-        print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*chosenDist[key]["negCorrelationBase"])))))
+        print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*chosenDist[key]["negCorrelationBase"].items())))))
+        print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*chosenDist[key]["negCorrelationBase"].items())))))
+        print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*chosenDist[key]["negCorrelationBase"].items())))))
 
     print("\tcorr. for pos. changes | all | larger changes == more clicks for original image?:")
-    print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*chosenDist[key]["posCorrelation"])))))
-    print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*chosenDist[key]["posCorrelation"])))))
-    print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*chosenDist[key]["posCorrelation"])))))
+    print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*chosenDist[key]["posCorrelation"].items())))))
+    print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*chosenDist[key]["posCorrelation"].items())))))
+    print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*chosenDist[key]["posCorrelation"].items())))))
 
     if len(chosenDist[key]["negCorrelation"]) != 0 and key != "vibrance":
         print("\tcorr. for neg. changes | all | larger changes == more clicks for original image?:")
-        print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*chosenDist[key]["negCorrelation"])))))
-        print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*chosenDist[key]["negCorrelation"])))))
-        print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*chosenDist[key]["negCorrelation"])))))
+        print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*chosenDist[key]["negCorrelation"].items())))))
+        print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*chosenDist[key]["negCorrelation"].items())))))
+        print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*chosenDist[key]["negCorrelation"].items())))))
+
     x = []
     y = []
     x_pos = []
     y_pos = []
     x_neg = []
     y_neg = []
+
+    axs[i].set_title(key)
 
     for k, v in sorted(chosenDist[key]["chosen"].items(), key=lambda k: k[0]):
         x.append(k)
@@ -259,29 +260,24 @@ for key in params:
             x_neg.append(k)
             y_neg.append((chosenDist[key]["chosen"][k] / chosenDist[key]["displayed"][k]) * 100)
 
-    plt.plot(x, y, "-x", label="probability of chosen if displayed")
-    plt.axvline(x=parameter_range[key]["default"], linestyle="--", color="orange", label="original image")
+    axs[i].plot(x, y, "-x", label="probability of chosen if displayed")
+    axs[i].axvline(x=parameter_range[key]["default"], linestyle="--", color="orange", label="original image")
 
-    slope_pos, intercept_pos, _, _, stderr_pos = linregress(x_pos, y_pos)
-    plt.plot(x_pos, [intercept_pos + slope_pos * val for val in x_pos], linestyle="-", color="orange", label="linreg")
-
+    sns.regplot(x_pos, y_pos, scatter=False, color="orange", label="linear regression", ax=axs[i])
     if len(x_neg) > 1:
-        slope_neg, intercept_neg, _, _, stderr_neg = linregress(x_neg, y_neg)
-        plt.plot(x_neg, [intercept_neg + slope_neg * val for val in x_neg], linestyle="-", color="orange")
+        sns.regplot(x_neg, y_neg, scatter=False, color="orange", ax=axs[i])
 
-    # plt.errorbar(x_pos, [intercept_pos + slope_pos * val for val in x_pos], yerr=len(x_pos) * [stderr_pos], fmt="orange", label="linreg")
-    # plt.errorbar(x_neg, [intercept_neg + slope_neg * val for val in x_neg], yerr=len(x_neg) * [stderr_neg], fmt="orange")
-
-    plt.ylim(bottom=0)
-    plt.legend()
-    plt.savefig(plot_dir / f"{key}_dist.png")
-    plt.clf()
-    # print(sorted(list(chosenDist[key].items()), key=lambda k: k[0]))
+    axs[i].set_ylim(bottom=0, top=100)
     print()
+
+plt.tight_layout()
+plt.savefig(plot_dir / f"dist.png")
+plt.clf()
+
 print("---")
 print()
 
-
+plt.figure()
 print("decision duration:")
 durations = (sub_df.submitTime - sub_df.loadTime).astype("timedelta64[s]")
 
@@ -289,14 +285,17 @@ no_afk_durations = durations[durations < 60]
 print(f"average time for decision: {'{:.1f}'.format(no_afk_durations.mean())} seconds")
 
 plt.hist(durations.values, bins=range(0, int(no_afk_durations.max()) + 1), align="left")
+# sns.distplot(durations, bins=range(0, int(no_afk_durations.max()) + 1), hist_kws={"align": "left"})
 plt.ylim(bottom=0)
+plt.xlim(left=-1, right=int(no_afk_durations.max()) + 2)
+plt.tight_layout()
 plt.savefig(plot_dir / "decision-duration.png")
 plt.clf()
 
 print("---")
 print()
 
-
+plt.figure()
 print("useragent distribution:")
 useragents = []
 for _, row in sub_df.iterrows():
@@ -318,7 +317,10 @@ usercount = sub_df[["userid", "hashval"]].rename(columns={"hashval": "count"}).g
 print(usercount.nlargest(5, "count"))
 
 plt.hist(usercount.values, bins=range(0, int(usercount.max()) + 1, 10), align="left")
+# sns.distplot(usercount, bins=range(0, int(usercount.max()) + 1, 10), hist_kws={"align": "left"})
 plt.ylim(bottom=0)
+plt.xlim(left=-1, right=int(usercount.max()) + 1)
+plt.tight_layout()
 plt.savefig(plot_dir / "session-duration.png")
 plt.clf()
 
