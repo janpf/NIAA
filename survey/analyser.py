@@ -81,6 +81,7 @@ sub_df["smallRelDistDefault"] = sub_df.apply(lambda row: min(row.lRelDistDefault
 sub_df["largeRelDistDefault"] = sub_df.apply(lambda row: max(row.lRelDistDefault, row.rRelDistDefault), axis=1)
 sub_df["smallLargeRelDistDefault"] = sub_df.apply(lambda row: abs((row.smallRelDistDefault) - (row.largeRelDistDefault)), axis=1)
 sub_df["smallLargeRelDistDefault"] = sub_df.apply(lambda row: 0 if math.isclose(row.smallLargeRelDistDefault, 0) else row.smallLargeRelDistDefault, axis=1)
+sub_df["smallLargeRelDistDefault"] = sub_df.apply(lambda row: round(row.smallLargeRelDistDefault, 2), axis=1)
 sub_df["changeSign"] = sub_df.apply(lambda row: 0 if math.isclose(row.largeChange - row.default, 0) else row.largeChange - row.default, axis=1)
 sub_df["changeSign"] = sub_df.apply(lambda row: np.sign(row.changeSign), axis=1)
 
@@ -198,30 +199,30 @@ for i, key in enumerate(params):
     print(f"\tunsure but not equal:\t{'{:.1f}%'.format(analyzeDict[key]['unsure_not_eq'] / analyzeDict[key]['overall'] * 100)}\t| {analyzeDict[key]['unsure_not_eq']}")
     print(f"\tnot unsure but equal:\t{'{:.1f}%'.format(analyzeDict[key]['not_unsure_eq'] / analyzeDict[key]['overall'] * 100)}\t| {analyzeDict[key]['not_unsure_eq']}")
 
-    print("\tcorr. for pos. changes | one image original | larger changes == more clicks for original image?:")
+    print("\tcorr. for pos. changes | one image original | larger relative changes == more clicks for original image?:")
     print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*analyzeDict[key]["smallerChosenRelChangesOrigPresentPos"].items())))))
     print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*analyzeDict[key]["smallerChosenRelChangesOrigPresentPos"].items())))))
     print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*analyzeDict[key]["smallerChosenRelChangesOrigPresentPos"].items())))))
 
     if len(analyzeDict[key]["smallerChosenRelChangesOrigPresentNeg"]) != 0 and key != "vibrance":
-        print("\tcorr. for neg. changes | one image original | larger changes == more clicks for original image?:")
+        print("\tcorr. for neg. changes | one image original | larger relative changes == more clicks for original image?:")
         print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*analyzeDict[key]["smallerChosenRelChangesOrigPresentNeg"].items())))))
         print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*analyzeDict[key]["smallerChosenRelChangesOrigPresentNeg"].items())))))
         print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*analyzeDict[key]["smallerChosenRelChangesOrigPresentNeg"].items())))))
 
-    print("\tcorr. for pos. changes | all | larger changes == more clicks for original image?:")
+    print("\tcorr. for pos. changes | all | larger relative changes == more clicks for (more) original image?:")
     print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*analyzeDict[key]["smallerChosenRelChangesPos"].items())))))
     print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*analyzeDict[key]["smallerChosenRelChangesPos"].items())))))
     print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*analyzeDict[key]["smallerChosenRelChangesPos"].items())))))
 
     if len(analyzeDict[key]["smallerChosenRelChangesNeg"]) != 0 and key != "vibrance":
-        print("\tcorr. for neg. changes | all | larger changes == more clicks for original image?:")
+        print("\tcorr. for neg. changes | all | larger relative changes == more clicks for (more) original image?:")
         print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*analyzeDict[key]["smallerChosenRelChangesNeg"].items())))))
         print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*analyzeDict[key]["smallerChosenRelChangesNeg"].items())))))
         print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*analyzeDict[key]["smallerChosenRelChangesNeg"].items())))))
 
     axs_corr[i].set_title(key)
-    # axs_corr[i].set_ylim(bottom=0, top=1)
+    axs_corr[i].set_ylim(bottom=0, top=1)
     tmp = list(zip(*sorted(analyzeDict[key]["smallerChosenRelChangesPos"].items(), key=lambda k: k[0])))
     axs_corr[i].plot(tmp[0], tmp[1], "-x", color="blue", label="click percentage per editing distance")
     tmp = list(zip(*sorted(analyzeDict[key]["smallerChosenRelChangesOrigPresentPos"].items(), key=lambda k: k[0])))
@@ -236,9 +237,10 @@ for i, key in enumerate(params):
         tmp[0] = [val * -1 for val in tmp[0]]
         axs_corr[i].plot(tmp[0], tmp[1], "-x", color="orange")
 
+    axs_corr[i].axvline(x=0, linestyle="--", color="orange", label="original image")
+
     axs[i].set_title(key)
     axs[i].set_ylim(bottom=0, top=1)
-
     tmp = list(zip(*sorted(analyzeDict[key]["chosenChangesPos"].items(), key=lambda k: k[0])))
     axs[i].plot(tmp[0], tmp[1], "-x", color="blue", label="probability of chosen if displayed")
     sns.regplot(tmp[0], tmp[1], scatter=False, color="orange", label="linear regression", ax=axs[i])
