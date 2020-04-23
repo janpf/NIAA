@@ -7,6 +7,7 @@ from pathlib import Path
 
 import httpagentparser
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import redis
 import seaborn as sns
@@ -57,205 +58,114 @@ print(sub_df.groupby("chosen").chosen.count().to_string())
 print("---")
 print()
 # %%
-chosenDist = dict()
-chosenDict = dict()
+sub_df["default"] = sub_df.apply(lambda row: parameter_range[row.parameter]["default"], axis=1)
+sub_df["leftChanges"] = sub_df.apply(lambda row: float(row.leftChanges), axis=1)
+sub_df["rightChanges"] = sub_df.apply(lambda row: float(row.rightChanges), axis=1)
+sub_df["leftChanges"] = sub_df.apply(lambda row: 0 if math.isclose(row.leftChanges, 0) else row.leftChanges, axis=1)
+sub_df["rightChanges"] = sub_df.apply(lambda row: 0 if math.isclose(row.rightChanges, 0) else row.rightChanges, axis=1)
+sub_df["leftChanges"] = sub_df.apply(lambda row: row.default if math.isclose(row.leftChanges, row.default) else row.leftChanges, axis=1)
+sub_df["rightChanges"] = sub_df.apply(lambda row: row.default if math.isclose(row.rightChanges, row.default) else row.rightChanges, axis=1)
+sub_df["leftChanges"] = sub_df.apply(lambda row: round(row.leftChanges, 2), axis=1)
+sub_df["rightChanges"] = sub_df.apply(lambda row: round(row.rightChanges, 2), axis=1)
+sub_df["bothSame"] = sub_df.apply(lambda row: math.isclose(row.leftChanges, row.rightChanges), axis=1)
+
+sub_df["lRelDistDefault"] = sub_df.apply(lambda row: abs((row.default) - (row.leftChanges)), axis=1)
+sub_df["rRelDistDefault"] = sub_df.apply(lambda row: abs((row.default) - (row.rightChanges)), axis=1)
+sub_df["lRelDistDefault"] = sub_df.apply(lambda row: 0 if math.isclose(row.lRelDistDefault, 0) else row.lRelDistDefault, axis=1)
+sub_df["rRelDistDefault"] = sub_df.apply(lambda row: 0 if math.isclose(row.rRelDistDefault, 0) else row.rRelDistDefault, axis=1)
+sub_df["lRelDistDefault"] = sub_df.apply(lambda row: round(row.lRelDistDefault, 2), axis=1)
+sub_df["rRelDistDefault"] = sub_df.apply(lambda row: round(row.rRelDistDefault, 2), axis=1)
+sub_df["smallChange"] = sub_df.apply(lambda row: row.leftChanges if row.lRelDistDefault < row.rRelDistDefault else row.rightChanges, axis=1)
+sub_df["largeChange"] = sub_df.apply(lambda row: row.rightChanges if row.lRelDistDefault < row.rRelDistDefault else row.leftChanges, axis=1)
+sub_df["smallRelDistDefault"] = sub_df.apply(lambda row: min(row.lRelDistDefault, row.rRelDistDefault), axis=1)
+sub_df["largeRelDistDefault"] = sub_df.apply(lambda row: max(row.lRelDistDefault, row.rRelDistDefault), axis=1)
+sub_df["smallLargeRelDistDefault"] = sub_df.apply(lambda row: abs((row.smallRelDistDefault) - (row.largeRelDistDefault)), axis=1)
+sub_df["smallLargeRelDistDefault"] = sub_df.apply(lambda row: 0 if math.isclose(row.smallLargeRelDistDefault, 0) else row.smallLargeRelDistDefault, axis=1)
+sub_df["changeSign"] = sub_df.apply(lambda row: 0 if math.isclose(row.largeChange - row.default, 0) else row.largeChange - row.default, axis=1)
+sub_df["changeSign"] = sub_df.apply(lambda row: np.sign(row.changeSign), axis=1)
+
+sub_df["smallChangeIsOriginal"] = sub_df.apply(lambda row: math.isclose(row.smallChange, row.default), axis=1)
+
+sub_df["smallerChosen"] = sub_df.apply(lambda row: not row.bothSame and ((math.isclose(row.smallChange, row.leftChanges) and row.chosen == "leftImage") or math.isclose(row.smallChange, row.rightChanges) and row.chosen == "rightImage"), axis=1)
+sub_df["largerChosen"] = sub_df.apply(lambda row: not row.bothSame and ((math.isclose(row.largeChange, row.leftChanges) and row.chosen == "leftImage") or math.isclose(row.largeChange, row.rightChanges) and row.chosen == "rightImage"), axis=1)
+
+clean_df = sub_df[sub_df.chosen != "error"]
+
+nestedDict = lambda: collections.defaultdict(nestedDict)  # infinitely deep dict
+analyzeDict = nestedDict()
 for key in parameter_range.keys():
-    chosenDict[key] = collections.defaultdict(lambda: 0)
-    chosenDist[key] = dict()
-    chosenDist[key]["chosenAll"] = collections.defaultdict(lambda: 0)
-    chosenDist[key]["displayedAll"] = collections.defaultdict(lambda: 0)
-    chosenDist[key]["chosenOrig"] = collections.defaultdict(lambda: 0)
-    chosenDist[key]["displayedOrig"] = collections.defaultdict(lambda: 0)
+    analyzeDict[key]["overall"] = len(clean_df[clean_df.parameter == key])
+    analyzeDict[key]["unsure_eq"] = len(clean_df[(clean_df.parameter == key) & (clean_df.bothSame == True) & (clean_df.chosen == "unsure")])
+    analyzeDict[key]["not_unsure_eq"] = len(clean_df[(clean_df.parameter == key) & (clean_df.bothSame == True) & (clean_df.chosen != "unsure")])
+    analyzeDict[key]["unsure_not_eq"] = len(clean_df[(clean_df.parameter == key) & (clean_df.bothSame == False) & (clean_df.chosen == "unsure")])
 
-    chosenDist[key]["chosenOrigPos"] = 0
-    chosenDist[key]["displayedOrigPos"] = 0
-    chosenDist[key]["chosenOrigNeg"] = 0
-    chosenDist[key]["displayedOrigNeg"] = 0
+    tmp = clean_df[(clean_df.parameter == key) & (clean_df.bothSame == False) & (clean_df.chosen != "unsure")]
+    analyzeDict[key]["smallerChosen"] = len(tmp[(tmp.smallerChosen == True)])
+    analyzeDict[key]["smallerChosenOrigPresent"] = len(tmp[(tmp.smallerChosen == True) & (tmp.smallChangeIsOriginal == True)])
+    analyzeDict[key]["largerChosen"] = len(tmp[(tmp.largerChosen == True)])
+    analyzeDict[key]["largerChosenOrigPresent"] = len(tmp[(tmp.largerChosen == True) & (tmp.smallChangeIsOriginal == True)])
 
-    chosenDist[key]["posCorrelationBase"] = collections.defaultdict(lambda: 0)
-    chosenDist[key]["negCorrelationBase"] = collections.defaultdict(lambda: 0)
-    chosenDist[key]["posCorrelation"] = collections.defaultdict(lambda: 0)
-    chosenDist[key]["negCorrelation"] = collections.defaultdict(lambda: 0)
+    d1 = tmp["leftChanges"].value_counts().to_dict()
+    d2 = tmp["rightChanges"].value_counts().to_dict()
+    analyzeDict[key]["occuredChanges"] = {k: d1.get(k, 0) + d2.get(k, 0) for k in set(d1.keys()).union(set(d2.keys()))}
+    d1 = tmp[(tmp.chosen == "leftImage")]["leftChanges"].value_counts().to_dict()
+    d2 = tmp[(tmp.chosen == "rightImage")]["rightChanges"].value_counts().to_dict()
+    analyzeDict[key]["chosenChanges"] = {k: d1.get(k, 0) + d2.get(k, 0) for k in set(d1.keys()).union(set(d2.keys()))}
+    d1 = tmp[(tmp.smallChangeIsOriginal == True)]["leftChanges"].value_counts().to_dict()
+    d2 = tmp[(tmp.smallChangeIsOriginal == True)]["rightChanges"].value_counts().to_dict()
+    analyzeDict[key]["occuredChangesOrigPresent"] = {k: d1.get(k, 0) + d2.get(k, 0) for k in set(d1.keys()).union(set(d2.keys()))}
+    d1 = tmp[(tmp.smallChangeIsOriginal == True) & (tmp.chosen == "leftImage")]["leftChanges"].value_counts().to_dict()
+    d2 = tmp[(tmp.smallChangeIsOriginal == True) & (tmp.chosen == "rightImage")]["rightChanges"].value_counts().to_dict()
+    analyzeDict[key]["chosenChangesOrigPresent"] = {k: d1.get(k, 0) + d2.get(k, 0) for k in set(d1.keys()).union(set(d2.keys()))}
 
-    chosenDist[key]["posCorrelationBaseDisplayed"] = collections.defaultdict(lambda: 0)
-    chosenDist[key]["negCorrelationBaseDisplayed"] = collections.defaultdict(lambda: 0)
-    chosenDist[key]["posCorrelationDisplayed"] = collections.defaultdict(lambda: 0)
-    chosenDist[key]["negCorrelationDisplayed"] = collections.defaultdict(lambda: 0)
+    d1 = tmp[tmp.changeSign > 0]["leftChanges"].value_counts().to_dict()
+    d2 = tmp[tmp.changeSign > 0]["rightChanges"].value_counts().to_dict()
+    analyzeDict[key]["occuredChangesPos"] = {k: d1.get(k, 0) + d2.get(k, 0) for k in set(d1.keys()).union(set(d2.keys()))}
+    d1 = tmp[(tmp.changeSign > 0) & (tmp.chosen == "leftImage")]["leftChanges"].value_counts().to_dict()
+    d2 = tmp[(tmp.changeSign > 0) & (tmp.chosen == "rightImage")]["rightChanges"].value_counts().to_dict()
+    analyzeDict[key]["chosenChangesPos"] = {k: d1.get(k, 0) + d2.get(k, 0) for k in set(d1.keys()).union(set(d2.keys()))}
+    d1 = tmp[(tmp.changeSign > 0) & (tmp.smallChangeIsOriginal == True)]["leftChanges"].value_counts().to_dict()
+    d2 = tmp[(tmp.changeSign > 0) & (tmp.smallChangeIsOriginal == True)]["rightChanges"].value_counts().to_dict()
+    analyzeDict[key]["occuredChangesOrigPresentPos"] = {k: d1.get(k, 0) + d2.get(k, 0) for k in set(d1.keys()).union(set(d2.keys()))}
+    d1 = tmp[(tmp.changeSign > 0) & (tmp.smallChangeIsOriginal == True) & (tmp.chosen == "leftImage")]["leftChanges"].value_counts().to_dict()
+    d2 = tmp[(tmp.changeSign > 0) & (tmp.smallChangeIsOriginal == True) & (tmp.chosen == "rightImage")]["rightChanges"].value_counts().to_dict()
+    analyzeDict[key]["chosenChangesOrigPresentPos"] = {k: d1.get(k, 0) + d2.get(k, 0) for k in set(d1.keys()).union(set(d2.keys()))}
 
-for _, row in sub_df.iterrows():
-    if row["chosen"] == "error":
-        continue
+    d1 = tmp[tmp.changeSign < 0]["leftChanges"].value_counts().to_dict()
+    d2 = tmp[tmp.changeSign < 0]["rightChanges"].value_counts().to_dict()
+    analyzeDict[key]["occuredChangesNeg"] = {k: d1.get(k, 0) + d2.get(k, 0) for k in set(d1.keys()).union(set(d2.keys()))}
+    d1 = tmp[(tmp.changeSign < 0) & (tmp.chosen == "leftImage")]["leftChanges"].value_counts().to_dict()
+    d2 = tmp[(tmp.changeSign < 0) & (tmp.chosen == "rightImage")]["rightChanges"].value_counts().to_dict()
+    analyzeDict[key]["chosenChangesNeg"] = {k: d1.get(k, 0) + d2.get(k, 0) for k in set(d1.keys()).union(set(d2.keys()))}
+    d1 = tmp[(tmp.changeSign < 0) & (tmp.smallChangeIsOriginal == True)]["leftChanges"].value_counts().to_dict()
+    d2 = tmp[(tmp.changeSign < 0) & (tmp.smallChangeIsOriginal == True)]["rightChanges"].value_counts().to_dict()
+    analyzeDict[key]["occuredChangesOrigPresentNeg"] = {k: d1.get(k, 0) + d2.get(k, 0) for k in set(d1.keys()).union(set(d2.keys()))}
+    d1 = tmp[(tmp.changeSign < 0) & (tmp.smallChangeIsOriginal == True) & (tmp.chosen == "leftImage")]["leftChanges"].value_counts().to_dict()
+    d2 = tmp[(tmp.changeSign < 0) & (tmp.smallChangeIsOriginal == True) & (tmp.chosen == "rightImage")]["rightChanges"].value_counts().to_dict()
+    analyzeDict[key]["chosenChangesOrigPresentNeg"] = {k: d1.get(k, 0) + d2.get(k, 0) for k in set(d1.keys()).union(set(d2.keys()))}
 
-    parameter = row["parameter"]
-    paramData = parameter_range[parameter]
-    lChange = float(row["leftChanges"])
-    rChange = float(row["rightChanges"])
+    analyzeDict[key]["occuredRelChangesPos"] = tmp[tmp.changeSign > 0]["smallLargeRelDistDefault"].value_counts().to_dict()
+    analyzeDict[key]["smallerChosenRelChangesPos"] = tmp[(tmp.changeSign > 0) & (tmp.smallerChosen == True)]["smallLargeRelDistDefault"].value_counts().to_dict()
+    analyzeDict[key]["occuredRelChangesOrigPresentPos"] = tmp[(tmp.changeSign > 0) & (tmp.smallChangeIsOriginal == True)]["smallLargeRelDistDefault"].value_counts().to_dict()
+    analyzeDict[key]["smallerChosenRelChangesOrigPresentPos"] = tmp[(tmp.changeSign > 0) & (tmp.smallerChosen == True) & (tmp.smallChangeIsOriginal == True)]["smallLargeRelDistDefault"].value_counts().to_dict()
 
-    if math.isclose(lChange, 0):
-        lChange = 0
-    if math.isclose(rChange, 0):
-        rChange = 0
+    analyzeDict[key]["occuredRelChangesNeg"] = tmp[tmp.changeSign < 0]["smallLargeRelDistDefault"].value_counts().to_dict()
+    analyzeDict[key]["smallerChosenRelChangesNeg"] = tmp[(tmp.changeSign < 0) & (tmp.smallerChosen == True)]["smallLargeRelDistDefault"].value_counts().to_dict()
+    analyzeDict[key]["occuredRelChangesOrigPresentNeg"] = tmp[(tmp.changeSign < 0) & (tmp.smallChangeIsOriginal == True)]["smallLargeRelDistDefault"].value_counts().to_dict()
+    analyzeDict[key]["smallerChosenRelChangesOrigPresentNeg"] = tmp[(tmp.changeSign < 0) & (tmp.smallerChosen == True) & (tmp.smallChangeIsOriginal == True)]["smallLargeRelDistDefault"].value_counts().to_dict()
 
-    if math.isclose(lChange, paramData["default"]):
-        lChange = paramData["default"]
-    if math.isclose(rChange, paramData["default"]):
-        rChange = paramData["default"]
-
-    lRelDistDefault = abs((paramData["default"]) - (lChange))
-    rRelDistDefault = abs((paramData["default"]) - (rChange))
-
-    chosen = row["chosen"]
-    bothSame = math.isclose(lChange, rChange)
-
-    if not math.isclose(lChange, rChange):
-        if lChange < paramData["default"] and rChange > paramData["default"]:
-            raise ("hä")
-        if lChange > paramData["default"] and rChange < paramData["default"]:
-            raise ("hä")
-
-    if bothSame and math.isclose(lChange, paramData["default"]):
-        changeSign = "|"  # both original
-
-    if not bothSame:
-        if lChange > paramData["default"] or rChange > paramData["default"]:
-            changeSign = "+"
-        else:
-            changeSign = "-"
-
-    if bothSame:
-        smallChange = largeChange = lChange
-
-    elif not bothSame:
-        if lRelDistDefault < rRelDistDefault:
-            smallChange = lChange
-            largeChange = rChange
-            smallRelDistDefault = lRelDistDefault
-            largeRelDistDefault = rRelDistDefault
-        elif lRelDistDefault > rRelDistDefault:
-            smallChange = rChange
-            largeChange = lChange
-            smallRelDistDefault = rRelDistDefault
-            largeRelDistDefault = lRelDistDefault
-        else:
-            raise ("hä")
-
-    if math.isclose(smallChange, paramData["default"]):
-        smallChangeIsOriginal = True
-    else:
-        smallChangeIsOriginal = False
-
-    if math.isclose(largeChange, paramData["default"]):
-        largeChangeIsOriginal = True
-    else:
-        largeChangeIsOriginal = False
-
-    if not smallChangeIsOriginal and largeChangeIsOriginal:
-        raise ("hä")
-
-    if not bothSame:
-        if math.isclose(lChange, smallChange):
-            if chosen == "leftImage":
-                smallerChosen = True
-                largerChosen = False
-            elif chosen == "rightImage":
-                smallerChosen = False
-                largerChosen = True
-            else:
-                smallerChosen = False
-                largerChosen = False
-        elif math.isclose(rChange, smallChange):
-            if chosen == "leftImage":
-                smallerChosen = False
-                largerChosen = True
-            elif chosen == "rightImage":
-                smallerChosen = True
-                largerChosen = False
-            else:
-                smallerChosen = False
-                largerChosen = False
-        else:
-            raise ("hä")
-
-    # actually analysing
-
-    if bothSame:
-        if chosen == "unsure":
-            chosenDict[parameter]["unsure_eq"] += 1
-        else:
-            chosenDict[parameter]["not_unsure_eq"] += 1
-    else:
-        if chosen == "unsure":
-            chosenDict[parameter]["unsure_not_eq"] += 1
-
-    if not bothSame and chosen != "unsure":
-        if smallerChosen:
-            chosenDict[parameter]["smaller"] += 1
-            if smallChangeIsOriginal:
-                chosenDict[parameter]["origsmaller"] += 1
-        elif largerChosen:
-            chosenDict[parameter]["larger"] += 1
-            if smallChangeIsOriginal:
-                chosenDict[parameter]["origlarger"] += 1
-        else:
-            raise ("hä")
-
-        chosenDist[parameter]["displayedAll"][lChange] += 1
-        chosenDist[parameter]["displayedAll"][rChange] += 1
-
-        if chosen == "leftImage":
-            chosenDist[parameter]["chosenAll"][lChange] += 1
-        else:
-            chosenDist[parameter]["chosenAll"][rChange] += 1
-
-        if smallChangeIsOriginal:
-            chosenDist[parameter]["displayedOrig"][lChange] += 1
-            chosenDist[parameter]["displayedOrig"][rChange] += 1
-
-            if changeSign == "+":
-                chosenDist[parameter]["displayedOrigPos"] += 1
-            elif changeSign == "-":
-                chosenDist[parameter]["displayedOrigNeg"] += 1
-
-            if smallerChosen:
-                if changeSign == "+":
-                    chosenDist[parameter]["chosenOrigPos"] += 1
-                elif changeSign == "-":
-                    chosenDist[parameter]["chosenOrigNeg"] += 1
-
-            if chosen == "leftImage":
-                chosenDist[parameter]["chosenOrig"][lChange] += 1
-            else:
-                chosenDist[parameter]["chosenOrig"][rChange] += 1
-
-    if not bothSame:
-        if smallChangeIsOriginal:
-            if smallerChosen:
-                if changeSign == "+":
-                    chosenDist[parameter]["posCorrelationBase"][largeRelDistDefault] += 1
-                elif changeSign == "-":
-                    chosenDist[parameter]["negCorrelationBase"][largeRelDistDefault] += 1
-        else:
-            if smallerChosen:
-                if changeSign == "+":
-                    chosenDist[parameter]["posCorrelation"][abs((largeChange) - (smallChange))] += 1
-                elif changeSign == "-":
-                    chosenDist[parameter]["negCorrelation"][abs((largeChange) - (smallChange))] += 1
-
-        if smallChangeIsOriginal:
-            if changeSign == "+":
-                chosenDist[parameter]["posCorrelationBaseDisplayed"][largeRelDistDefault] += 1
-            elif changeSign == "-":
-                chosenDist[parameter]["negCorrelationBaseDisplayed"][largeRelDistDefault] += 1
-
-        if changeSign == "+":
-            chosenDist[parameter]["posCorrelationDisplayed"][abs((largeChange) - (smallChange))] += 1
-        elif changeSign == "-":
-            chosenDist[parameter]["negCorrelationDisplayed"][abs((largeChange) - (smallChange))] += 1
-
-for corr in ["posCorrelation", "negCorrelation", "posCorrelationBase", "negCorrelationBase"]:
-    for param in chosenDist.keys():
-        for val in chosenDist[param][corr].keys():
-            chosenDist[param][corr][val] /= chosenDist[param][corr + "Displayed"][val]
+    for corr in [
+        ("smallerChosenRelChangesPos", "occuredRelChangesPos"),
+        ("smallerChosenRelChangesOrigPresentPos", "occuredRelChangesOrigPresentPos"),
+        ("smallerChosenRelChangesNeg", "occuredRelChangesNeg"),
+        ("smallerChosenRelChangesOrigPresentNeg", "occuredRelChangesOrigPresentNeg"),
+        ("chosenChangesPos", "occuredChangesPos"),
+        ("chosenChangesOrigPresentPos", "occuredChangesOrigPresentPos"),
+        ("chosenChangesNeg", "occuredChangesNeg"),
+        ("chosenChangesOrigPresentNeg", "occuredChangesOrigPresentNeg"),
+    ]:
+        for val in analyzeDict[key][corr[0]].keys():
+            analyzeDict[key][corr[0]][val] /= analyzeDict[key][corr[1]][val]
 
 # %%
 f, axs = plt.subplots(3, 4, sharey=True, figsize=(20, 10))
@@ -270,130 +180,88 @@ f.suptitle("Probability of chosen, if displayed")
 f_orig.suptitle("Probability of chosen, if displayed (original image was present)")
 f_corr.suptitle("correlations")
 
-params = sorted(parameter_range.keys(), key=lambda k: binom_test(chosenDict[k]["smaller"], n=chosenDict[k]["smaller"] + chosenDict[k]["larger"]))
+params = sorted(parameter_range.keys(), key=lambda key: binom_test(analyzeDict[key]["smallerChosen"], n=analyzeDict[key]["smallerChosen"] + analyzeDict[key]["largerChosen"]))
 for i, key in enumerate(params):
-    print(f"{key}:\t{'{:.1f}%'.format(sum(chosenDict[key].values()) / sum([sum(val.values()) for val in chosenDict.values()])*100)}\t| {sum(chosenDict[key].values())}")
-    print("\tbinomial test overall w/o unsure:\tp: {:05.4f}".format(binom_test(chosenDict[key]["smaller"], n=chosenDict[key]["smaller"] + chosenDict[key]["larger"])), f"(x={chosenDict[key]['smaller']} | n={chosenDict[key]['smaller'] + chosenDict[key]['larger']})")
-    print("\tbinomial test w/ orig. img. w/o unsure:\tp: {:05.4f}".format(binom_test(chosenDict[key]["origsmaller"], n=chosenDict[key]["origsmaller"] + chosenDict[key]["origlarger"])), f"(x={chosenDict[key]['origsmaller']} | n={chosenDict[key]['origsmaller'] + chosenDict[key]['origlarger']})")
+    print(f"{key}:\t{analyzeDict[key]['overall']} | {(analyzeDict[key]['overall'] / len(clean_df)) * 100}")
+    print(
+        "\tbinomial test overall w/o unsure:\tp: {:05.4f}".format(binom_test(analyzeDict[key]["smallerChosen"], n=analyzeDict[key]["smallerChosen"] + analyzeDict[key]["largerChosen"])),
+        f"(x={analyzeDict[key]['smallerChosen']} | n={analyzeDict[key]['smallerChosen'] + analyzeDict[key]['largerChosen']})",
+    )
+    print(
+        "\tbinomial test w/ orig. img. w/o unsure:\tp: {:05.4f}".format(binom_test(analyzeDict[key]["smallerChosenOrigPresent"], n=analyzeDict[key]["smallerChosenOrigPresent"] + analyzeDict[key]["largerChosenOrigPresent"])),
+        f"(x={analyzeDict[key]['smallerChosenOrigPresent']} | n={analyzeDict[key]['smallerChosenOrigPresent'] + analyzeDict[key]['largerChosenOrigPresent']})",
+    )
 
-    print(f"\tsmaller edit:\t\t{'{:.1f}%'.format(chosenDict[key]['smaller'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['smaller']}")
-    print(f"\tlarger edit:\t\t{'{:.1f}%'.format(chosenDict[key]['larger'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['larger']}")
-    print(f"\tunsure and equal:\t{'{:.1f}%'.format(chosenDict[key]['unsure_eq'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['unsure_eq']}")
-    print(f"\tunsure but not equal:\t{'{:.1f}%'.format(chosenDict[key]['unsure_not_eq'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['unsure_not_eq']}")
-    print(f"\tnot unsure but equal:\t{'{:.1f}%'.format(chosenDict[key]['not_unsure_eq'] / sum(chosenDict[key].values()) * 100)}\t| {chosenDict[key]['not_unsure_eq']}")
+    print(f"\tsmaller edit:\t\t{'{:.1f}%'.format(analyzeDict[key]['smallerChosenOrigPresent'] / (analyzeDict[key]['smallerChosenOrigPresent'] + analyzeDict[key]['largerChosenOrigPresent']) * 100)}\t| {analyzeDict[key]['smallerChosenOrigPresent']}")
+    print(f"\tlarger edit:\t\t{'{:.1f}%'.format(analyzeDict[key]['largerChosenOrigPresent'] / (analyzeDict[key]['smallerChosenOrigPresent'] + analyzeDict[key]['largerChosenOrigPresent']) * 100)}\t| {analyzeDict[key]['largerChosenOrigPresent']}")
+    print(f"\tunsure and equal:\t{'{:.1f}%'.format(analyzeDict[key]['unsure_eq'] / analyzeDict[key]['overall'] * 100)}\t| {analyzeDict[key]['unsure_eq']}")
+    print(f"\tunsure but not equal:\t{'{:.1f}%'.format(analyzeDict[key]['unsure_not_eq'] / analyzeDict[key]['overall'] * 100)}\t| {analyzeDict[key]['unsure_not_eq']}")
+    print(f"\tnot unsure but equal:\t{'{:.1f}%'.format(analyzeDict[key]['not_unsure_eq'] / analyzeDict[key]['overall'] * 100)}\t| {analyzeDict[key]['not_unsure_eq']}")
 
     print("\tcorr. for pos. changes | one image original | larger changes == more clicks for original image?:")
-    print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*chosenDist[key]["posCorrelationBase"].items())))))
-    print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*chosenDist[key]["posCorrelationBase"].items())))))
-    print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*chosenDist[key]["posCorrelationBase"].items())))))
+    print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*analyzeDict[key]["smallerChosenRelChangesOrigPresentPos"].items())))))
+    print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*analyzeDict[key]["smallerChosenRelChangesOrigPresentPos"].items())))))
+    print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*analyzeDict[key]["smallerChosenRelChangesOrigPresentPos"].items())))))
 
-    if len(chosenDist[key]["negCorrelationBase"]) != 0 and key != "vibrance":
+    if len(analyzeDict[key]["smallerChosenRelChangesOrigPresentNeg"]) != 0 and key != "vibrance":
         print("\tcorr. for neg. changes | one image original | larger changes == more clicks for original image?:")
-        print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*chosenDist[key]["negCorrelationBase"].items())))))
-        print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*chosenDist[key]["negCorrelationBase"].items())))))
-        print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*chosenDist[key]["negCorrelationBase"].items())))))
+        print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*analyzeDict[key]["smallerChosenRelChangesOrigPresentNeg"].items())))))
+        print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*analyzeDict[key]["smallerChosenRelChangesOrigPresentNeg"].items())))))
+        print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*analyzeDict[key]["smallerChosenRelChangesOrigPresentNeg"].items())))))
 
     print("\tcorr. for pos. changes | all | larger changes == more clicks for original image?:")
-    print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*chosenDist[key]["posCorrelation"].items())))))
-    print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*chosenDist[key]["posCorrelation"].items())))))
-    print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*chosenDist[key]["posCorrelation"].items())))))
+    print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*analyzeDict[key]["smallerChosenRelChangesPos"].items())))))
+    print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*analyzeDict[key]["smallerChosenRelChangesPos"].items())))))
+    print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*analyzeDict[key]["smallerChosenRelChangesPos"].items())))))
 
-    if len(chosenDist[key]["negCorrelation"]) != 0 and key != "vibrance":
+    if len(analyzeDict[key]["smallerChosenRelChangesNeg"]) != 0 and key != "vibrance":
         print("\tcorr. for neg. changes | all | larger changes == more clicks for original image?:")
-        print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*chosenDist[key]["negCorrelation"].items())))))
-        print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*chosenDist[key]["negCorrelation"].items())))))
-        print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*chosenDist[key]["negCorrelation"].items())))))
+        print("\t\tpearson:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*pearsonr(*list(zip(*analyzeDict[key]["smallerChosenRelChangesNeg"].items())))))
+        print("\t\tspearman:\tcorr. coeff: {:05.3f} p: {:05.4f}".format(*spearmanr(*list(zip(*analyzeDict[key]["smallerChosenRelChangesNeg"].items())))))
+        print("\t\tlinregr:\tslope: {:05.3f} intercept: {:05.3f} corr. coeff: {:05.3f} p: {:05.4f} stderr: {:05.3f}".format(*linregress(*list(zip(*analyzeDict[key]["smallerChosenRelChangesNeg"].items())))))
 
     axs_corr[i].set_title(key)
-
-    tmp = list(zip(*sorted(chosenDist[key]["posCorrelation"].items(), key=lambda k: k[0])))
+    # axs_corr[i].set_ylim(bottom=0, top=1)
+    tmp = list(zip(*sorted(analyzeDict[key]["smallerChosenRelChangesPos"].items(), key=lambda k: k[0])))
     axs_corr[i].plot(tmp[0], tmp[1], "-x", color="blue", label="click percentage per editing distance")
-    tmp = list(zip(*sorted(chosenDist[key]["posCorrelationBase"].items(), key=lambda k: k[0])))
+    tmp = list(zip(*sorted(analyzeDict[key]["smallerChosenRelChangesOrigPresentPos"].items(), key=lambda k: k[0])))
     axs_corr[i].plot(tmp[0], tmp[1], "-x", color="orange", label="click percentage per editing distance, original present")
 
-    if len(chosenDist[key]["negCorrelation"]) > 1:
-        tmp = list(zip(*sorted(chosenDist[key]["negCorrelation"].items(), key=lambda k: k[0])))
+    if len(analyzeDict[key]["smallerChosenRelChangesNeg"]) > 1:
+        tmp = list(zip(*sorted(analyzeDict[key]["smallerChosenRelChangesNeg"].items(), key=lambda k: k[0])))
         tmp[0] = [val * -1 for val in tmp[0]]
         axs_corr[i].plot(tmp[0], tmp[1], "-x", color="blue")
 
-        tmp = list(zip(*sorted(chosenDist[key]["negCorrelationBase"].items(), key=lambda k: k[0])))
+        tmp = list(zip(*sorted(analyzeDict[key]["smallerChosenRelChangesOrigPresentNeg"].items(), key=lambda k: k[0])))
         tmp[0] = [val * -1 for val in tmp[0]]
         axs_corr[i].plot(tmp[0], tmp[1], "-x", color="orange")
-    axs_corr[i].set_ylim(bottom=0, top=1)
-
-    x = []
-    y = []
-    x_pos = []
-    y_pos = []
-    x_neg = []
-    y_neg = []
 
     axs[i].set_title(key)
+    axs[i].set_ylim(bottom=0, top=1)
 
-    x_pos.append(parameter_range[key]["default"])
-    y_pos.append((chosenDist[key]["chosenOrigPos"] / chosenDist[key]["displayedOrigPos"]) * 100)
+    tmp = list(zip(*sorted(analyzeDict[key]["chosenChangesPos"].items(), key=lambda k: k[0])))
+    axs[i].plot(tmp[0], tmp[1], "-x", color="blue", label="probability of chosen if displayed")
+    sns.regplot(tmp[0], tmp[1], scatter=False, color="orange", label="linear regression", ax=axs[i])
 
-    for k, v in sorted(chosenDist[key]["chosenAll"].items(), key=lambda k: k[0]):
-        x.append(k)
-        y.append((chosenDist[key]["chosenAll"][k] / chosenDist[key]["displayedAll"][k]) * 100)
+    tmp = list(zip(*sorted(analyzeDict[key]["chosenChangesNeg"].items(), key=lambda k: k[0])))
+    if len(tmp) > 1:
+        axs[i].plot(tmp[0], tmp[1], "-x", color="blue")
+        sns.regplot(tmp[0], tmp[1], scatter=False, color="orange", ax=axs[i])
 
-        if k > parameter_range[key]["default"]:
-            x_pos.append(k)
-            y_pos.append((chosenDist[key]["chosenAll"][k] / chosenDist[key]["displayedAll"][k]) * 100)
-        if k < parameter_range[key]["default"]:
-            x_neg.append(k)
-            y_neg.append((chosenDist[key]["chosenAll"][k] / chosenDist[key]["displayedAll"][k]) * 100)
-
-    if len(x_neg) > 1:
-        x_neg.append(parameter_range[key]["default"])
-        y_neg.append((chosenDist[key]["chosenOrigNeg"] / chosenDist[key]["displayedOrigNeg"]) * 100)
-
-    axs[i].plot(x_pos, y_pos, "-x", color="blue", label="probability of chosen if displayed")
-    axs[i].plot(x_neg, y_neg, "-x", color="blue")
     axs[i].axvline(x=parameter_range[key]["default"], linestyle="--", color="orange", label="original image")
 
-    sns.regplot(x_pos, y_pos, scatter=False, color="orange", label="linear regression", ax=axs[i])
-    if len(x_neg) > 1:
-        sns.regplot(x_neg, y_neg, scatter=False, color="orange", ax=axs[i])
-
-    axs[i].set_ylim(bottom=0, top=100)
-
-    x = []
-    y = []
-    x_pos = []
-    y_pos = []
-    x_neg = []
-    y_neg = []
-
     axs_orig[i].set_title(key)
+    axs_orig[i].set_ylim(bottom=0, top=1)
+    tmp = list(zip(*sorted(analyzeDict[key]["chosenChangesOrigPresentPos"].items(), key=lambda k: k[0])))
+    axs_orig[i].plot(tmp[0], tmp[1], "-x", color="blue", label="probability of chosen if displayed")
+    sns.regplot(tmp[0], tmp[1], scatter=False, color="orange", label="linear regression", ax=axs_orig[i])
 
-    x_pos.append(parameter_range[key]["default"])
-    y_pos.append((chosenDist[key]["chosenOrigPos"] / chosenDist[key]["displayedOrigPos"]) * 100)
+    tmp = list(zip(*sorted(analyzeDict[key]["chosenChangesOrigPresentNeg"].items(), key=lambda k: k[0])))
+    if len(tmp) > 1:
+        axs_orig[i].plot(tmp[0], tmp[1], "-x", color="blue")
+        sns.regplot(tmp[0], tmp[1], scatter=False, color="orange", ax=axs_orig[i])
 
-    for k, v in sorted(chosenDist[key]["chosenOrig"].items(), key=lambda k: k[0]):
-        x.append(k)
-        y.append((chosenDist[key]["chosenOrig"][k] / chosenDist[key]["displayedOrig"][k]) * 100)
-
-        if k > parameter_range[key]["default"]:
-            x_pos.append(k)
-            y_pos.append((chosenDist[key]["chosenOrig"][k] / chosenDist[key]["displayedOrig"][k]) * 100)
-        if k < parameter_range[key]["default"]:
-            x_neg.append(k)
-            y_neg.append((chosenDist[key]["chosenOrig"][k] / chosenDist[key]["displayedOrig"][k]) * 100)
-
-    if len(x_neg) > 1:
-        x_neg.append(parameter_range[key]["default"])
-        y_neg.append((chosenDist[key]["chosenOrigNeg"] / chosenDist[key]["displayedOrigNeg"]) * 100)
-
-    axs_orig[i].plot(x_pos, y_pos, "-x", color="blue", label="probability of chosen if displayed")
-    axs_orig[i].plot(x_neg, y_neg, "-x", color="blue")
     axs_orig[i].axvline(x=parameter_range[key]["default"], linestyle="--", color="orange", label="original image")
-
-    sns.regplot(x_pos, y_pos, scatter=False, color="orange", label="linear regression", ax=axs_orig[i])
-    if len(x_neg) > 1:
-        sns.regplot(x_neg, y_neg, scatter=False, color="orange", ax=axs_orig[i])
-
-    axs_orig[i].set_ylim(bottom=0, top=100)
 
     print()
 
