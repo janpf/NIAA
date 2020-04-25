@@ -7,6 +7,7 @@ from pathlib import Path
 
 import httpagentparser
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
 import pandas as pd
 import redis
@@ -165,6 +166,27 @@ for key in parameter_range.keys():
         ("chosenChangesNeg", "occuredChangesNeg"),
         ("chosenChangesOrigPresentNeg", "occuredChangesOrigPresentNeg"),
     ]:
+        if "rel" in corr[0].lower():  # TODO implement
+            pass
+        elif not "rel" in corr[0].lower():
+            if "pos" in corr[0].lower():
+                for change in [val for val in parameter_range[key]["range"] if val >= parameter_range[key]["default"]]:
+                    if not change in analyzeDict[key][corr[0]]:
+                        analyzeDict[key][corr[0]][change] = 0
+                    if not change in analyzeDict[key][corr[1]]:
+                        raise KeyError(f"that's weird: {key} {analyzeDict[key][corr[1]].keys()} {change}")
+            elif "neg" in corr[0].lower():
+                if len(analyzeDict[key][corr[0]]) > 1:  # lcontrast and vibrance
+                    for change in [val for val in parameter_range[key]["range"] if val <= parameter_range[key]["default"]]:
+                        if not change in analyzeDict[key][corr[0]]:
+                            analyzeDict[key][corr[0]][change] = 0
+                        if not change in analyzeDict[key][corr[1]]:
+                            raise KeyError(f"that's weird: {key} {analyzeDict[key][corr[1]].keys()} {change}")
+            else:
+                raise NotImplementedError("you forgot what you thought wasn't necessary")
+        else:
+            raise "what?"
+
         for val in analyzeDict[key][corr[0]].keys():
             analyzeDict[key][corr[0]][val] /= analyzeDict[key][corr[1]][val]
 
@@ -179,7 +201,7 @@ axs_corr = [x for sublist in axs_corr for x in sublist]  # flatten
 
 f.suptitle("Probability of chosen, if displayed")
 f_orig.suptitle("Probability of chosen, if displayed (original image was present)")
-f_corr.suptitle("correlations")
+f_corr.suptitle("Probability (y) of smaller chosen given relative distance (x) between images")
 
 params = sorted(parameter_range.keys(), key=lambda key: binom_test(analyzeDict[key]["smallerChosen"], n=analyzeDict[key]["smallerChosen"] + analyzeDict[key]["largerChosen"]))
 for i, key in enumerate(params):
@@ -228,6 +250,15 @@ for i, key in enumerate(params):
     tmp = list(zip(*sorted(analyzeDict[key]["smallerChosenRelChangesOrigPresentPos"].items(), key=lambda k: k[0])))
     axs_corr[i].plot(tmp[0], tmp[1], "-x", color="orange", label="click percentage per editing distance, original present")
 
+    # axs_corr[i].grid(True, which="both")
+    # axs_corr[i].minorticks_on()
+    axs_corr[i].yaxis.set_ticks([0, 0.5, 1])
+    axs_corr[i].yaxis.set_major_formatter(ticker.FormatStrFormatter("%0.1f"))
+    axs_corr[i].yaxis.set_ticks([0.1, 0.2, 0.3, 0.4, 0.6, 0.7, 0.8, 0.9], minor=True)
+    axs_corr[i].yaxis.set_minor_formatter(ticker.FormatStrFormatter("%0.1f"))
+    # axs_corr[i].xaxis.set_ticks([])
+    # axs_corr[i].xaxis.set_ticks([])
+
     if len(analyzeDict[key]["smallerChosenRelChangesNeg"]) > 1:
         tmp = list(zip(*sorted(analyzeDict[key]["smallerChosenRelChangesNeg"].items(), key=lambda k: k[0])))
         tmp[0] = [val * -1 for val in tmp[0]]
@@ -237,32 +268,56 @@ for i, key in enumerate(params):
         tmp[0] = [val * -1 for val in tmp[0]]
         axs_corr[i].plot(tmp[0], tmp[1], "-x", color="orange")
 
+    axs_corr[i].axhline(y=0.5, linestyle="-", color="grey", label="equally likely clicked")
     axs_corr[i].axvline(x=0, linestyle="--", color="orange", label="original image")
 
     axs[i].set_title(key)
+    axs[i].set_xlim(left=min(parameter_range[key]["range"]), right=max(parameter_range[key]["range"]))
     axs[i].set_ylim(bottom=0, top=1)
     tmp = list(zip(*sorted(analyzeDict[key]["chosenChangesPos"].items(), key=lambda k: k[0])))
     axs[i].plot(tmp[0], tmp[1], "-x", color="blue", label="probability of chosen if displayed")
     sns.regplot(tmp[0], tmp[1], scatter=False, color="orange", label="linear regression", ax=axs[i])
+
+    axs[i].grid(True, which="both")
+    axs[i].minorticks_on()
+    axs[i].yaxis.set_ticks([0, 0.5, 1])
+    axs[i].yaxis.set_major_formatter(ticker.FormatStrFormatter("%0.1f"))
+    axs[i].yaxis.set_ticks([0.1, 0.2, 0.3, 0.4, 0.6, 0.7, 0.8, 0.9], minor=True)
+    axs[i].yaxis.set_minor_formatter(ticker.FormatStrFormatter("%0.1f"))
+    axs[i].xaxis.set_ticks([])
+    axs[i].xaxis.set_ticks(parameter_range[key]["range"], minor=True)
+    axs[i].xaxis.set_ticklabels(parameter_range[key]["range"], minor=True)
 
     tmp = list(zip(*sorted(analyzeDict[key]["chosenChangesNeg"].items(), key=lambda k: k[0])))
     if len(tmp) > 1:
         axs[i].plot(tmp[0], tmp[1], "-x", color="blue")
         sns.regplot(tmp[0], tmp[1], scatter=False, color="orange", ax=axs[i])
 
+    axs[i].axhline(y=0.5, linestyle="-", color="grey", label="equally likely clicked")
     axs[i].axvline(x=parameter_range[key]["default"], linestyle="--", color="orange", label="original image")
 
     axs_orig[i].set_title(key)
+    axs_orig[i].set_xlim(left=min(parameter_range[key]["range"]), right=max(parameter_range[key]["range"]))
     axs_orig[i].set_ylim(bottom=0, top=1)
     tmp = list(zip(*sorted(analyzeDict[key]["chosenChangesOrigPresentPos"].items(), key=lambda k: k[0])))
     axs_orig[i].plot(tmp[0], tmp[1], "-x", color="blue", label="probability of chosen if displayed")
     sns.regplot(tmp[0], tmp[1], scatter=False, color="orange", label="linear regression", ax=axs_orig[i])
 
+    axs_orig[i].grid(True, which="both")
+    axs_orig[i].minorticks_on()
+    axs_orig[i].yaxis.set_ticks([0, 0.5, 1])
+    axs_orig[i].yaxis.set_major_formatter(ticker.FormatStrFormatter("%0.1f"))
+    axs_orig[i].yaxis.set_ticks([0.1, 0.2, 0.3, 0.4, 0.6, 0.7, 0.8, 0.9], minor=True)
+    axs_orig[i].yaxis.set_minor_formatter(ticker.FormatStrFormatter("%0.1f"))
+    axs_orig[i].xaxis.set_ticks([])
+    axs_orig[i].xaxis.set_ticks(parameter_range[key]["range"], minor=True)
+    axs_orig[i].xaxis.set_ticklabels(parameter_range[key]["range"], minor=True)
+
     tmp = list(zip(*sorted(analyzeDict[key]["chosenChangesOrigPresentNeg"].items(), key=lambda k: k[0])))
     if len(tmp) > 1:
         axs_orig[i].plot(tmp[0], tmp[1], "-x", color="blue")
         sns.regplot(tmp[0], tmp[1], scatter=False, color="orange", ax=axs_orig[i])
-
+    axs_orig[i].axhline(y=0.5, linestyle="-", color="grey", label="equally likely clicked")
     axs_orig[i].axvline(x=parameter_range[key]["default"], linestyle="--", color="orange", label="original image")
 
     print()
@@ -334,4 +389,3 @@ print(sub_df.tail(3))
 
 print("---")
 print()
-# %%
