@@ -1,4 +1,3 @@
-# %%
 import collections
 import json
 import math
@@ -18,13 +17,12 @@ sys.path.insert(0, ".")
 from edit_image import parameter_range
 
 sns.set(style="whitegrid")
-# %%
-submission_log = "/scratch/stud/pfister/NIAA/pexels/logs/submissions.log"
-# submission_log = "/home/stud/pfister/random.log"
+
+submission_log = Path.home() / "eclipse-workspace" / "NIAA" / "survey" / "survey.csv"  # type: Path
 plot_dir = Path.home() / "eclipse-workspace" / "NIAA" / "analysis" / "survey"  # type: Path
 
 plot_dir.mkdir(parents=True, exist_ok=True)
-# %%
+
 try:
     r = redis.Redis(host="localhost", port=7000)
     memdata = r.info("memory")
@@ -39,18 +37,8 @@ try:
     print()
 except:
     print("no redis connection available => 'kctl port-forward svc/redis 7000:6379'")
-# %%
-with open(submission_log, mode="r") as subs_file:
-    subs = subs_file.readlines()
 
-subs = (row.strip() for row in subs)
-subs = (row.split("submit:")[1] for row in subs)
-subs = (row.strip() for row in subs)
-subs = (row.replace("'id':", "'userid':") for row in subs)
-subs = (row.replace("'", '"') for row in subs)
-subs = [json.loads(row) for row in subs]
-
-sub_df = pd.read_json(json.dumps(subs), orient="records", convert_dates=["loadTime", "submitTime"])  # type: pd.DataFrame
+sub_df = pd.read_csv(submission_log)  # type: pd.DataFrame
 # data reading done
 
 print()
@@ -58,7 +46,7 @@ print(f"{sub_df.hashval.count()} images compared in {sub_df.groupby('userid').us
 print(sub_df.groupby("chosen").chosen.count().to_string())
 print("---")
 print()
-# %%
+
 sub_df["default"] = sub_df.apply(lambda row: parameter_range[row.parameter]["default"], axis=1)
 sub_df["leftChanges"] = sub_df.apply(lambda row: float(row.leftChanges), axis=1)
 sub_df["rightChanges"] = sub_df.apply(lambda row: float(row.rightChanges), axis=1)
@@ -156,6 +144,14 @@ for key in parameter_range.keys():
     analyzeDict[key]["occuredRelChangesOrigPresentNeg"] = tmp[(tmp.changeSign < 0) & (tmp.smallChangeIsOriginal == True)]["smallLargeRelDistDefault"].value_counts().to_dict()
     analyzeDict[key]["smallerChosenRelChangesOrigPresentNeg"] = tmp[(tmp.changeSign < 0) & (tmp.smallerChosen == True) & (tmp.smallChangeIsOriginal == True)]["smallLargeRelDistDefault"].value_counts().to_dict()
 
+    chosenVS = tmp.groupby(["smallerChosen", "smallChange", "largeChange"])[["smallerChosen"]].size().to_frame("size").reset_index()
+    allComparisons = tmp.groupby(["smallChange", "largeChange"])[["smallChange"]].size().to_frame("size").reset_index()
+
+    for _, row in chosenVS[chosenVS.smallerChosen == True].iterrows():
+        if len(allComparisons[(allComparisons.smallChange == row["smallChange"]) & (allComparisons.largeChange == row["largeChange"])]) > 1:
+            raise KeyError("what?")
+        analyzeDict[key]["asSmallerChosenVS"][row["smallChange"]][row["largeChange"]] = row["size"] / allComparisons[(allComparisons.smallChange == row["smallChange"]) & (allComparisons.largeChange == row["largeChange"])].iloc[0]["size"]
+
     for corr in [
         ("smallerChosenRelChangesPos", "occuredRelChangesPos"),
         ("smallerChosenRelChangesOrigPresentPos", "occuredRelChangesOrigPresentPos"),
@@ -190,7 +186,7 @@ for key in parameter_range.keys():
         for val in analyzeDict[key][corr[0]].keys():
             analyzeDict[key][corr[0]][val] /= analyzeDict[key][corr[1]][val]
 
-# %%
+
 f, axs = plt.subplots(3, 4, sharey=True, figsize=(20, 10))
 axs = [x for sublist in axs for x in sublist]  # flatten
 f_orig, axs_orig = plt.subplots(3, 4, sharey=True, figsize=(20, 10))
@@ -199,8 +195,8 @@ axs_orig = [x for sublist in axs_orig for x in sublist]  # flatten
 f_corr, axs_corr = plt.subplots(3, 4, sharey=True, figsize=(20, 10))
 axs_corr = [x for sublist in axs_corr for x in sublist]  # flatten
 
-f.suptitle("Probability of chosen, if displayed")
-f_orig.suptitle("Probability of chosen, if displayed (original image was present)")
+f.suptitle("Probability (y) of chosen, if displayed")
+f_orig.suptitle("Probability (y) of chosen, if displayed (original image was present)")
 f_corr.suptitle("Probability (y) of smaller chosen given relative distance (x) between images")
 
 params = sorted(parameter_range.keys(), key=lambda key: binom_test(analyzeDict[key]["smallerChosen"], n=analyzeDict[key]["smallerChosen"] + analyzeDict[key]["largerChosen"]))
@@ -250,7 +246,7 @@ for i, key in enumerate(params):
     tmp = list(zip(*sorted(analyzeDict[key]["smallerChosenRelChangesOrigPresentPos"].items(), key=lambda k: k[0])))
     axs_corr[i].plot(tmp[0], tmp[1], "-x", color="orange", label="click percentage per editing distance, original present")
 
-    # axs_corr[i].grid(True, which="both")
+    # axs_corr[i].grid(True, which="both") # FIXME?
     # axs_corr[i].minorticks_on()
     axs_corr[i].yaxis.set_ticks([0, 0.5, 1])
     axs_corr[i].yaxis.set_major_formatter(ticker.FormatStrFormatter("%0.1f"))
@@ -320,6 +316,31 @@ for i, key in enumerate(params):
     axs_orig[i].axhline(y=0.5, linestyle="-", color="grey", label="equally likely clicked")
     axs_orig[i].axvline(x=parameter_range[key]["default"], linestyle="--", color="orange", label="original image")
 
+    f_small_vs, axs_small_vs = plt.subplots(math.ceil(math.sqrt(len(parameter_range[key]["range"]))), math.ceil(math.sqrt(len(parameter_range[key]["range"]))), sharey=True, figsize=(20, 10))
+    axs_small_vs = [x for sublist in axs_small_vs for x in sublist]  # flatten
+    f_small_vs.suptitle(f"{key}: probability (y) of chosen, if displayed against other (x)")
+
+    for j, valSmall in enumerate(parameter_range[key]["range"]):
+        x = []
+        y = []
+        if not valSmall in analyzeDict[key]["asSmallerChosenVS"]:
+            x = parameter_range[key]["range"]
+            y = [0] * len(parameter_range[key]["range"])
+        else:
+            for valLarge in parameter_range[key]["range"]:
+                x.append(valLarge)
+                y.append(analyzeDict[key]["asSmallerChosenVS"][valSmall].get(valLarge, 0))
+
+        axs_small_vs[j].set_title(valSmall)
+        axs_small_vs[j].set_xlim(left=min(parameter_range[key]["range"]), right=max(parameter_range[key]["range"]))
+        axs_small_vs[j].set_ylim(bottom=0, top=1)
+        axs_small_vs[j].plot(x, y, "-x", color="blue", label="probability of chosen if displayed against")
+        # axs_small_vs[j].axhline() # TODO
+        axs_small_vs[j].axvline(x=valSmall, linestyle="--", color="orange", label="compared")
+
+    f_small_vs.tight_layout()
+    f_small_vs.savefig(plot_dir / "small_vs" / f"{key}.png")
+
     print()
 
 f.tight_layout()
@@ -334,7 +355,7 @@ f_corr.savefig(plot_dir / f"corr.png")
 
 print("---")
 print()
-# %%
+
 plt.figure()
 print("decision duration:")
 durations = (sub_df.submitTime - sub_df.loadTime).astype("timedelta64[s]")
@@ -352,7 +373,7 @@ plt.clf()
 
 print("---")
 print()
-# %%
+
 plt.figure()
 print("useragent distribution:")
 useragents = []
@@ -368,7 +389,7 @@ print(os_count)
 print(dist_count)
 print("---")
 print()
-# %%
+
 print("Top 5 longest sessions:")
 usercount = sub_df[["userid", "hashval"]].rename(columns={"hashval": "count"}).groupby("userid").count()
 print(usercount.nlargest(5, "count"))
@@ -383,7 +404,7 @@ plt.clf()
 
 print("---")
 print()
-# %%
+
 print("3 most recent comparisons:")
 print(sub_df.tail(3))
 
