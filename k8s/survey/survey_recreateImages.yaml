@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Job
+metadata:
+  name: survey-replicator
+spec:
+  selector:
+    matchLabels:
+      app: survey-replicator
+  template:
+    metadata:
+      labels:
+        app: survey-replicator
+    spec:
+      restartPolicy: "Always"
+      containers:
+        - name: survey-replicator
+          image: janpf/niaa:flask-latest
+          imagePullPolicy: "Always"
+          command:
+            - python3
+            - /workspace/survey/surveyNIMA/recreateImages.py
+            - --csv_file
+            - /data/logs/submissions.csv
+          env:
+            - name: HOME
+              value: "/tmp"
+          resources:
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+            requests:
+              cpu: "2"
+              memory: "2Gi"
+          volumeMounts:
+            - mountPath: /app
+              name: code
+            - mountPath: /data
+              name: scratch
+      volumes:
+        - name: code
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studpfister
+            path: "/home/stud/pfister/eclipse-workspace/NIAA"
+            secretRef:
+              name: studpfister-secret
+        - name: scratch
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studpfister
+            path: "/scratch/stud/pfister/NIAA/pexels"
+            secretRef:
+              name: studpfister-secret

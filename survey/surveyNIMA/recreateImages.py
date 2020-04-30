@@ -1,8 +1,6 @@
 import argparse
-import json
 import logging
 import sys
-from io import BytesIO
 from pathlib import Path
 
 import pandas as pd
@@ -16,7 +14,6 @@ inputFolder = Path("/data") / "images"
 
 
 def preprocessImage(img: str, parameter: str, leftChange: float, rightChange: float, hashval: int, outdir: Path = editedImageFolder):
-
     left = edit_image(img_path=img, change=parameter, value=leftChange)
     right = edit_image(img_path=img, change=parameter, value=rightChange)
 
