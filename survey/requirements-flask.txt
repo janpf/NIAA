@@ -3,5 +3,6 @@ gunicorn
 httpagentparser
 numpy
 opencv-python-headless
+pandas
 Pillow
 redis
