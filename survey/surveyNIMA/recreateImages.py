@@ -14,14 +14,21 @@ inputFolder = Path("/data") / "images"
 
 
 def preprocessImage(img: str, parameter: str, leftChange: float, rightChange: float, hashval: int, outdir: Path = editedImageFolder):
-    left = edit_image(img_path=img, change=parameter, value=leftChange)
-    right = edit_image(img_path=img, change=parameter, value=rightChange)
 
-    if not left or not right:
-        return
+    logging.info(f"working on {img}\t{parameter}\t{leftChange}\t{rightChange}\t{hashval}")
+    savelocation = outdir / f"{hashval}l.jpg"
+    if savelocation.exists() and not args.redo_existing:
+        logging.info(f"skipping:\t{img}\t{parameter}\t{leftChange}\t{hashval}")
+    else:
+        left = edit_image(img_path=img, change=parameter, value=leftChange)
+        left.save(savelocation, format="JPEG")
 
-    left.save(outdir / f"{hashval}l", format="JPEG")
-    right.save(outdir / f"{hashval}r", format="JPEG")
+    savelocation = outdir / f"{hashval}r.jpg"
+    if savelocation.exists() and not args.redo_existing:
+        logging.info(f"skipping:\t{img}\t{parameter}\t{rightChange}\t{hashval}")
+    else:
+        right = edit_image(img_path=img, change=parameter, value=rightChange)
+        right.save(outdir / f"{hashval}r.jpg", format="JPEG")
 
 
 if __name__ == "__main__":
@@ -36,18 +43,11 @@ if __name__ == "__main__":
     df = df[df.chosen != "error"]
     df = df[df.chosen != "unsure"]
 
-    print(f"{len(df)} pairs have to get preprocessed")
+    logging.info(f"{len(df)} pairs have to get preprocessed")
     for row in df.iterrows():
         img = row["img"].replace("/img/", "")
         img = inputFolder / img
-        if img.exists():
-            if args.redo_existing:
-                print(f"redoing:\t{img}")
-            else:
-                print(f"skipping:\t{img}")
-        else:
-            print(f"working:\t{img}")
-            try:
-                preprocessImage(img, row["parameter"], row["leftChanges"], row["rightChanges"], row["hashval"])
-            except Exception as e:
-                print(f"got Exception: {e}")
+        try:
+            preprocessImage(img, row["parameter"], row["leftChanges"], row["rightChanges"], row["hashval"])
+        except Exception as e:
+            logging.info(f"got Exception: {e}")
