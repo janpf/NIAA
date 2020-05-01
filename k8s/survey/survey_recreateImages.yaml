@@ -1,17 +1,14 @@
-apiVersion: apps/v1
+apiVersion: batch/v1
 kind: Job
 metadata:
   name: survey-replicator
 spec:
-  selector:
-    matchLabels:
-      app: survey-replicator
   template:
     metadata:
       labels:
         app: survey-replicator
     spec:
-      restartPolicy: "Always"
+      restartPolicy: "Never"
       containers:
         - name: survey-replicator
           image: janpf/niaa:flask-latest
@@ -32,7 +29,7 @@ spec:
               cpu: "2"
               memory: "2Gi"
           volumeMounts:
-            - mountPath: /app
+            - mountPath: /workspace
               name: code
             - mountPath: /data
               name: scratch

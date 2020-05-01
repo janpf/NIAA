@@ -14,7 +14,6 @@ inputFolder = Path("/data") / "images"
 
 
 def preprocessImage(img: str, parameter: str, leftChange: float, rightChange: float, hashval: int, outdir: Path = editedImageFolder):
-
     logging.info(f"working on {img}\t{parameter}\t{leftChange}\t{rightChange}\t{hashval}")
     savelocation = outdir / f"{hashval}l.jpg"
     if savelocation.exists() and not args.redo_existing:
