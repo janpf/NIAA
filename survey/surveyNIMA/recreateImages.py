@@ -3,6 +3,7 @@ import logging
 import sys
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 sys.path.insert(0, ".")
@@ -33,7 +34,7 @@ def preprocessImage(img: str, parameter: str, leftChange: float, rightChange: fl
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--csv_file", type=str)
-    parser.add_argument("--redo_existing", action="store_true", type=bool)
+    parser.add_argument("--redo_existing", action="store_true")
     args = parser.parse_args()
 
     format = "%(asctime)s: %(message)s"
@@ -42,10 +43,13 @@ if __name__ == "__main__":
     df = df[df.chosen != "error"]
     df = df[df.chosen != "unsure"]
 
+    df = df.iloc[np.random.permutation(len(df))]  #  shuffle df for parallelism
+    df = df.reset_index(drop=True)
+
     logging.info(f"{len(df)} pairs have to get preprocessed")
-    for row in df.iterrows():
+    for _, row in df.iterrows():
         img = row["img"].replace("/img/", "")
-        img = inputFolder / img
+        img = str(inputFolder / img)
         try:
             preprocessImage(img, row["parameter"], row["leftChanges"], row["rightChanges"], row["hashval"])
         except Exception as e:

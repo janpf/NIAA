@@ -1,34 +1,33 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: survey-replicator
+  name: survey-nima
 spec:
-  parallelism: 5
   template:
     metadata:
       labels:
-        app: survey-replicator
+        app: survey-nima
     spec:
       restartPolicy: "Never"
       containers:
         - name: survey-replicator
-          image: janpf/niaa:flask-latest
+          image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           command:
             - python3
-            - /workspace/survey/surveyNIMA/recreateImages.py
-            - --csv_file
-            - /data/logs/survey.csv
+            - /workspace/survey/surveyNIMA/queryNIMAsurvey.py
           env:
             - name: HOME
               value: "/tmp"
           resources:
             limits:
-              cpu: "2"
-              memory: "2Gi"
+              nvidia.com/gpu: "1"
+              cpu: "4"
+              memory: "4Gi"
             requests:
-              cpu: "2"
-              memory: "2Gi"
+              nvidia.com/gpu: "1"
+              cpu: "4"
+              memory: "4Gi"
           volumeMounts:
             - mountPath: /workspace
               name: code
