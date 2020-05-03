@@ -19,6 +19,7 @@ from edit_image import parameter_range
 sns.set(style="whitegrid")
 
 submission_log = Path.home() / "eclipse-workspace" / "NIAA" / "survey" / "survey.csv"  # type: Path
+submission_log = Path("/scratch") / "stud" / "pfister" / "NIAA" / "pexels" / "logs" / "survey_NIMA.csv"  # type: Path
 plot_dir = Path.home() / "eclipse-workspace" / "NIAA" / "analysis" / "survey"  # type: Path
 
 plot_dir.mkdir(parents=True, exist_ok=True)
@@ -46,6 +47,8 @@ print(f"{sub_df.hashval.count()} images compared in {sub_df.groupby('userid').us
 print(sub_df.groupby("chosen").chosen.count().to_string())
 print("---")
 print()
+
+# sub_df["chosen"] = sub_df.apply(lambda row: "leftImage" if row.leftNIMA > row.rightNIMA else "rightImage", axis=1)  #  if in NIMA is evaluated
 
 sub_df["default"] = sub_df.apply(lambda row: parameter_range[row.parameter]["default"], axis=1)
 sub_df["leftChanges"] = sub_df.apply(lambda row: float(row.leftChanges), axis=1)
@@ -78,6 +81,10 @@ sub_df["smallChangeIsOriginal"] = sub_df.apply(lambda row: math.isclose(row.smal
 
 sub_df["smallerChosen"] = sub_df.apply(lambda row: not row.bothSame and ((math.isclose(row.smallChange, row.leftChanges) and row.chosen == "leftImage") or math.isclose(row.smallChange, row.rightChanges) and row.chosen == "rightImage"), axis=1)
 sub_df["largerChosen"] = sub_df.apply(lambda row: not row.bothSame and ((math.isclose(row.largeChange, row.leftChanges) and row.chosen == "leftImage") or math.isclose(row.largeChange, row.rightChanges) and row.chosen == "rightImage"), axis=1)
+
+if "leftNIMA" in sub_df.columns and "rightNIMA" in sub_df.columns:
+    sub_df["chosenNIMA"] = sub_df.apply(lambda row: "leftImage" if row.leftNIMA > row.rightNIMA else "rightImage", axis=1)
+    sub_df["sameNIMA"] = sub_df.apply(lambda row: row.chosen == row.chosenNIMA, axis=1)
 
 clean_df = sub_df[sub_df.chosen != "error"]
 
@@ -147,6 +154,9 @@ for key in parameter_range.keys():
     chosenVS = tmp.groupby(["smallerChosen", "smallChange", "largeChange"])[["smallerChosen"]].size().to_frame("size").reset_index()
     allComparisons = tmp.groupby(["smallChange", "largeChange"])[["smallChange"]].size().to_frame("size").reset_index()
 
+    if "leftNIMA" in sub_df.columns and "rightNIMA" in sub_df.columns:
+        analyzeDict[key]["sameNIMA"] = tmp["sameNIMA"].value_counts().to_dict()
+
     for _, row in chosenVS[chosenVS.smallerChosen == True].iterrows():
         if len(allComparisons[(allComparisons.smallChange == row["smallChange"]) & (allComparisons.largeChange == row["largeChange"])]) > 1:
             raise KeyError("what?")
@@ -210,6 +220,9 @@ for i, key in enumerate(params):
         "\tbinomial test w/ orig. img. w/o unsure:\tp: {:05.4f}".format(binom_test(analyzeDict[key]["smallerChosenOrigPresent"], n=analyzeDict[key]["smallerChosenOrigPresent"] + analyzeDict[key]["largerChosenOrigPresent"])),
         f"(x={analyzeDict[key]['smallerChosenOrigPresent']} | n={analyzeDict[key]['smallerChosenOrigPresent'] + analyzeDict[key]['largerChosenOrigPresent']})",
     )
+    if "leftNIMA" in sub_df.columns and "rightNIMA" in sub_df.columns:
+        print("\tsurvey == NIMA: {:04.2f}%".format(analyzeDict[key]["sameNIMA"][True] / (analyzeDict[key]["sameNIMA"][True] + analyzeDict[key]["sameNIMA"][False]) * 100))
+        pass
 
     print(f"\tsmaller edit:\t\t{'{:.1f}%'.format(analyzeDict[key]['smallerChosenOrigPresent'] / (analyzeDict[key]['smallerChosenOrigPresent'] + analyzeDict[key]['largerChosenOrigPresent']) * 100)}\t| {analyzeDict[key]['smallerChosenOrigPresent']}")
     print(f"\tlarger edit:\t\t{'{:.1f}%'.format(analyzeDict[key]['largerChosenOrigPresent'] / (analyzeDict[key]['smallerChosenOrigPresent'] + analyzeDict[key]['largerChosenOrigPresent']) * 100)}\t| {analyzeDict[key]['largerChosenOrigPresent']}")

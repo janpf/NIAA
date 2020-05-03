@@ -59,10 +59,12 @@ def predictImage(path: str):
 
 
 for i, row in df.iterrows():
+    print(f"working on {row['hashval']}")
+    print(row)
     leftScore = predictImage(str(Path(args.test_images) / f"{row['hashval']}l.jpg"))
     rightScore = predictImage(str(Path(args.test_images) / f"{row['hashval']}r.jpg"))
 
     df.at[i, "leftNIMA"] = leftScore
     df.at[i, "rightNIMA"] = rightScore
 
-    df.to_csv(str(Path("/data") / "logs" / "survey_NIMA.csv"))
+df.to_csv(str(Path("/data") / "logs" / "survey_NIMA.csv"))
