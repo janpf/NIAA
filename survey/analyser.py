@@ -19,7 +19,7 @@ from edit_image import parameter_range
 sns.set(style="whitegrid")
 
 submission_log = Path.home() / "eclipse-workspace" / "NIAA" / "survey" / "survey.csv"  # type: Path
-submission_log = Path("/scratch") / "stud" / "pfister" / "NIAA" / "pexels" / "logs" / "survey_NIMA.csv"  # type: Path
+# submission_log = Path("/scratch") / "stud" / "pfister" / "NIAA" / "pexels" / "logs" / "survey_NIMA.csv"  # type: Path
 plot_dir = Path.home() / "eclipse-workspace" / "NIAA" / "analysis" / "survey"  # type: Path
 
 plot_dir.mkdir(parents=True, exist_ok=True)
@@ -153,14 +153,20 @@ for key in parameter_range.keys():
 
     chosenVS = tmp.groupby(["smallerChosen", "smallChange", "largeChange"])[["smallerChosen"]].size().to_frame("size").reset_index()
     allComparisons = tmp.groupby(["smallChange", "largeChange"])[["smallChange"]].size().to_frame("size").reset_index()
-
-    if "leftNIMA" in sub_df.columns and "rightNIMA" in sub_df.columns:
-        analyzeDict[key]["sameNIMA"] = tmp["sameNIMA"].value_counts().to_dict()
-
     for _, row in chosenVS[chosenVS.smallerChosen == True].iterrows():
         if len(allComparisons[(allComparisons.smallChange == row["smallChange"]) & (allComparisons.largeChange == row["largeChange"])]) > 1:
             raise KeyError("what?")
         analyzeDict[key]["asSmallerChosenVS"][row["smallChange"]][row["largeChange"]] = row["size"] / allComparisons[(allComparisons.smallChange == row["smallChange"]) & (allComparisons.largeChange == row["largeChange"])].iloc[0]["size"]
+
+    chosenVS = tmp.groupby(["largerChosen", "smallChange", "largeChange"])[["largerChosen"]].size().to_frame("size").reset_index()
+    allComparisons = tmp.groupby(["smallChange", "largeChange"])[["largeChange"]].size().to_frame("size").reset_index()
+    for _, row in chosenVS[chosenVS.largerChosen == True].iterrows():
+        if len(allComparisons[(allComparisons.smallChange == row["smallChange"]) & (allComparisons.largeChange == row["largeChange"])]) > 1:
+            raise KeyError("what?")
+        analyzeDict[key]["asLargerChosenVS"][row["largeChange"]][row["smallChange"]] = row["size"] / allComparisons[(allComparisons.smallChange == row["smallChange"]) & (allComparisons.largeChange == row["largeChange"])].iloc[0]["size"]
+
+    if "leftNIMA" in sub_df.columns and "rightNIMA" in sub_df.columns:
+        analyzeDict[key]["sameNIMA"] = tmp["sameNIMA"].value_counts().to_dict()
 
     for corr in [
         ("smallerChosenRelChangesPos", "occuredRelChangesPos"),
@@ -347,9 +353,22 @@ for i, key in enumerate(params):
         axs_small_vs[j].set_title(valSmall)
         axs_small_vs[j].set_xlim(left=min(parameter_range[key]["range"]), right=max(parameter_range[key]["range"]))
         axs_small_vs[j].set_ylim(bottom=0, top=1)
-        axs_small_vs[j].plot(x, y, "-x", color="blue", label="probability of chosen if displayed against")
+        axs_small_vs[j].plot(x, y, "-x", color="green", label="probability of chosen if displayed against")
         # axs_small_vs[j].axhline() # TODO
         axs_small_vs[j].axvline(x=valSmall, linestyle="--", color="orange", label="compared")
+
+    for j, valLarge in enumerate(parameter_range[key]["range"]):
+        x = []
+        y = []
+        if not valLarge in analyzeDict[key]["asLargerChosenVS"]:
+            x = parameter_range[key]["range"]
+            y = [0] * len(parameter_range[key]["range"])
+        else:
+            for valSmall in parameter_range[key]["range"]:
+                x.append(valSmall)
+                y.append(analyzeDict[key]["asLargerChosenVS"][valLarge].get(valSmall, 0))
+
+        axs_small_vs[j].plot(x, y, "-x", color="red", label="probability of chosen if displayed against")
 
     f_small_vs.tight_layout()
     f_small_vs.savefig(plot_dir / "small_vs" / f"{key}.png")
