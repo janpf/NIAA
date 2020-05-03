@@ -39,7 +39,7 @@ try:
 except:
     print("no redis connection available => 'kctl port-forward svc/redis 7000:6379'")
 
-sub_df = pd.read_csv(submission_log)  # type: pd.DataFrame
+sub_df = pd.read_csv(submission_log, parse_dates=["loadTime", "submitTime"])  # type: pd.DataFrame
 # data reading done
 
 print()
