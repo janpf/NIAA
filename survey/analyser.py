@@ -19,7 +19,7 @@ from edit_image import parameter_range
 sns.set(style="whitegrid")
 
 submission_log = Path.home() / "eclipse-workspace" / "NIAA" / "survey" / "survey.csv"  # type: Path
-# submission_log = Path("/scratch") / "stud" / "pfister" / "NIAA" / "pexels" / "logs" / "survey_NIMA.csv"  # type: Path
+submission_log = Path("/scratch") / "stud" / "pfister" / "NIAA" / "pexels" / "logs" / "survey_NIMA.csv"  # type: Path
 plot_dir = Path.home() / "eclipse-workspace" / "NIAA" / "analysis" / "survey"  # type: Path
 
 plot_dir.mkdir(parents=True, exist_ok=True)
