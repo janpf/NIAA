@@ -24,7 +24,7 @@ df = df[df.chosen != "error"]
 df = df[df.chosen != "unsure"]
 df = df.assign(leftNIMA=np.nan, rightNIMA=np.nan)
 
-base_model = models.vgg16(pretrained=False)  #  TODO check, pretrained dürfte nicht nötig sein, da eh gleich überschrieben wird
+base_model = models.vgg16(pretrained=False)  # pretrained dürfte nicht nötig sein, da eh gleich überschrieben wird
 model = NIMA(base_model)
 
 model.load_state_dict(torch.load(args.model))

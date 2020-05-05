@@ -178,7 +178,7 @@ for key in parameter_range.keys():
         ("chosenChangesNeg", "occuredChangesNeg"),
         ("chosenChangesOrigPresentNeg", "occuredChangesOrigPresentNeg"),
     ]:
-        if "rel" in corr[0].lower():  # TODO implement
+        if "rel" in corr[0].lower():
             pass
         elif not "rel" in corr[0].lower():
             if "pos" in corr[0].lower():

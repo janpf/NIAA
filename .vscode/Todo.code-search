@@ -3,11 +3,13 @@
 # Including: \home\stud\pfister\eclipse-workspace\NIAA, ./Masterarbeit
 # Excluding: .gitignore
 
-3 results - 2 files
+5 results - 2 files
 
-NIAA • annotate_image.py:
-  81:     gt = np.exp(gt) / sum(np.exp(gt))  # softmax # TODO stimmt das so?
-  95: if args.imageFolder:  # TODO batchprocessing
+NIAA • datasets.py:
+  26:         row = self.annotations.iloc[idx]  #  TODO wie funktioniert iloc?
+  27:         img = Image.open(self.root_dir / (row["img_id"] + ".jpg"))  # TODO kontrollieren
+  35: # TODO pexels dataset
 
-NIAA • data_loader.py:
-  20:         self.annotations = pd.read_csv(csv_file, delimiter=" ")  # TODO rearrange according to expected csv
+NIAA • survey/analyser.py:
+  268:     # axs_corr[i].grid(True, which="both") # FIXME?
+  357:         # axs_small_vs[j].axhline() # TODO

@@ -78,7 +78,7 @@ def annotate_image(img):
         return
 
     gt = df[df[1] == int(Path(img).stem)].to_numpy()[:, 2:12].reshape(10, 1)
-    gt = np.exp(gt) / sum(np.exp(gt))  # softmax # TODO stimmt das so?
+    gt = np.exp(gt) / sum(np.exp(gt))  # softmax
     gt_mean = 0.0
     for l, e in enumerate(gt, 1):
         gt_mean += l * e
@@ -92,7 +92,7 @@ def annotate_image(img):
         plt.savefig(Path(args.out) / f"{Path(img).stem}.png")
 
 
-if args.imageFolder:  # TODO batchprocessing
+if args.imageFolder:
     for img in Path(args.imageFolder).iterdir():
         annotate_image(str(img))
 elif args.image:

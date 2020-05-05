@@ -19,7 +19,7 @@ import torchvision.models as models
 
 from data_loader import AVADataset
 
-from model import *
+from originalNIMA.model import NIMA
 
 
 def main(config):
