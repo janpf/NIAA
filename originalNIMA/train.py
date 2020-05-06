@@ -17,9 +17,9 @@ import torchvision.models as models
 
 # import lera
 
-from data_loader import AVADataset
+from originalNIMA.data_loader import AVADataset
 
-from originalNIMA.model import NIMA
+from originalNIMA.model import *
 
 
 def main(config):
