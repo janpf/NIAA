@@ -6,14 +6,6 @@ import torchvision.transforms as transforms
 from PIL import Image
 
 
-@dataclass
-class AVASample:
-    img_id: str
-    img: torch.Tensor
-    distribution: torch.Tensor
-    score: torch.Tensor
-
-
 class AVA(torch.utils.data.Dataset):
     """AVA dataset
 
@@ -42,18 +34,7 @@ class AVA(torch.utils.data.Dataset):
         distribution = torch.nn.Softmax(dim=-1)(distribution)
         score = distribution.dot(torch.FloatTensor(list(range(1, len(distribution) + 1))))
 
-        return AVASample(img_id=row["img_id"], img=img, distribution=distribution, score=score)
-
-
-@dataclass
-class PexelsSample:
-    img1: torch.Tensor
-    img2: torch.Tensor
-    parameter: str
-    changes1: float
-    changes2: float
-    relChanges1: float
-    relChanges2: float
+        return {"img_id": row["img_id"], "img": img, "distribution": distribution, "score": score}
 
 
 class Pexels(torch.utils.data.Dataset):
@@ -84,4 +65,4 @@ class Pexels(torch.utils.data.Dataset):
         img2 = Image.open(self.edited_dir / (row["img2"] + ".jpg"))
         img2 = self.transforms(img2)
 
-        return PexelsSample(img1=img1, img2=img2, parameter=row["parameter"], changes1=row["changes1"], changes2=row["changes2"], relChanges1=row["relChanges1"], relChanges2=row["relChanges2"])
+        return {"img1": img1, "img2": img2, "parameter": row["parameter"], "changes1": row["changes1"], "changes2": row["changes2"], "relChanges1": row["relChanges1"], "relChanges2": row["relChanges2"]}
