@@ -5,28 +5,16 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.autograd as autograd
-import torch.optim as optim
 import torchvision.transforms as transforms
 
-from datasets import AVA, Pexels
-from model import NIAA, Distance_Loss, Earth_Movers_Distance_Loss
+from model.datasets import Pexels
+from model.model import NIAA, Distance_Loss, Earth_Movers_Distance_Loss
 
 
 def main(config):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # fmt: off
-    AVA_train_transform = transforms.Compose([
-        transforms.Scale(256),
-        transforms.RandomCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor()])
-
-    AVA_val_transform = transforms.Compose([
-        transforms.Scale(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor()])
-
     Pexels_train_transform = transforms.Compose([
         transforms.Scale(256),
         transforms.CenterCrop(224),
@@ -37,11 +25,13 @@ def main(config):
         transforms.CenterCrop(224),
         transforms.ToTensor()])
     # fmt: on
-    model = NIAA()
+    model = NIAA(base_model_pretrained=True)
 
     if config.warm_start:
         model.load_state_dict(torch.load(str(Path(config.ckpt_path) / f"epoch-{config.warm_start_epoch}.pkl")))
         print(f"Successfully loaded model epoch-{config.warm_start_epoch}.pkl")
+    else:
+        print("starting cold")
 
     if config.multi_gpu:
         model.features = torch.nn.DataParallel(model.features, device_ids=config.gpu_ids)
@@ -50,7 +40,7 @@ def main(config):
         model = model.to(device)
 
     # fmt: off
-    optimizer = optim.SGD([
+    optimizer = torch.optim.SGD([
         {'params': model.features.parameters(), 'lr': config.conv_base_lr},
         {'params': model.classifier.parameters(), 'lr': config.dense_lr}],
         momentum=0.9)
@@ -62,11 +52,11 @@ def main(config):
     print(f"Trainable params: {(param_num / 1e6):.2f} million")
 
     if config.train:
-        AVA_trainset = AVA(csv_file=config.train_csv_file, root_dir=config.train_img_path, transform=AVA_train_transform)
-        AVA_valset = AVA(csv_file=config.val_csv_file, root_dir=config.val_img_path, transform=AVA_val_transform)
+        Pexels_trainset = Pexels(csv_file=config.train_csv_file, root_dir=config.train_img_path, transform=Pexels_train_transform)
+        Pexels_valset = Pexels(csv_file=config.val_csv_file, root_dir=config.val_img_path, transform=Pexels_val_transform)
 
-        AVA_train_loader = torch.utils.data.DataLoader(AVA_trainset, batch_size=config.train_batch_size, shuffle=True, num_workers=config.num_workers)
-        AVA_val_loader = torch.utils.data.DataLoader(AVA_valset, batch_size=config.val_batch_size, shuffle=False, num_workers=config.num_workers)
+        Pexels_train_loader = torch.utils.data.DataLoader(Pexels_trainset, batch_size=config.train_batch_size, shuffle=True, num_workers=config.num_workers)
+        Pexels_val_loader = torch.utils.data.DataLoader(Pexels_valset, batch_size=config.val_batch_size, shuffle=False, num_workers=config.num_workers)
 
         count = 0  # for early stopping
         init_val_loss = float("inf")
@@ -74,7 +64,7 @@ def main(config):
         val_losses = []
         for epoch in range(config.warm_start_epoch, config.epochs):
             batch_losses = []
-            for i, data in enumerate(AVA_train_loader):
+            for i, data in enumerate(Pexels_train_loader):
                 images = data.img.to(device)
                 labels = data.distribution.to(device).float()
                 outputs = model(images)
@@ -88,9 +78,9 @@ def main(config):
                 loss.backward()
 
                 optimizer.step()
-                print(f"Epoch: {epoch + 1}/{config.epochs} | Step: {i + 1}/{len(trainset) // config.train_batch_size + 1} | Training EMD loss: {loss.data[0]:.4f}")
+                print(f"Epoch: {epoch + 1}/{config.epochs} | Step: {i + 1}/{len(Pexels_trainset) // config.train_batch_size + 1} | Training EMD loss: {loss.data[0]:.4f}")
 
-            avg_loss = sum(batch_losses) / (len(trainset) // config.train_batch_size + 1)
+            avg_loss = sum(batch_losses) / (len(Pexels_trainset) // config.train_batch_size + 1)
             train_losses.append(avg_loss)
             print(f"Epoch {epoch + 1} averaged training EMD loss: {avg_loss:.4f}")
 
@@ -99,7 +89,7 @@ def main(config):
                 conv_base_lr = conv_base_lr * config.lr_decay_rate ** ((epoch + 1) / config.lr_decay_freq)
                 dense_lr = dense_lr * config.lr_decay_rate ** ((epoch + 1) / config.lr_decay_freq)
                 # fmt: off
-                optimizer = optim.SGD([
+                optimizer = torch.optim.SGD([
                     {'params': model.features.parameters(), 'lr': conv_base_lr},
                     {'params': model.classifier.parameters(), 'lr': dense_lr}],
                     momentum=0.9)
@@ -107,7 +97,7 @@ def main(config):
 
             # do validation after each epoch
             batch_val_losses = []
-            for data in AVA_val_loader:
+            for data in Pexels_val_loader:
                 images = data.img.to(device)
                 labels = data.distribution.to(device).float()
                 with torch.no_grad():
@@ -115,7 +105,7 @@ def main(config):
                 outputs = outputs.view(-1, 10, 1)
                 val_loss = Earth_Movers_Distance_Loss(labels, outputs)
                 batch_val_losses.append(val_loss.item())
-            avg_val_loss = sum(batch_val_losses) / (len(valset) // config.val_batch_size + 1)
+            avg_val_loss = sum(batch_val_losses) / (len(Pexels_valset) // config.val_batch_size + 1)
             val_losses.append(avg_val_loss)
 
             print(f"Epoch {epoch + 1} completed. Averaged EMD loss on val set: {avg_val_loss:.4f}." % (epoch + 1, avg_val_loss))

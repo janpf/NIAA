@@ -6,11 +6,16 @@ from torchvision.models import vgg16
 class NIAA(nn.Module):
     """Neural Image Aesthetic Assessment model"""
 
-    def __init__(self, base_model: nn.module = vgg16(pretrained=False), num_classes: int = 10):
+    def __init__(self, base_model: nn.module = vgg16, num_classes: int = 10, base_model_pretrained=None):
         super(NIAA, self).__init__()
         self.num_classes = num_classes
         self.scores = torch.FloatTensor(list(range(1, num_classes + 1)))  # [1..10]
-        self.features = base_model.features  # vgg16.features
+        if base_model_pretrained is not None:
+            self.base_model = base_model(pretrained=base_model_pretrained)
+        else:
+            self.base_model = base_model()
+        self.features = self.base_model.features  # vgg16.features
+
         # fmt: off
         self.classifier = nn.Sequential(
             nn.Dropout(p=0.75),
