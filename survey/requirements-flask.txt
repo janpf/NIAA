@@ -5,4 +5,5 @@ numpy
 opencv-python-headless
 pandas
 Pillow
+ptvsd
 redis
