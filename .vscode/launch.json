@@ -10,6 +10,19 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Python Attach (Remote Debug localhost)",
+            "type": "python",
+            "request": "attach",
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}", // You may also manually specify the directory containing your source code.
+                    "remoteRoot": "/workspace"
+                }
+            ],
+            "port": 4444, // Set to the remote port.
+            "host": "localhost" // Set to your remote host's public IP address.
         }
     ]
 }

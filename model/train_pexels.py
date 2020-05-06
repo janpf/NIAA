@@ -26,6 +26,7 @@ def main(config):
     model = NIAA(base_model_pretrained=True)
 
     if config.warm_start:
+        Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
         model.load_state_dict(torch.load(str(Path(config.ckpt_path) / f"epoch-{config.warm_start_epoch}.pkl")))
         print(f"Successfully loaded model epoch-{config.warm_start_epoch}.pkl")
     else:
@@ -50,8 +51,8 @@ def main(config):
     print(f"Trainable params: {(param_num / 1e6):.2f} million")
 
     if config.train:
-        Pexels_trainset = Pexels(csv_file=config.train_csv_file, root_dir=config.train_img_path, transform=Pexels_train_transform)
-        Pexels_valset = Pexels(csv_file=config.val_csv_file, root_dir=config.val_img_path, transform=Pexels_val_transform)
+        Pexels_trainset = Pexels(csv_file=config.train_csv_file, root_dir=config.img_path, transform=Pexels_train_transform)
+        Pexels_valset = Pexels(csv_file=config.val_csv_file, root_dir=config.img_path, transform=Pexels_val_transform)
 
         Pexels_train_loader = torch.utils.data.DataLoader(Pexels_trainset, batch_size=config.train_batch_size, shuffle=True, num_workers=config.num_workers)
         Pexels_val_loader = torch.utils.data.DataLoader(Pexels_valset, batch_size=config.val_batch_size, shuffle=False, num_workers=config.num_workers)
@@ -132,8 +133,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # input parameters
-    parser.add_argument("--train_img_path", type=str, default="/home/yunxiao/ava_data/train")
-    parser.add_argument("--val_img_path", type=str, default="/home/yunxiao/ava_data/val")
+    parser.add_argument("--img_path", type=str, default="/data/pexels/images")
+    parser.add_argument("--edited_img_path", type=str, default="/data/pexels/edited_images")
     parser.add_argument("--train_csv_file", type=str, default="../train_labels.csv")
     parser.add_argument("--val_csv_file", type=str, default="../val_labels.csv")
 
@@ -148,13 +149,12 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=100)
 
     # misc
-    parser.add_argument("--ckpt_path", type=str, default="../ckpts")
+    parser.add_argument("--ckpt_path", type=str, default="/data/ckpts/pexels/cold")
     parser.add_argument("--multi_gpu", type=bool, default=False)
     parser.add_argument("--gpu_ids", type=list, default=None)
     parser.add_argument("--warm_start", type=bool, default=False)
     parser.add_argument("--warm_start_epoch", type=int, default=0)
     parser.add_argument("--early_stopping_patience", type=int, default=5)
-    parser.add_argument("--save_fig", type=bool, default=False)
 
     config = parser.parse_args()
 
