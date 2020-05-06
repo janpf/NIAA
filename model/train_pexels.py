@@ -1,5 +1,4 @@
 import argparse
-import os
 from pathlib import Path
 
 import numpy as np
@@ -8,11 +7,10 @@ import torch.autograd as autograd
 import torchvision.transforms as transforms
 
 from model.datasets import Pexels
-from model.model import NIAA, Distance_Loss, Earth_Movers_Distance_Loss
+from model.model import NIAA, Distance_Loss
 
 
 def main(config):
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # fmt: off
     Pexels_train_transform = transforms.Compose([
@@ -65,14 +63,13 @@ def main(config):
         for epoch in range(config.warm_start_epoch, config.epochs):
             batch_losses = []
             for i, data in enumerate(Pexels_train_loader):
-                images = data.img.to(device)
-                labels = data.distribution.to(device).float()
-                outputs = model(images)
-                outputs = outputs.view(-1, 10, 1)
+                img1 = data["img1"].to(device)
+                img2 = data["img2"].to(device)
+                out1, out2 = model(img1, img2, mode="siamese")
 
                 optimizer.zero_grad()
 
-                loss = Earth_Movers_Distance_Loss(labels, outputs)
+                loss = Distance_Loss(out1, out2)
                 batch_losses.append(loss.item())
 
                 loss.backward()
@@ -98,12 +95,13 @@ def main(config):
             # do validation after each epoch
             batch_val_losses = []
             for data in Pexels_val_loader:
-                images = data.img.to(device)
-                labels = data.distribution.to(device).float()
+                img1 = data["img1"].to(device)
+                img2 = data["img2"].to(device)
+
                 with torch.no_grad():
-                    outputs = model(images)
-                outputs = outputs.view(-1, 10, 1)
-                val_loss = Earth_Movers_Distance_Loss(labels, outputs)
+                    out1, out2 = model(img1, img2, mode="siamese")
+
+                val_loss = Distance_Loss(out1, out2)
                 batch_val_losses.append(val_loss.item())
             avg_val_loss = sum(batch_val_losses) / (len(Pexels_valset) // config.val_batch_size + 1)
             val_losses.append(avg_val_loss)
@@ -115,8 +113,7 @@ def main(config):
                 init_val_loss = avg_val_loss
                 # save model weights if val loss decreases
                 print("Saving model...")
-                if not os.path.exists(config.ckpt_path):
-                    os.makedirs(config.ckpt_path)
+                Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
                 torch.save(model.state_dict(), str(Path(config.ckpt_path) / f"epoch-{epoch + 1}.pkl"))
                 print("Done.\n")
                 # reset count
