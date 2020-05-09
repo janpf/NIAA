@@ -34,6 +34,15 @@ def edit_image(img_path: str, change: str, value: float) -> Image:
     edit_file = "/tmp/edit.xmp"
     out_file = "/tmp/out.jpg"
 
+    create_xmp_file(edit_file, change, value)
+
+    subprocess.run(["darktable-cli", img_path, edit_file, out_file, "--core", "--library", ":memory:"])
+    img = Image.open(out_file).convert("RGB")
+    os.remove(out_file)
+    return img
+
+
+def create_xmp_file(path:str, change:str, value:float):
     if "contrast" == change or "brightness" == change or "saturation" == change:
         template_file = "./darktable_xmp/colisa.xmp"
         param_index = ["contrast", "brightness", "saturation"].index(change)
@@ -61,12 +70,7 @@ def edit_image(img_path: str, change: str, value: float) -> Image:
         change_str = parameter_range[change]["rangemapping"][value]
 
     with open(template_file) as template_file:
-        Template(template_file.read()).stream(value=change_str).dump(edit_file)
-
-    subprocess.run(["darktable-cli", img_path, edit_file, out_file, "--core", "--library", ":memory:"])
-    img = Image.open(out_file).convert("RGB")
-    os.remove(out_file)
-    return img
+        Template(template_file.read()).stream(value=change_str).dump(path)
 
 
 parameter_range = collections.defaultdict(dict)

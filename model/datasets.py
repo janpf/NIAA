@@ -26,7 +26,7 @@ class AVA(torch.utils.data.Dataset):
     def __getitem__(self, idx) -> AVASample:
         row = self.annotations.iloc[idx]  #  TODO wie funktioniert iloc?
 
-        img = Image.open(self.root_dir / (row["img_id"] + ".jpg"))  # TODO kontrollieren
+        img = Image.open(self.root_dir / (row["img_id"] + ".jpg")).convert("RGB")  # TODO kontrollieren
         img = self.transforms(img)
 
         distribution = list(row.loc[:, "1":"10"])
@@ -59,10 +59,10 @@ class Pexels(torch.utils.data.Dataset):
     def __getitem__(self, idx) -> PexelsSample:
         row = self.annotations.iloc[idx]
 
-        img1 = Image.open(self.root_dir / (row["img1"] + ".jpg"))
+        img1 = Image.open(self.root_dir / row["img1"]).convert("RGB")
         img1 = self.transforms(img1)
 
-        img2 = Image.open(self.edited_dir / (row["img2"] + ".jpg"))
+        img2 = Image.open(self.edited_dir / row["img2"] + ".jpg").convert("RGB")
         img2 = self.transforms(img2)
 
         return {"img1": img1, "img2": img2, "parameter": row["parameter"], "changes1": row["changes1"], "changes2": row["changes2"], "relChanges1": row["relChanges1"], "relChanges2": row["relChanges2"]}

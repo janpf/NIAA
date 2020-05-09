@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: prepare-shadows-m-60
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: prepare-shadows-m-60
+        image: janpf/niaa:flask-latest
+        imagePullPolicy: Always
+        env:
+        - name: HOME
+          value: /tmp
+        resources:
+          limits:
+            cpu: '4'
+            memory: 8Gi
+          requests:
+            cpu: '4'
+            memory: 8Gi
+        volumeMounts:
+        - mountPath: /workspace
+          name: code
+        - mountPath: /scratch
+          name: scratch
+        command:
+        - darktable-cli
+        - /scratch/pexels/images
+        - /scratch/pexels/xmps/shadows/-60.xmp
+        - /scratch/pexels/edited_images/shadows/-60/$(FILE_NAME).jpg
+        - --verbose
+      volumes:
+      - name: code
+        cephfs:
+          monitors:
+          - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+          user: studpfister
+          path: /home/stud/pfister/eclipse-workspace/NIAA
+          secretRef:
+            name: studpfister-secret
+      - name: scratch
+        cephfs:
+          monitors:
+          - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+          user: studpfister
+          path: /scratch/stud/pfister/NIAA
+          secretRef:
+            name: studpfister-secret

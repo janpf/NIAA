@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: to_be_changed
+spec:
+  template:
+    spec:
+      restartPolicy: "Never"
+      containers:
+        - name: to_be_changed
+          image: janpf/niaa:flask-latest
+          imagePullPolicy: "Always"
+          env:
+            - name: HOME
+              value: "/tmp"
+          resources:
+            limits:
+              cpu: "4"
+              memory: "8Gi"
+            requests:
+              cpu: "4"
+              memory: "8Gi"
+          volumeMounts:
+            - mountPath: /workspace
+              name: code
+            - mountPath: /scratch
+              name: scratch
+          command:
+            - darktable-cli
+            - to_be_changed
+            - to_be_changed
+            - to_be_changed
+            - --verbose
+      volumes:
+        - name: code
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studpfister
+            path: "/home/stud/pfister/eclipse-workspace/NIAA"
+            secretRef:
+              name: studpfister-secret
+        - name: scratch
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studpfister
+            path: "/scratch/stud/pfister/NIAA"
+            secretRef:
+              name: studpfister-secret
