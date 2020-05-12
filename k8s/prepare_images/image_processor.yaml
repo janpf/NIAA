@@ -1,13 +1,15 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: to_be_changed
+  name: image-processor
 spec:
+  parallelism: 300
   template:
     spec:
+      priorityClassName: research-low
       restartPolicy: "Never"
       containers:
-        - name: to_be_changed
+        - name: image-processor
           image: janpf/niaa:flask-latest
           imagePullPolicy: "Always"
           env:
@@ -15,22 +17,19 @@ spec:
               value: "/tmp"
           resources:
             limits:
-              cpu: "4"
-              memory: "8Gi"
+              cpu: "1"
+              memory: "2Gi"
             requests:
-              cpu: "4"
-              memory: "8Gi"
+              cpu: "1"
+              memory: "2Gi"
           volumeMounts:
             - mountPath: /workspace
               name: code
             - mountPath: /scratch
               name: scratch
           command:
-            - darktable-cli
-            - to_be_changed
-            - to_be_changed
-            - to_be_changed
-            - --verbose
+            - python
+            - /workspace/k8s/prepare_images/imageworker.py
       volumes:
         - name: code
           cephfs:
