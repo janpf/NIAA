@@ -1,7 +1,6 @@
 import json
 import logging
 import sys
-import time
 from pathlib import Path
 
 import redis
@@ -37,4 +36,3 @@ if __name__ == "__main__":
         if ret == 0:
             logging.info(f"queue empty")
             break
-        time.sleep(1)
