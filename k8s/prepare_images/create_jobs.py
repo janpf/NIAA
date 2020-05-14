@@ -3,6 +3,7 @@ import math
 import sys
 from pathlib import Path
 
+from PIL import Image
 import redis
 
 sys.path.insert(0, ".")
@@ -20,6 +21,8 @@ pexels_docker_dir = Path("/scratch") / "pexels"
 img_docker_dir = pexels_docker_dir / "images"
 out_docker_dir = pexels_docker_dir / "edited_images"
 
+mode = ["all", "missing", "repair"][0]
+
 del parameter_range["lcontrast"]
 for i, image in enumerate(list(img_dir.iterdir())):
     if i % 1000 == 0:
@@ -28,6 +31,15 @@ for i, image in enumerate(list(img_dir.iterdir())):
         for change in parameter_range[parameter]["range"]:
             if math.isclose(change, parameter_range[parameter]["default"]):
                 continue
-            # print({"img": str(img_docker_dir / image.name), "parameter": parameter, "change": change, "out": str(out_docker_dir / parameter / str(change) / image.name)})
-            pipe.rpush("NIAA_img_q", json.dumps({"img": str(img_docker_dir / image.name), "parameter": parameter, "change": change, "out": str(out_docker_dir / parameter / str(change) / image.name)}))
+            data = {"img": str(img_docker_dir / image.name), "parameter": parameter, "change": change, "out": str(out_docker_dir / parameter / str(change) / image.name)}
+            if mode == "all":
+                pipe.rpush("NIAA_img_q", json.dumps(data))
+            elif mode == "missing":
+                if not Path(data["out"].exists()):
+                    pipe.rpush("NIAA_img_q", json.dumps(data))
+            elif mode == "repair":
+                try:
+                    Image.open(data["out"])
+                except:
+                    pipe.rpush("NIAA_img_q", json.dumps(data))
     pipe.execute()
