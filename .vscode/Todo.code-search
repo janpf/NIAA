@@ -3,12 +3,11 @@
 # Including: \home\stud\pfister\eclipse-workspace\NIAA, ./Masterarbeit
 # Excluding: .gitignore
 
-5 results - 2 files
+4 results - 2 files
 
-NIAA • datasets.py:
-  26:         row = self.annotations.iloc[idx]  #  TODO wie funktioniert iloc?
-  27:         img = Image.open(self.root_dir / (row["img_id"] + ".jpg"))  # TODO kontrollieren
-  35: # TODO pexels dataset
+NIAA • model/datasets.py:
+  27:         row = self.annotations.iloc[idx]  #  TODO wie funktioniert iloc?
+  29:         img = Image.open(self.root_dir / (row["img_id"] + ".jpg")).convert("RGB")  # TODO kontrollieren
 
 NIAA • survey/analyser.py:
   268:     # axs_corr[i].grid(True, which="both") # FIXME?
