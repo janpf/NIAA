@@ -18,5 +18,7 @@
         }
     ],
     "remoteAuthority": "ssh-remote+vingilot",
-    "settings": {}
+    "settings": {
+        "python.pythonPath": "/autofs/ceph-stud-new/pfister/eclipse-workspace/NIAA/venv/bin/python"
+    }
 }

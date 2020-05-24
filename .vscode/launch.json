@@ -17,7 +17,7 @@
             "request": "attach",
             "pathMappings": [
                 {
-                    "localRoot": "${workspaceFolder}", // You may also manually specify the directory containing your source code.
+                    "localRoot": "/home/stud/pfister/eclipse-workspace/NIAA", // You may also manually specify the directory containing your source code.
                     "remoteRoot": "/workspace"
                 }
             ],
