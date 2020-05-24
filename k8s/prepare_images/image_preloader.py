@@ -1,31 +1,47 @@
 import json
 import logging
 from pathlib import Path
+from io import BytesIO
 import redis
+from PIL import Image
 
 r = redis.Redis(host="redis")
+pipe = r.pipeline()
 
 
 def preprocessImage():
-    data = r.lrange("NIAA_img_q")
-    if not data:
-        return 0
-    data = json.loads(data)
+    data = r.lrange("NIAA_img_q", 1, 5000)
+    data = [json.loads(val)["img"] for val in data]
+    done = list(r.hkeys("NIAA_img_q_prepared"))
 
-    logging.info(f"got: {data}")
-    logging.info(f"finished image")
+    for val in data:
+        if val in done:
+            continue
+        logging.info(val)
+        img = Image.open(val)
+        with BytesIO() as output:
+            img.save(output, format="JPEG")
+            img = output.getvalue()
+        pipe.hset("NIAA_img_q_prepared", key=val, value=img)
+        done.append(val)
 
-    if not img:
-        raise ValueError(f"not working: {data}")
 
-    img.save(data["out"], format="JPEG")
-    logging.info(f"saved image")
-    return 1
+def clearOldImages():
+    done = r.hkeys("NIAA_img_q_prepared")
+    data = r.lrange("NIAA_img_q", 1, 5000)
+    data = [json.loads(val)["img"] for val in data]
+
+    for key in done:
+        if not key in data:
+            pipe.hdel("NIAA_img_q_prepared", key)
+
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.INFO)
     while True:
-        ret = preprocessImage()
-        if ret == 0:
-            logging.info(f"queue empty")
-            break
+        logging.info(f"{r.hlen('NIAA_img_q_prepared')} images queued")
+        preprocessImage()
+        pipe.execute()
+        logging.info(f"{r.hlen('NIAA_img_q_prepared')} images queued")
+        clearOldImages()
+        pipe.execute()
