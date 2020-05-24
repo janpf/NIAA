@@ -4,9 +4,10 @@ metadata:
   name: image-processor
 spec:
   parallelism: 100
+  backoffLimit: 5000
   template:
     spec:
-      restartPolicy: "Never"
+      restartPolicy: "OnFailure"
       containers:
         - name: image-processor
           image: janpf/niaa:flask-latest
@@ -26,6 +27,8 @@ spec:
               name: code
             - mountPath: /scratch
               name: scratch
+            - mountPath: /tmp
+              name: tmp-ramdisk
           command:
             - python
             - /workspace/k8s/prepare_images/imageworker.py
@@ -46,3 +49,6 @@ spec:
             path: "/scratch/stud/pfister/NIAA"
             secretRef:
               name: studpfister-secret
+        - name: tmp-ramdisk
+          emptyDir:
+            medium: Memory
