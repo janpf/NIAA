@@ -4,15 +4,17 @@ from pathlib import Path
 from io import BytesIO
 import redis
 from PIL import Image
+from random import shuffle
 
 r = redis.Redis(host="redis")
 pipe = r.pipeline()
 
 
 def preprocessImage():
-    data = r.lrange("NIAA_img_q", 1, 5000)
+    data = r.lrange("NIAA_img_q", 1, 20000)
     data = [json.loads(val)["img"] for val in data]
-    done = list(r.hkeys("NIAA_img_q_prepared"))
+    done = [val.decode("ascii") for val in r.hkeys("NIAA_img_q_prepared")]
+    shuffle(data)
 
     for val in data:
         if val in done:
@@ -27,8 +29,8 @@ def preprocessImage():
 
 
 def clearOldImages():
-    done = r.hkeys("NIAA_img_q_prepared")
-    data = r.lrange("NIAA_img_q", 1, 5000)
+    done = [val.decode("ascii") for val in r.hkeys("NIAA_img_q_prepared")]
+    data = r.lrange("NIAA_img_q", 1, 20000)
     data = [json.loads(val)["img"] for val in data]
 
     for key in done:
@@ -40,7 +42,11 @@ if __name__ == "__main__":
     logging.getLogger().setLevel(logging.INFO)
     while True:
         logging.info(f"{r.hlen('NIAA_img_q_prepared')} images queued")
-        preprocessImage()
+        try:
+            preprocessImage()
+        except:
+            pass
+
         pipe.execute()
         logging.info(f"{r.hlen('NIAA_img_q_prepared')} images queued")
         clearOldImages()

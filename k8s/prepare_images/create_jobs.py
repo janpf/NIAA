@@ -32,6 +32,7 @@ for i, image in enumerate(list(img_dir.iterdir())):
             if math.isclose(change, parameter_range[parameter]["default"]):
                 continue
             data = {"img": str(img_docker_dir / image.name), "parameter": parameter, "change": change, "out": str(out_docker_dir / parameter / str(change) / image.name)}
+            # FIXME all pngs. am besten nochmal neu machen
             if mode == "all":
                 pipe.rpush("NIAA_img_q", json.dumps(data))
             elif mode == "missing":

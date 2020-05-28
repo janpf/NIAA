@@ -18,11 +18,14 @@ def preprocessImage():
         return 0
     data = json.loads(data)
     logging.info(f"got: {data}")
-    for i in range(60):
+    for i in range(10):
         img = r.hget("NIAA_img_q_prepared", data["img"])
         if img is not None:
             break
+        logging.info("waiting for image")
         time.sleep(1)
+    if img is None:
+        return 1
     with open("/tmp/in.jpeg", "wb") as f:
         f.write(BytesIO(img).getbuffer())
     img = edit_image(img_path="/tmp/in.jpeg", change=data["parameter"], value=data["change"])  # keyword naming kann ich
