@@ -265,14 +265,12 @@ for i, key in enumerate(params):
     tmp = list(zip(*sorted(analyzeDict[key]["smallerChosenRelChangesOrigPresentPos"].items(), key=lambda k: k[0])))
     axs_corr[i].plot(tmp[0], tmp[1], "-x", color="orange", label="click percentage per editing distance, original present")
 
-    # axs_corr[i].grid(True, which="both") # FIXME?
-    # axs_corr[i].minorticks_on()
+    axs_corr[i].grid(True, which="both")
+    axs_corr[i].minorticks_on()
     axs_corr[i].yaxis.set_ticks([0, 0.5, 1])
     axs_corr[i].yaxis.set_major_formatter(ticker.FormatStrFormatter("%0.1f"))
     axs_corr[i].yaxis.set_ticks([0.1, 0.2, 0.3, 0.4, 0.6, 0.7, 0.8, 0.9], minor=True)
     axs_corr[i].yaxis.set_minor_formatter(ticker.FormatStrFormatter("%0.1f"))
-    # axs_corr[i].xaxis.set_ticks([])
-    # axs_corr[i].xaxis.set_ticks([])
 
     if len(analyzeDict[key]["smallerChosenRelChangesNeg"]) > 1:
         tmp = list(zip(*sorted(analyzeDict[key]["smallerChosenRelChangesNeg"].items(), key=lambda k: k[0])))
@@ -350,12 +348,23 @@ for i, key in enumerate(params):
                 x.append(valLarge)
                 y.append(analyzeDict[key]["asSmallerChosenVS"][valSmall].get(valLarge, 0))
 
+        axs_small_vs[j].grid(True, which="both")
+        axs_small_vs[j].minorticks_on()
+        axs_small_vs[j].yaxis.set_ticks([0, 0.5, 1])
+        axs_small_vs[j].yaxis.set_major_formatter(ticker.FormatStrFormatter("%0.1f"))
+        axs_small_vs[j].yaxis.set_ticks([0.1, 0.2, 0.3, 0.4, 0.6, 0.7, 0.8, 0.9], minor=True)
+        axs_small_vs[j].yaxis.set_minor_formatter(ticker.FormatStrFormatter("%0.1f"))
+        axs_small_vs[j].xaxis.set_ticks([])
+        axs_small_vs[j].xaxis.set_ticks(x, minor=True)
+        axs_small_vs[j].xaxis.set_ticklabels(x, minor=True)
+
+        axs_small_vs[j].plot(x, y, "-x", color="green", label="probability of chosen if displayed against")
+        axs_small_vs[j].axhline(y=0.5, linestyle="-", color="grey", label="equally likely clicked")
+        axs_small_vs[j].axvline(x=valSmall, linestyle="--", color="orange", label="compared")
+
         axs_small_vs[j].set_title(valSmall)
         axs_small_vs[j].set_xlim(left=min(parameter_range[key]["range"]), right=max(parameter_range[key]["range"]))
         axs_small_vs[j].set_ylim(bottom=0, top=1)
-        axs_small_vs[j].plot(x, y, "-x", color="green", label="probability of chosen if displayed against")
-        # axs_small_vs[j].axhline() # TODO
-        axs_small_vs[j].axvline(x=valSmall, linestyle="--", color="orange", label="compared")
 
     for j, valLarge in enumerate(parameter_range[key]["range"]):
         x = []
@@ -367,6 +376,9 @@ for i, key in enumerate(params):
             for valSmall in parameter_range[key]["range"]:
                 x.append(valSmall)
                 y.append(analyzeDict[key]["asLargerChosenVS"][valLarge].get(valSmall, 0))
+
+        axs_small_vs[j].xaxis.set_ticks(x, minor=True)
+        axs_small_vs[j].xaxis.set_ticklabels(x, minor=True)
 
         axs_small_vs[j].plot(x, y, "-x", color="red", label="probability of chosen if displayed against")
 
