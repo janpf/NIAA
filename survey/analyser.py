@@ -18,8 +18,8 @@ from edit_image import parameter_range
 
 sns.set(style="whitegrid")
 
-submission_log = Path.home() / "eclipse-workspace" / "NIAA" / "survey" / "survey.csv"  # type: Path
-submission_log = Path("/scratch") / "stud" / "pfister" / "NIAA" / "pexels" / "logs" / "survey_NIMA.csv"  # type: Path
+submission_csv = Path.home() / "eclipse-workspace" / "NIAA" / "survey" / "survey.csv"  # type: Path
+# submission_csv = Path("/scratch") / "stud" / "pfister" / "NIAA" / "pexels" / "logs" / "survey_NIMA.csv"  # type: Path
 plot_dir = Path.home() / "eclipse-workspace" / "NIAA" / "analysis" / "survey"  # type: Path
 
 plot_dir.mkdir(parents=True, exist_ok=True)
@@ -39,7 +39,7 @@ try:
 except:
     print("no redis connection available => 'kctl port-forward svc/redis 7000:6379'")
 
-sub_df = pd.read_csv(submission_log, parse_dates=["loadTime", "submitTime"])  # type: pd.DataFrame
+sub_df = pd.read_csv(submission_csv)  # type: pd.DataFrame
 # data reading done
 
 print()
@@ -291,7 +291,7 @@ for i, key in enumerate(params):
     axs[i].set_ylim(bottom=0, top=1)
     tmp = list(zip(*sorted(analyzeDict[key]["chosenChangesPos"].items(), key=lambda k: k[0])))
     axs[i].plot(tmp[0], tmp[1], "-x", color="blue", label="probability of chosen if displayed")
-    sns.regplot(tmp[0], tmp[1], scatter=False, color="orange", label="linear regression", ax=axs[i])
+    sns.regplot(list(tmp[0]), list(tmp[1]), scatter=False, color="orange", label="linear regression", ax=axs[i])
 
     axs[i].grid(True, which="both")
     axs[i].minorticks_on()
@@ -306,7 +306,7 @@ for i, key in enumerate(params):
     tmp = list(zip(*sorted(analyzeDict[key]["chosenChangesNeg"].items(), key=lambda k: k[0])))
     if len(tmp) > 1:
         axs[i].plot(tmp[0], tmp[1], "-x", color="blue")
-        sns.regplot(tmp[0], tmp[1], scatter=False, color="orange", ax=axs[i])
+        sns.regplot(list(tmp[0]), list(tmp[1]), scatter=False, color="orange", ax=axs[i])
 
     axs[i].axhline(y=0.5, linestyle="-", color="grey", label="equally likely clicked")
     axs[i].axvline(x=parameter_range[key]["default"], linestyle="--", color="orange", label="original image")
@@ -316,7 +316,7 @@ for i, key in enumerate(params):
     axs_orig[i].set_ylim(bottom=0, top=1)
     tmp = list(zip(*sorted(analyzeDict[key]["chosenChangesOrigPresentPos"].items(), key=lambda k: k[0])))
     axs_orig[i].plot(tmp[0], tmp[1], "-x", color="blue", label="probability of chosen if displayed")
-    sns.regplot(tmp[0], tmp[1], scatter=False, color="orange", label="linear regression", ax=axs_orig[i])
+    sns.regplot(list(tmp[0]), list(tmp[1]), scatter=False, color="orange", label="linear regression", ax=axs_orig[i])
 
     axs_orig[i].grid(True, which="both")
     axs_orig[i].minorticks_on()
@@ -331,7 +331,7 @@ for i, key in enumerate(params):
     tmp = list(zip(*sorted(analyzeDict[key]["chosenChangesOrigPresentNeg"].items(), key=lambda k: k[0])))
     if len(tmp) > 1:
         axs_orig[i].plot(tmp[0], tmp[1], "-x", color="blue")
-        sns.regplot(tmp[0], tmp[1], scatter=False, color="orange", ax=axs_orig[i])
+        sns.regplot(list(tmp[0]), list(tmp[1]), scatter=False, color="orange", ax=axs_orig[i])
     axs_orig[i].axhline(y=0.5, linestyle="-", color="grey", label="equally likely clicked")
     axs_orig[i].axvline(x=parameter_range[key]["default"], linestyle="--", color="orange", label="original image")
 
@@ -390,7 +390,7 @@ print()
 
 plt.figure()
 print("decision duration:")
-durations = (sub_df.submitTime - sub_df.loadTime).astype("timedelta64[s]")
+durations = sub_df["RTT(s)"]
 
 no_afk_durations = durations[durations < 60]
 print(f"average time for decision: {'{:.1f}'.format(no_afk_durations.mean())} seconds")
