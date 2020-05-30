@@ -22,7 +22,7 @@ def preprocessImage():
         logging.info(val)
         img = Image.open(val)
         with BytesIO() as output:
-            img.save(output, format="JPEG")
+            img.save(output, format=Path(val).suffix.replace(".", "").upper())  # "epic_Image.pNg" => "PNG"
             img = output.getvalue()
         pipe.hset("NIAA_img_q_prepared", key=val, value=img)
         done.append(val)
@@ -44,8 +44,8 @@ if __name__ == "__main__":
         logging.info(f"{r.hlen('NIAA_img_q_prepared')} images queued")
         try:
             preprocessImage()
-        except:
-            pass
+        except Exception as e:
+            print(e)
 
         pipe.execute()
         logging.info(f"{r.hlen('NIAA_img_q_prepared')} images queued")

@@ -16,7 +16,7 @@ from PIL import Image
 def edit_image(img_path: str, change: str, value: float) -> Image:
     if math.isclose(parameter_range[change]["default"], value):
         print(f"default called: {change}: {value}")
-        return Image.open(img_path).convert("RGB")
+        return Image.open(img_path)
 
     if "lcontrast" == change:  # not my fault: localcontrast xmp in darktable is broken atm. no idea why
         img = cv2.imread(img_path)
@@ -27,22 +27,22 @@ def edit_image(img_path: str, change: str, value: float) -> Image:
 
         limg = cv2.merge((cl, a, b))
 
-        img = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
+        img = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)  # no png support? RGBA? decided based on filename? not needed atm
         img = Image.fromarray(img)
         return img
 
     edit_file = "/tmp/edit.xmp"
-    out_file = "/tmp/out.jpg"
+    out_file = f"/tmp/out{Path(img_path).suffix}"
 
     create_xmp_file(edit_file, change, value)
 
     subprocess.run(["darktable-cli", img_path, edit_file, out_file, "--core", "--library", ":memory:"])
-    img = Image.open(out_file).convert("RGB")
+    img = Image.open(out_file)
     os.remove(out_file)
     return img
 
 
-def create_xmp_file(path:str, change:str, value:float):
+def create_xmp_file(path: str, change: str, value: float):
     if "contrast" == change or "brightness" == change or "saturation" == change:
         template_file = "./darktable_xmp/colisa.xmp"
         param_index = ["contrast", "brightness", "saturation"].index(change)

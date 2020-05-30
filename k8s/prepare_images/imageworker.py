@@ -26,15 +26,16 @@ def preprocessImage():
         time.sleep(1)
     if img is None:
         return 1
-    with open("/tmp/in.jpeg", "wb") as f:
+    in_img = f"/tmp/in{Path(data['out']).suffix}"
+    with open(in_img, "wb") as f:
         f.write(BytesIO(img).getbuffer())
-    img = edit_image(img_path="/tmp/in.jpeg", change=data["parameter"], value=data["change"])  # keyword naming kann ich
+    img = edit_image(img_path=in_img, change=data["parameter"], value=data["change"])  # keyword naming kann ich
     logging.info(f"finished image")
 
     if not img:
         raise ValueError(f"not working: {data}")
 
-    img.save(data["out"], format="JPEG")
+    img.save(data["out"])
     logging.info(f"saved image")
     return 1
 

@@ -21,26 +21,46 @@ pexels_docker_dir = Path("/scratch") / "pexels"
 img_docker_dir = pexels_docker_dir / "images"
 out_docker_dir = pexels_docker_dir / "edited_images"
 
-mode = ["all", "missing", "repair"][0]
+mode = ["all", "missing", "repair", "png"][1]
 
 del parameter_range["lcontrast"]
-for i, image in enumerate(list(img_dir.iterdir())):
-    if i % 1000 == 0:
-        print(f"{i} images done")
+
+if mode == "missing":
+    orig_imgs = list(img_dir.iterdir())
+    orig_imgs: set = {str(img.name) for img in orig_imgs}
+
     for parameter in parameter_range:
+        print(parameter)
         for change in parameter_range[parameter]["range"]:
             if math.isclose(change, parameter_range[parameter]["default"]):
                 continue
-            data = {"img": str(img_docker_dir / image.name), "parameter": parameter, "change": change, "out": str(out_docker_dir / parameter / str(change) / image.name)}
-            # FIXME all pngs. am besten nochmal neu machen
-            if mode == "all":
+            edited_imgs = list((out_dir / parameter / str(change)).iterdir())
+            edited_imgs: set = {str(img.name) for img in edited_imgs}
+            missing = orig_imgs.difference(edited_imgs)
+            print(parameter, change, "missing:", len(missing))
+            for image in missing:
+                image = Path(image)
+                data = {"img": str(img_docker_dir / image.name), "parameter": parameter, "change": change, "out": str(out_docker_dir / parameter / str(change) / image.name)}
                 pipe.rpush("NIAA_img_q", json.dumps(data))
-            elif mode == "missing":
-                if not Path(data["out"].exists()):
+        pipe.execute()
+else:
+    for i, image in enumerate(list(img_dir.iterdir())):
+        if i % 1000 == 0:
+            print(f"{i} images done")
+        for parameter in parameter_range:
+            for change in parameter_range[parameter]["range"]:
+                if math.isclose(change, parameter_range[parameter]["default"]):
+                    continue
+                data = {"img": str(img_docker_dir / image.name), "parameter": parameter, "change": change, "out": str(out_docker_dir / parameter / str(change) / image.name)}
+
+                if mode == "all":
                     pipe.rpush("NIAA_img_q", json.dumps(data))
-            elif mode == "repair":
-                try:
-                    Image.open(data["out"])
-                except:
+                elif mode == "png" and image.suffix.lower() == ".png":
                     pipe.rpush("NIAA_img_q", json.dumps(data))
-    pipe.execute()
+                    continue
+                elif mode == "repair":
+                    try:
+                        Image.open(data["out"])
+                    except:
+                        pipe.rpush("NIAA_img_q", json.dumps(data))
+        pipe.execute()
