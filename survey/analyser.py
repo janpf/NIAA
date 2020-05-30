@@ -402,18 +402,34 @@ print()
 
 plt.figure()
 print("decision duration:")
-durations = sub_df["RTT(s)"]
 
+durations = clean_df["RTT(s)"]
 no_afk_durations = durations[durations < 60]
+unsure_duration = durations[(durations < 60) & (clean_df["chosen"] == "unsure")]
+not_unsure_duration = durations[(durations < 60) & (clean_df["chosen"] != "unsure")]
+
 print(f"average time for decision: {'{:.1f}'.format(no_afk_durations.mean())} seconds")
 
-plt.hist(durations.values, bins=range(0, int(no_afk_durations.max()) + 1), align="left")
-# sns.distplot(durations, bins=range(0, int(no_afk_durations.max()) + 1), hist_kws={"align": "left"})
-plt.ylim(bottom=0)
+plt.hist(durations.values, bins=range(0, int(no_afk_durations.max()) + 1))
+plt.gca().axvline(x=no_afk_durations.mean(), linestyle="--", color="k", label="average")
 plt.xlim(left=-1, right=int(no_afk_durations.max()) + 2)
+plt.ylim(bottom=0)
+plt.xlabel("seconds")
+plt.ylabel("count")
 plt.tight_layout()
 plt.savefig(plot_dir / "decision-duration.png")
 plt.clf()
+
+if False:
+    # plt.hist(unsure_duration.values, bins=range(0, int(no_afk_durations.max()) + 1), align="left")
+    sns.distplot(no_afk_durations, hist=False, label="overall")
+    sns.distplot(unsure_duration, hist=False, label="unsure")
+    sns.distplot(not_unsure_duration, hist=False, label="not unsure")
+    plt.xlim(left=-1, right=int(no_afk_durations.max()) + 2)
+    plt.ylim(bottom=0)
+    plt.tight_layout()
+    plt.savefig(plot_dir / "decision-duration-unsure.png")
+    plt.clf()
 
 print("---")
 print()
@@ -421,7 +437,7 @@ print()
 plt.figure()
 print("useragent distribution:")
 useragents = []
-for _, row in sub_df.iterrows():
+for _, row in clean_df.iterrows():
     useragents.append(httpagentparser.detect(row["useragent"]))
 
 browser_count = collections.Counter([val["browser"]["name"] for val in useragents])
@@ -435,13 +451,18 @@ print("---")
 print()
 
 print("Top 5 longest sessions:")
-usercount = sub_df[["userid", "hashval"]].rename(columns={"hashval": "count"}).groupby("userid").count()
+usercount = clean_df[["userid", "hashval"]].rename(columns={"hashval": "count"}).groupby("userid").count()
+print(f"average number of decisions: {'{:.1f}'.format(float(usercount.mean()))}")
 print(usercount.nlargest(5, "count"))
 
-plt.hist(usercount.values, bins=range(0, int(usercount.max()) + 1, 10), align="left")
+plt.hist(usercount.values, bins=range(0, int(usercount.max()) + 11, 10))
 # sns.distplot(usercount, bins=range(0, int(usercount.max()) + 1, 10), hist_kws={"align": "left"})
+plt.gca().axvline(x=float(usercount.mean()), linestyle="--", color="k", label="average")
+plt.yticks(range(0, 14))
+plt.xlim(left=-1, right=int(usercount.max()) + 11)
 plt.ylim(bottom=0)
-plt.xlim(left=-1, right=int(usercount.max()) + 1)
+plt.xlabel("image pairs decided per session")
+plt.ylabel("count")
 plt.tight_layout()
 plt.savefig(plot_dir / "session-duration.png")
 plt.clf()
