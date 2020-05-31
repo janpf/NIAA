@@ -1,14 +1,15 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: image-processor
+  name: image-checker
 spec:
-  parallelism: 100
+  parallelism: 92
+  backoffLimit: 5000
   template:
     spec:
-      restartPolicy: "Never"
+      restartPolicy: "OnFailure"
       containers:
-        - name: image-processor
+        - name: image-checker
           image: janpf/niaa:flask-latest
           imagePullPolicy: "Always"
           env:
@@ -17,20 +18,23 @@ spec:
           resources:
             limits:
               cpu: "1"
-              memory: "2Gi"
+              memory: "256Mi"
             requests:
               cpu: "1"
-              memory: "2Gi"
+              memory: "256Mi"
           volumeMounts:
             - mountPath: /workspace
               name: code
             - mountPath: /scratch
               name: scratch
-            - mountPath: /tmp
-              name: tmp-ramdisk
           command:
             - python
-            - /workspace/dataset_processing/imageworker.py
+            #- -m
+            #- debugpy
+            #- --listen
+            #- 0.0.0.0:4444
+            #- --wait-for-client
+            - /workspace/dataset_processing/find_corrupted.py
       volumes:
         - name: code
           cephfs:
@@ -48,6 +52,3 @@ spec:
             path: "/scratch/stud/pfister/NIAA"
             secretRef:
               name: studpfister-secret
-        - name: tmp-ramdisk
-          emptyDir:
-            medium: Memory
