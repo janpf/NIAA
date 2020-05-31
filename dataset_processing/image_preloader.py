@@ -9,15 +9,18 @@ from random import shuffle
 r = redis.Redis(host="redis")
 pipe = r.pipeline()
 
+with open("/workspace/dataset_processing/ignored_images.txt") as f:
+    ignored_imgs = f.readlines()
+
 
 def preprocessImage():
     data = r.lrange("NIAA_img_q", 1, 20000)
-    data = [json.loads(val)["img"] for val in data]
+    data = list(set([json.loads(val)["img"] for val in data]))
     done = [val.decode("ascii") for val in r.hkeys("NIAA_img_q_prepared")]
     shuffle(data)
 
     for val in data:
-        if val in done:
+        if val in done or Path(val).name in ignored_imgs:
             continue
         logging.info(val)
         img = Image.open(val)
@@ -25,7 +28,6 @@ def preprocessImage():
             img.save(output, format=Path(val).suffix.replace(".", "").upper())  # "epic_Image.pNg" => "PNG"
             img = output.getvalue()
         pipe.hset("NIAA_img_q_prepared", key=val, value=img)
-        done.append(val)
 
 
 def clearOldImages():
@@ -45,7 +47,7 @@ if __name__ == "__main__":
         try:
             preprocessImage()
         except Exception as e:
-            print(e)
+            logging.info(e)
 
         pipe.execute()
         logging.info(f"{r.hlen('NIAA_img_q_prepared')} images queued")

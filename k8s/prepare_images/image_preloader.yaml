@@ -33,7 +33,7 @@ spec:
             #- --listen
             #- 0.0.0.0:4444
             #- --wait-for-client
-            - /workspace/k8s/prepare_images/image_preloader.py
+            - /workspace/dataset_processing/image_preloader.py
       volumes:
         - name: code
           cephfs:

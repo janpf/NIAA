@@ -32,7 +32,7 @@ spec:
               name: tmp-ramdisk
           command:
             - python
-            - /workspace/k8s/prepare_images/imageworker.py
+            - /workspace/dataset_processing/imageworker.py
       volumes:
         - name: code
           cephfs:
