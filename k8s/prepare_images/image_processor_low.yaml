@@ -3,7 +3,7 @@ kind: Job
 metadata:
   name: image-processor-low
 spec:
-  parallelism: 500
+  parallelism: 200
   backoffLimit: 5000
   template:
     spec:

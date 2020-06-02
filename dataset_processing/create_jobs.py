@@ -21,7 +21,7 @@ pexels_docker_dir = Path("/scratch") / "pexels"
 img_docker_dir = pexels_docker_dir / "images"
 out_docker_dir = pexels_docker_dir / "edited_images"
 
-mode = ["all", "missing", "repair", "png"][1]
+mode = ["all", "missing", "repair", "png"][2]
 
 del parameter_range["lcontrast"]
 
@@ -43,6 +43,25 @@ if mode == "missing":
                 data = {"img": str(img_docker_dir / image.name), "parameter": parameter, "change": change, "out": str(out_docker_dir / parameter / str(change) / image.name)}
                 pipe.rpush("NIAA_img_q", json.dumps(data))
         pipe.execute()
+
+elif mode == "repair":
+    broken = []
+    for f in Path("/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/corrupted").iterdir():
+        with open(f, "r") as f:
+            broken.extend(f.readlines())
+    for img_path in broken:
+        img_path = Path(img_path)
+        img_name = img_path.name.strip()
+        parameter, change = img_path.parts[-3:-1]
+        for tmp in parameter_range[parameter]["range"]:
+            if math.isclose(float(change), tmp):
+                change = tmp
+                break
+        if type(change) == str:
+            raise (parameter, change)
+        data = {"img": str(img_docker_dir / img_name), "parameter": parameter, "change": change, "out": str(out_docker_dir / parameter / str(change) / img_name)}
+        pipe.rpush("NIAA_img_q", json.dumps(data))
+    pipe.execute()
 else:
     for i, image in enumerate(list(img_dir.iterdir())):
         if i % 1000 == 0:
@@ -58,9 +77,4 @@ else:
                 elif mode == "png" and image.suffix.lower() == ".png":
                     pipe.rpush("NIAA_img_q", json.dumps(data))
                     continue
-                elif mode == "repair":
-                    try:
-                        Image.open(data["out"])
-                    except:
-                        pipe.rpush("NIAA_img_q", json.dumps(data))
         pipe.execute()

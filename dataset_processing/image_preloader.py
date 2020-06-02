@@ -14,7 +14,7 @@ with open("/workspace/dataset_processing/ignored_images.txt") as f:
 
 
 def preprocessImage():
-    data = r.lrange("NIAA_img_q", 1, 20000)
+    data = r.lrange("NIAA_img_q", 0, 5000)
     data = list(set([json.loads(val)["img"] for val in data]))
     done = [val.decode("ascii") for val in r.hkeys("NIAA_img_q_prepared")]
     shuffle(data)
@@ -25,14 +25,17 @@ def preprocessImage():
         logging.info(val)
         img = Image.open(val)
         with BytesIO() as output:
-            img.save(output, format=Path(val).suffix.replace(".", "").upper())  # "epic_Image.pNg" => "PNG"
+            img_format = Path(val).suffix.replace(".", "").upper()  # "epic_Image.pNg" => "PNG"
+            if img_format == "JPG":
+                img_format = "JPEG"
+            img.save(output, format=img_format)
             img = output.getvalue()
         pipe.hset("NIAA_img_q_prepared", key=val, value=img)
 
 
 def clearOldImages():
     done = [val.decode("ascii") for val in r.hkeys("NIAA_img_q_prepared")]
-    data = r.lrange("NIAA_img_q", 1, 20000)
+    data = r.lrange("NIAA_img_q", 0, 5000)
     data = [json.loads(val)["img"] for val in data]
 
     for key in done:
@@ -44,12 +47,9 @@ if __name__ == "__main__":
     logging.getLogger().setLevel(logging.INFO)
     while True:
         logging.info(f"{r.hlen('NIAA_img_q_prepared')} images queued")
-        try:
-            preprocessImage()
-        except Exception as e:
-            logging.info(e)
-
+        preprocessImage()
         pipe.execute()
+
         logging.info(f"{r.hlen('NIAA_img_q_prepared')} images queued")
         clearOldImages()
         pipe.execute()

@@ -3,7 +3,7 @@ kind: Job
 metadata:
   name: image-checker
 spec:
-  parallelism: 92
+  parallelism: 100
   backoffLimit: 5000
   template:
     spec:
@@ -35,6 +35,7 @@ spec:
             #- 0.0.0.0:4444
             #- --wait-for-client
             - /workspace/dataset_processing/find_corrupted.py
+            - recheck
       volumes:
         - name: code
           cephfs:
