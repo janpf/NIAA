@@ -21,7 +21,7 @@ pexels_docker_dir = Path("/scratch") / "pexels"
 img_docker_dir = pexels_docker_dir / "images"
 out_docker_dir = pexels_docker_dir / "edited_images"
 
-mode = ["all", "missing", "repair", "png"][2]
+mode = ["all", "missing", "repair", "png"][1]
 
 del parameter_range["lcontrast"]
 

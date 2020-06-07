@@ -10,11 +10,11 @@ r = redis.Redis(host="redis")
 pipe = r.pipeline()
 
 with open("/workspace/dataset_processing/ignored_images.txt") as f:
-    ignored_imgs = f.readlines()
+    ignored_imgs = [val.strip() for val in f.readlines()]
 
 
 def preprocessImage():
-    data = r.lrange("NIAA_img_q", 0, 5000)
+    data = r.lrange("NIAA_img_q", 0, 20000)
     data = list(set([json.loads(val)["img"] for val in data]))
     done = [val.decode("ascii") for val in r.hkeys("NIAA_img_q_prepared")]
     shuffle(data)
@@ -35,7 +35,7 @@ def preprocessImage():
 
 def clearOldImages():
     done = [val.decode("ascii") for val in r.hkeys("NIAA_img_q_prepared")]
-    data = r.lrange("NIAA_img_q", 0, 5000)
+    data = r.lrange("NIAA_img_q", 0, 20000)
     data = [json.loads(val)["img"] for val in data]
 
     for key in done:

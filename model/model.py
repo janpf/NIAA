@@ -33,7 +33,7 @@ class NIAA(nn.Module):
             elif score == False:  # return distribution like NIMA
                 return out
 
-        def _forwardSiamese(self, x1: torch.Tensor, x2: torch.Tensor):  #  for pexels
+        def _forwardSiamese(self, x1: torch.Tensor, x2: torch.Tensor):  # for pexels
             out1 = self._forwardSingle(x1, score=True)
             out2 = self._forwardSingle(x2, score=True)
             return (out1, out2)
