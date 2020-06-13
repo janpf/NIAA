@@ -19,7 +19,8 @@ survey_imgs = [Path(val).name for val in survey_imgs]
 print(f"images in survey:{len(survey_imgs)}")
 print(f"ignored images in survey:{len(set(survey_imgs).intersection(ignored))}")
 survey_imgs = [val for val in survey_imgs if val not in ignored]
-survey_imgs_count = sorted(list(dict(Counter(survey_imgs)).items()), key=lambda k: k[1], reverse=True)
+survey_counter = Counter(survey_imgs)
+survey_imgs_count = sorted(list(dict(survey_counter).items()), key=lambda k: k[1], reverse=True)
 survey_once = [val[0] for val in survey_imgs_count if val[1] == 1]
 survey_more_than_once = [val[0] for val in survey_imgs_count if val[1] != 1]
 random.shuffle(survey_more_than_once)
@@ -40,20 +41,43 @@ print(f"images existing (unique): {len(all_imgs)}")
 all_imgs = {val for val in all_imgs if val not in ignored}
 print(f"images existing (after ignored): {len(all_imgs)}")
 all_imgs_rest = {val for val in all_imgs if val not in survey_imgs}
-print(f"images existing (without survey): {len(all_imgs_rest)}") # FIXME??
+print(f"images existing (without survey): {len(all_imgs_rest)}")
 
 train_survey_percentage = 0.7
 train_count = 100000
 val_count = test_count = 15000
 
-train_set = set(survey_more_than_once[len(survey_more_than_once) // 2 :])
-test_set = set(survey_more_than_once[: len(survey_more_than_once) // 2])
+train_set = survey_more_than_once[len(survey_more_than_once) // 2 :]
+test_set = survey_more_than_once[: len(survey_more_than_once) // 2]
+
+print(len(train_set), len(test_set))
+
+tmp = [val for val in train_set]
+train_set = []
+
+for val in tmp:
+    train_set.extend([val]*survey_counter[val])
+
+tmp = [val for val in test_set]
+test_set = []
+for val in tmp:
+    test_set.extend([val]*survey_counter[val])
+del tmp
+
+print(len(train_set), len(test_set))
 
 for img in survey_once:
     if len(train_set) < train_survey_percentage * len(survey_imgs):
-        train_set.add(img)
+        train_set.append(img)
     else:
-        test_set.add(img)
+        test_set.append(img)
+
+
+print(len(train_set), len(test_set))
+train_set = set(train_set)
+test_set = set(test_set)
+
+print(len(train_set), len(test_set))
 
 rest = list(all_imgs.difference(survey_imgs))
 random.shuffle(rest)
@@ -70,3 +94,13 @@ for img in rest:
     else:
         print("all distributed, done")
         break
+
+print("checking")
+print(f"trainset:\t{len(train_set)}")
+print(f"valset:\t\t{len(val_set)}")
+print(f"testset:\t{len(test_set)}")
+
+print(f"survey train:\t{len([val for val in survey_imgs if val in train_set])}")
+print(f"survey val:\t{len([val for val in survey_imgs if val in val_set])}")
+print(f"survey test:\t{len([val for val in survey_imgs if val in test_set])}")
+
