@@ -50,8 +50,6 @@ val_count = test_count = 15000
 train_set = survey_more_than_once[len(survey_more_than_once) // 2 :]
 test_set = survey_more_than_once[: len(survey_more_than_once) // 2]
 
-print(len(train_set), len(test_set))
-
 tmp = [val for val in train_set]
 train_set = []
 
@@ -64,20 +62,14 @@ for val in tmp:
     test_set.extend([val]*survey_counter[val])
 del tmp
 
-print(len(train_set), len(test_set))
-
 for img in survey_once:
     if len(train_set) < train_survey_percentage * len(survey_imgs):
         train_set.append(img)
     else:
         test_set.append(img)
 
-
-print(len(train_set), len(test_set))
 train_set = set(train_set)
 test_set = set(test_set)
-
-print(len(train_set), len(test_set))
 
 rest = list(all_imgs.difference(survey_imgs))
 random.shuffle(rest)
