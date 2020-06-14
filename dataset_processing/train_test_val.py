@@ -96,3 +96,21 @@ print(f"survey train:\t{len([val for val in survey_imgs if val in train_set])}")
 print(f"survey val:\t{len([val for val in survey_imgs if val in val_set])}")
 print(f"survey test:\t{len([val for val in survey_imgs if val in test_set])}")
 
+print(f"train -> test intersection: {len(train_set.intersection(test_set))}")
+print(f"train -> val intersection: {len(train_set.intersection(val_set))}")
+print(f"test -> val  intersection: {len(test_set.intersection(val_set))}")
+
+with open("/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/train_set.txt", "w") as f:
+    for val in train_set:
+        f.write(val + "\n")
+
+
+with open("/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/val_set.txt", "w") as f:
+    for val in val_set:
+        f.write(val + "\n")
+
+
+with open("/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/test_set.txt", "w") as f:
+    for val in test_set:
+        f.write(val + "\n")
+
