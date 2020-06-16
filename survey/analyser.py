@@ -20,7 +20,19 @@ sns.set(style="whitegrid")
 
 submission_csv = Path.home() / "eclipse-workspace" / "NIAA" / "survey" / "survey.csv"  # type: Path
 # submission_csv = Path("/scratch") / "stud" / "pfister" / "NIAA" / "pexels" / "logs" / "survey_NIMA.csv"  # type: Path
-plot_dir = Path.home() / "eclipse-workspace" / "NIAA" / "analysis" / "survey"  # type: Path
+eval_mode = sys.argv[1]
+plot_dir = Path.home() / "eclipse-workspace" / "NIAA" / "analysis" / "survey" / eval_mode  # type: Path
+
+if eval_mode == "train":
+    with open("/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/train_set.txt") as f:
+        selected = f.readlines()
+elif eval_mode == "test":
+    with open("/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/test_set.txt") as f:
+        selected = f.readlines()
+else:
+    raise(f"you forgot to implement {eval_mode}")
+
+selected = [val.strip() for val in selected]
 
 plot_dir.mkdir(parents=True, exist_ok=True)
 
@@ -40,6 +52,8 @@ except:
     print("no redis connection available => 'kctl port-forward svc/redis 7000:6379'")
 
 sub_df = pd.read_csv(submission_csv)  # type: pd.DataFrame
+sub_df = sub_df[sub_df["img"].isin({"/img/"+val for val in selected})]
+print(f"selecting {len(sub_df)} with mode {eval_mode}")
 # data reading done
 
 print()
