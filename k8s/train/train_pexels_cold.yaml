@@ -29,12 +29,16 @@ spec:
               name: scratch
           command:
             - python3
-            - -m
-            - debugpy
-            - --listen
-            - 0.0.0.0:4444
-            - --wait-for-client
+            #            - -m
+            #            - debugpy
+            #            - --listen
+            #            - 0.0.0.0:4444
+            #            - --wait-for-client
             - /workspace/model/train_pexels.py
+            - --orig_present
+            - --parameters
+            - brightness
+            - contrast
       volumes:
         - name: code
           cephfs:

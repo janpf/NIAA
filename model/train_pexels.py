@@ -51,11 +51,11 @@ def main(config):
     print(f"Trainable params: {(param_num / 1e6):.2f} million")
 
     if config.train:
-        Pexels_trainset = Pexels(csv_file=config.train_csv_file, root_dir=config.img_path, transform=Pexels_train_transform)
-        Pexels_valset = Pexels(csv_file=config.val_csv_file, root_dir=config.img_path, transform=Pexels_val_transform)
+        Pexels_train = Pexels(file_list_path=config.train_files, original_present=config.orig_present, available_parameters=config.parameters, transforms=transforms, orig_dir=config.original_img_dir, edited_dir=config.edited_img_dir)
+        Pexels_val = Pexels(file_list_path=config.val_files, original_present=config.orig_present, available_parameters=config.parameters, transforms=transforms)
 
-        Pexels_train_loader = torch.utils.data.DataLoader(Pexels_trainset, batch_size=config.train_batch_size, shuffle=True, num_workers=config.num_workers)
-        Pexels_val_loader = torch.utils.data.DataLoader(Pexels_valset, batch_size=config.val_batch_size, shuffle=False, num_workers=config.num_workers)
+        Pexels_train_loader = torch.utils.data.DataLoader(Pexels_train, batch_size=config.train_batch_size, shuffle=True, num_workers=config.num_workers)
+        Pexels_val_loader = torch.utils.data.DataLoader(Pexels_val, batch_size=config.val_batch_size, shuffle=False, num_workers=config.num_workers)
 
         count = 0  # for early stopping
         init_val_loss = float("inf")
@@ -76,9 +76,9 @@ def main(config):
                 loss.backward()
 
                 optimizer.step()
-                print(f"Epoch: {epoch + 1}/{config.epochs} | Step: {i + 1}/{len(Pexels_trainset) // config.train_batch_size + 1} | Training EMD loss: {loss.data[0]:.4f}")
+                print(f"Epoch: {epoch + 1}/{config.epochs} | Step: {i + 1}/{len(Pexels_train_loader)} | Training EMD loss: {loss.data[0]:.4f}")
 
-            avg_loss = sum(batch_losses) / (len(Pexels_trainset) // config.train_batch_size + 1)
+            avg_loss = sum(batch_losses) / len(Pexels_train_loader)
             train_losses.append(avg_loss)
             print(f"Epoch {epoch + 1} averaged training EMD loss: {avg_loss:.4f}")
 
@@ -104,7 +104,7 @@ def main(config):
 
                 val_loss = Distance_Loss(out1, out2)
                 batch_val_losses.append(val_loss.item())
-            avg_val_loss = sum(batch_val_losses) / (len(Pexels_valset) // config.val_batch_size + 1)
+            avg_val_loss = sum(batch_val_losses) / len(Pexels_val_loader)
             val_losses.append(avg_val_loss)
 
             print(f"Epoch {epoch + 1} completed. Averaged EMD loss on val set: {avg_val_loss:.4f}." % (epoch + 1, avg_val_loss))
@@ -133,10 +133,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # input parameters
-    parser.add_argument("--img_path", type=str, default="/data/pexels/images")
-    parser.add_argument("--edited_img_path", type=str, default="/data/pexels/edited_images")
-    parser.add_argument("--train_csv_file", type=str, default="../train_labels.csv")
-    parser.add_argument("--val_csv_file", type=str, default="../val_labels.csv")
+    parser.add_argument("--original_img_dir", type=str, default="/scratch/pexels/images")
+    parser.add_argument("--edited_img_dir", type=str, default="/scratch/pexels/edited_images")
+    parser.add_argument("--train_files", type=str, default="/workspace/NIAA/dataset_processing/train_set.txt")
+    parser.add_argument("--val_files", type=str, default="/workspace/NIAA/dataset_processing/val_set.txt")
+    parser.add_argument("--orig_present", type=bool, action="store_true", default=False)
+    parser.add_argument("--parameters", type=str, nargs="+")
 
     # training parameters
     parser.add_argument("--conv_base_lr", type=float, default=3e-7)
@@ -149,10 +151,10 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=100)
 
     # misc
-    parser.add_argument("--ckpt_path", type=str, default="/data/ckpts/pexels/cold")
-    parser.add_argument("--multi_gpu", type=bool, default=False)
+    parser.add_argument("--ckpt_path", type=str, default="/scratch/ckpts/pexels/cold")
+    parser.add_argument("--multi_gpu", type=bool, action="store_true", default=False)
     parser.add_argument("--gpu_ids", type=list, default=None)
-    parser.add_argument("--warm_start", type=bool, default=False)
+    parser.add_argument("--warm_start", type=bool, action="store_true", default=False)
     parser.add_argument("--warm_start_epoch", type=int, default=0)
     parser.add_argument("--early_stopping_patience", type=int, default=5)
 
