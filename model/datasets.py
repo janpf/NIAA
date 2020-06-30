@@ -1,9 +1,13 @@
+import math
 from pathlib import Path
+from typing import Dict, List, Tuple
 
 import pandas as pd
 import torch
 import torchvision.transforms as transforms
 from PIL import Image
+
+from edit_image import parameter_range
 
 
 class AVA(torch.utils.data.Dataset):
@@ -23,10 +27,10 @@ class AVA(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.annotations)
 
-    def __getitem__(self, idx) -> AVASample:
+    def __getitem__(self, idx) -> Dict[str, str]:
         row = self.annotations.iloc[idx]  #  TODO wie funktioniert iloc?
 
-        img = Image.open(self.root_dir / (row["img_id"] + ".jpg")).convert("RGB")  # TODO kontrollieren
+        img = Image.open(self.root_dir / (row["img_id"] + ".jpg")).convert("RGB")  # FIXME, but not yet
         img = self.transforms(img)
 
         distribution = list(row.loc[:, "1":"10"])
@@ -41,28 +45,47 @@ class Pexels(torch.utils.data.Dataset):
     """Pexels dataset
 
     Args:
-        csv_file: a csv_file, column one contains the names of image files, column 2-11 contains the empiricial distributions of ratings
-        root_dir: directory to the images
-        edited_dir: directory to the edited images
+        file_list_path: a file with a list of files to be loaded
+        original_present: compare against the regular image
+        available_parameters: which parameters to edit
         transform: preprocessing and augmentation of the training images
+        orig_dir: directory to the original images
+        edited_dir: directory to the edited images
     """
 
-    def __init__(self, csv_file: str, root_dir: str, edited_dir: str, transforms: transforms):
-        self.annotations: pd.DataFrame = pd.read_csv(csv_file, header=["img1", "img2", "parameter", "changes1", "changes2", "relChanges1", "relChanges2"])
-        self.root_dir: Path = Path(root_dir)
+    def __init__(self, file_list_path: str, original_present: bool, available_parameters: List[str], transforms: transforms, orig_dir: str = "/scratch/stud/pfister/NIAA/pexels/images", edited_dir: str = "/scratch/stud/pfister/NIAA/pexels/edited_images"):
+        self.file_list_path: str = file_list_path
+        with open(file_list_path) as f:
+            self.file_list = [val.strip() for val in f.readlines()]
+        self.orig_dir: Path = Path(orig_dir)
         self.edited_dir: Path = Path(edited_dir)
+        self.original_present: bool = original_present
+        self.available_parameters: List[str] = available_parameters  # ["brightness", "contrast", ..]
         self.transforms: transforms = transforms
+        self.edits = []
 
-    def __len__(self):
-        return len(self.annotations)
+        for img in self.file_list:
+            for parameter in self.available_parameters:
+                for change in parameter_range[parameter]["range"]:
+                    if self.original_present:
+                        if math.isclose(change, parameter_range[parameter]["default"]):
+                            continue
+                        relDist = abs((parameter_range[parameter]["default"]) - (change))
+                        relDist = 0 if math.isclose(relDist, 0) else relDist
+                        relDist = round(relDist, 2)
+                        self.edits.append(
+                            {"img1": str(self.orig_dir / img), "img2": str(self.edited_dir / parameter / str(change) / img), "parameter": parameter, "changes1": parameter_range[parameter]["default"], "changes2": change, "relChanges1": 0, "relChanges2": relDist,}
+                        )
+                    else:
+                        raise NotImplementedError("bruh")
 
-    def __getitem__(self, idx) -> PexelsSample:
-        row = self.annotations.iloc[idx]
+    def __len__(self) -> int:
+        return len(self.edits)
 
-        img1 = Image.open(self.root_dir / row["img1"]).convert("RGB")
-        img1 = self.transforms(img1)
+    def __getitem__(self, idx) -> Dict[str, str]:
+        item = self.edits[idx].copy()
 
-        img2 = Image.open(self.edited_dir / row["img2"] + ".jpg").convert("RGB")
-        img2 = self.transforms(img2)
+        item["img1"] = self.transforms(Image.open(item["img1"]).convert("RGB"))
+        item["img2"] = self.transforms(Image.open(item["img2"]).convert("RGB"))
 
-        return {"img1": img1, "img2": img2, "parameter": row["parameter"], "changes1": row["changes1"], "changes2": row["changes2"], "relChanges1": row["relChanges1"], "relChanges2": row["relChanges2"]}
+        return item
