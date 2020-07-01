@@ -2,12 +2,12 @@ import argparse
 import sys
 from pathlib import Path
 
-sys.path[0] = "/workspace"
-
 import numpy as np
 import torch
 import torch.autograd as autograd
 import torchvision.transforms as transforms
+
+sys.path[0] = "/workspace"
 
 from model.datasets import Pexels
 from model.NIAA import NIAA, Distance_Loss

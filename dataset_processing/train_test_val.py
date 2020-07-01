@@ -1,7 +1,7 @@
-import random
-from pathlib import Path
 import csv
+import random
 from collections import Counter
+from pathlib import Path
 
 with open("/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/ignored_images.txt") as f:
     ignored = f.readlines()
@@ -50,16 +50,17 @@ val_count = test_count = 15000
 train_set = survey_more_than_once[len(survey_more_than_once) // 2 :]
 test_set = survey_more_than_once[: len(survey_more_than_once) // 2]
 
-tmp = [val for val in train_set]
-train_set = []
+tmp = []
+for val in train_set:
+    tmp.extend([val] * survey_counter[val])
 
-for val in tmp:
-    train_set.extend([val]*survey_counter[val])
+train_set = tmp
 
-tmp = [val for val in test_set]
-test_set = []
-for val in tmp:
-    test_set.extend([val]*survey_counter[val])
+tmp = []
+for val in test_set:
+    tmp.extend([val] * survey_counter[val])
+
+test_set = tmp
 del tmp
 
 for img in survey_once:
@@ -98,19 +99,18 @@ print(f"survey test:\t{len([val for val in survey_imgs if val in test_set])}")
 
 print(f"train -> test intersection: {len(train_set.intersection(test_set))}")
 print(f"train -> val intersection: {len(train_set.intersection(val_set))}")
-print(f"test -> val  intersection: {len(test_set.intersection(val_set))}")
+print(f"test -> val intersection: {len(test_set.intersection(val_set))}")
 
 with open("/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/train_set.txt", "w") as f:
-    for val in train_set:
+    for val in sorted(list(train_set)):
         f.write(val + "\n")
 
 
 with open("/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/val_set.txt", "w") as f:
-    for val in val_set:
+    for val in sorted(list(val_set)):
         f.write(val + "\n")
 
 
 with open("/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/test_set.txt", "w") as f:
-    for val in test_set:
+    for val in sorted(list(test_set)):
         f.write(val + "\n")
-
