@@ -23,30 +23,30 @@ class NIAA(nn.Module):
             out_features=num_classes), nn.Softmax())
         # fmt: on
 
-        def _forwardSingle(self, x: torch.Tensor, score: bool):  # for AVA
-            out = self.features(x)
-            out = out.view(out.size(0), -1)
-            out = self.classifier(out)
+    def _forwardSingle(self, x: torch.Tensor, score: bool):  # for AVA
+        out = self.features(x)
+        out = out.view(out.size(0), -1)
+        out = self.classifier(out)
 
-            if score == True:  # return score 1..10
-                return out.dot(self.scores)  # batchify?
-            else:  # return distribution like NIMA
-                return out
+        if score == True:  # return score 1..10
+            return out.dot(self.scores)  # batchify?
+        else:  # return distribution like NIMA
+            return out
 
-        def _forwardSiamese(self, x1: torch.Tensor, x2: torch.Tensor):  # for pexels
-            out1 = self._forwardSingle(x1, score=True)
-            out2 = self._forwardSingle(x2, score=True)
-            return (out1, out2)
+    def _forwardSiamese(self, x1: torch.Tensor, x2: torch.Tensor):  # for pexels
+        out1 = self._forwardSingle(x1, score=True)
+        out2 = self._forwardSingle(x2, score=True)
+        return (out1, out2)
 
-        def forward(self, x1: torch.Tensor, x2: torch.Tensor, mode: str):
-            if mode == "distribution":
-                return self._forwardSingle(x=x1, score=False)
-            elif mode == "score":
-                return self._forwardSingle(x=x1, score=True)
-            elif mode == "siamese":
-                return self._forwardSiamese(x1=x1, x2=x2)
-            else:
-                raise ValueError(f"unsupported mode: {mode}")
+    def forward(self, x1: torch.Tensor, x2: torch.Tensor, mode: str):
+        if mode == "distribution":
+            return self._forwardSingle(x=x1, score=False)
+        elif mode == "score":
+            return self._forwardSingle(x=x1, score=True)
+        elif mode == "siamese":
+            return self._forwardSiamese(x1=x1, x2=x2)
+        else:
+            raise ValueError(f"unsupported mode: {mode}")
 
 
 class Earth_Movers_Distance_Loss(nn.Module):
