@@ -29,8 +29,8 @@ class NIAA(nn.Module):
             out = self.classifier(out)
 
             if score == True:  # return score 1..10
-                return out.dot(scores)  # batchify?
-            elif score == False:  # return distribution like NIMA
+                return out.dot(self.scores)  # batchify?
+            else:  # return distribution like NIMA
                 return out
 
         def _forwardSiamese(self, x1: torch.Tensor, x2: torch.Tensor):  # for pexels
@@ -40,13 +40,13 @@ class NIAA(nn.Module):
 
         def forward(self, x1: torch.Tensor, x2: torch.Tensor, mode: str):
             if mode == "distribution":
-                return _forwardSingle(x1, score=False)
+                return self._forwardSingle(x=x1, score=False)
             elif mode == "score":
-                return _forwardSingle(x1, score=True)
+                return self._forwardSingle(x=x1, score=True)
             elif mode == "siamese":
-                return _forwardSiamese(x1, x2)
+                return self._forwardSiamese(x1=x1, x2=x2)
             else:
-                raise ValueError(f"unsupported mode")
+                raise ValueError(f"unsupported mode: {mode}")
 
 
 class Earth_Movers_Distance_Loss(nn.Module):
@@ -83,7 +83,7 @@ class Earth_Movers_Distance_Loss(nn.Module):
         mini_batch_size = p.shape[0]
         loss_vector = []
         for i in range(mini_batch_size):
-            loss_vector.append(_single_emd_loss(p[i], q[i], r=r))
+            loss_vector.append(self._single_emd_loss(p[i], q[i], r=r))
         return sum(loss_vector) / mini_batch_size
 
 
@@ -103,5 +103,5 @@ class Distance_Loss(nn.Module):
         mini_batch_size = x1.shape[0]
         loss_vector = []
         for i in range(mini_batch_size):
-            loss_vector.append(_single_distance_loss(x1[i], x2[i], epsilon=epsilon))
+            loss_vector.append(self._single_distance_loss(x1[i], x2[i], epsilon=epsilon))
         return sum(loss_vector) / mini_batch_size

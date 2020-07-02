@@ -68,7 +68,7 @@ def main(config):
         for i, data in enumerate(Pexels_train_loader):
             img1 = data["img1"].to(device)
             img2 = data["img2"].to(device)
-            out1, out2 = model(img1, img2, mode="siamese")
+            out1, out2 = model(img1, img2, "siamese")
 
             optimizer.zero_grad()
 
@@ -102,7 +102,7 @@ def main(config):
             img2 = data["img2"].to(device)
 
             with torch.no_grad():
-                out1, out2 = model(img1, img2, mode="siamese")
+                out1, out2 = model(img1, img2, "siamese")
 
             val_loss = Distance_Loss(out1, out2)
             batch_val_losses.append(val_loss.item())
