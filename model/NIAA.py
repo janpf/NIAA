@@ -92,9 +92,13 @@ class Earth_Movers_Distance_Loss(nn.Module):
 class Distance_Loss(nn.Module):
     """Distance_Loss"""
 
+    def __init__(self):
+        super(Distance_Loss, self).__init__()
+        self.zero_cmp = torch.zeros(1, device=torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+
     def _single_distance_loss(self, x1: torch.Tensor, x2: torch.Tensor, epsilon: float):
         """x1 better than x2 by at least epsilon == 0"""
-        return torch.max((x2 - x1) + epsilon, 0)
+        return torch.max((x2 - x1) + epsilon, self.zero_cmp)
 
     def forward(self, x1: torch.Tensor, x2: torch.Tensor, epsilon: float = 0.1):
         """x1 better than x2 by at least epsilon == 0"""

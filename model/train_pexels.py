@@ -4,7 +4,6 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import torch.autograd as autograd
 import torchvision.transforms as transforms
 
 sys.path[0] = "/workspace"
@@ -27,6 +26,7 @@ def main(config):
         transforms.ToTensor()])
     # fmt: on
     model = NIAA(base_model_pretrained=True)
+    dist_loss = Distance_Loss()
 
     if config.warm_start:
         Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
@@ -72,7 +72,7 @@ def main(config):
 
             optimizer.zero_grad()
 
-            loss = Distance_Loss(out1, out2)
+            loss = dist_loss(out1, out2)
             batch_losses.append(loss.item())
 
             loss.backward()
@@ -104,7 +104,7 @@ def main(config):
             with torch.no_grad():
                 out1, out2 = model(img1, img2, "siamese")
 
-            val_loss = Distance_Loss(out1, out2)
+            val_loss = dist_loss(out1, out2)
             batch_val_losses.append(val_loss.item())
         avg_val_loss = sum(batch_val_losses) / len(Pexels_val_loader)
         val_losses.append(avg_val_loss)
