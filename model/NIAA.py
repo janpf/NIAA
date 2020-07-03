@@ -64,9 +64,6 @@ class Earth_Movers_Distance_Loss(nn.Module):
         r: norm parameters
     """
 
-    def __init__(self):
-        super(Earth_Movers_Distance_Loss, self).__init__()
-
     def _single_emd_loss(self, p: torch.Tensor, q: torch.Tensor, r=2):
         """
         Earth Mover's Distance of one sample
@@ -94,9 +91,6 @@ class Earth_Movers_Distance_Loss(nn.Module):
 
 class Distance_Loss(nn.Module):
     """Distance_Loss"""
-
-    def __init__(self):
-        super(Distance_Loss, self).__init__()
 
     def _single_distance_loss(self, x1: torch.Tensor, x2: torch.Tensor, epsilon: float):
         """x1 better than x2 by at least epsilon == 0"""
