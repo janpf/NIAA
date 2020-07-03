@@ -31,9 +31,10 @@ class NIAA(nn.Module):
         out = self.features(x)
         out = out.view(out.size(0), -1)
         out = self.classifier(out)
+        out = out.matmul(self.scores)
 
         if score == True:  # return score 1..10
-            return out.dot(self.scores)  # batchify?
+            return out
         else:  # return distribution like NIMA
             return out
 
@@ -97,7 +98,7 @@ class Distance_Loss(nn.Module):
     def __init__(self):
         super(Distance_Loss, self).__init__()
 
-    def _single_distance_loss(self, x1: torch.Tensor, x2: torch.Tensor, epsilon: float = 0.1):
+    def _single_distance_loss(self, x1: torch.Tensor, x2: torch.Tensor, epsilon: float):
         """x1 better than x2 by at least epsilon == 0"""
         return torch.max((x2 - x1) + epsilon, 0)
 
