@@ -28,7 +28,7 @@ class NIAA(nn.Module):
         out = self.classifier(out)
 
         if score == True:  # return score 1..10
-            out = out.matmul(self.scores)
+            out = out.matmul(self.scores)  # FIXME? sure?
             return out
         else:  # return distribution like NIMA
             return out
@@ -59,7 +59,7 @@ class Earth_Movers_Distance_Loss(nn.Module):
         r: norm parameters
     """
 
-    def _single_emd_loss(self, p: torch.Tensor, q: torch.Tensor, r=2):
+    def _single_emd_loss(self, p: torch.Tensor, q: torch.Tensor, r):
         """
         Earth Mover's Distance of one sample
 
@@ -68,6 +68,7 @@ class Earth_Movers_Distance_Loss(nn.Module):
             q: estimated distribution of shape num_classes × 1
             r: norm parameter
         """
+
         assert p.shape == q.shape, "Length of the two distribution must be the same"
         length = p.shape[0]
         emd_loss = 0.0

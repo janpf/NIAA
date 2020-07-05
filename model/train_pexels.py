@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+import torchvision.models as models
 import torchvision.transforms as transforms
 
 sys.path[0] = "/workspace"
@@ -25,13 +26,14 @@ def main(config):
         transforms.CenterCrop(224),
         transforms.ToTensor()])
     # fmt: on
-    model = NIAA(base_model_pretrained=True)
+    base_model = models.vgg16(pretrained=True)
+    model = NIAA(base_model)
     dist_loss = Distance_Loss()
 
     if config.warm_start:
         Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
-        model.load_state_dict(torch.load(str(Path(config.ckpt_path) / f"epoch-{config.warm_start_epoch}.pkl")))
-        print(f"Successfully loaded model epoch-{config.warm_start_epoch}.pkl")
+        model.load_state_dict(torch.load(str(Path(config.ckpt_path) / f"epoch-{config.warm_start_epoch}.pth")))
+        print(f"Successfully loaded model epoch-{config.warm_start_epoch}.pth")
     else:
         print("starting cold")
 
@@ -78,7 +80,7 @@ def main(config):
             loss.backward()
 
             optimizer.step()
-            print(f"Epoch: {epoch + 1}/{config.epochs} | Step: {i + 1}/{len(Pexels_train_loader)} | Training EMD loss: {loss.data[0]:.4f}", flush=True)
+            print(f"Epoch: {epoch + 1}/{config.epochs} | Step: {i + 1}/{len(Pexels_train_loader)} | Training dist loss: {loss.data[0]:.4f}", flush=True)
 
         avg_loss = sum(batch_losses) / len(Pexels_train_loader)
         train_losses.append(avg_loss)
@@ -117,14 +119,14 @@ def main(config):
             # save model weights if val loss decreases
             print("Saving model...")
             Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
-            torch.save(model.state_dict(), str(Path(config.ckpt_path) / f"epoch-{epoch + 1}.pkl"))
+            torch.save(model.state_dict(), str(Path(config.ckpt_path) / f"epoch-{epoch + 1}.pth"))
             print("Done.\n")
             # reset count
             count = 0
         elif avg_val_loss >= init_val_loss:
             count += 1
             if count == config.early_stopping_patience:
-                print(f"Val EMD loss has not decreased in {config.early_stopping_patience} epochs. Training terminated.")
+                print(f"Val dist loss has not decreased in {config.early_stopping_patience} epochs. Training terminated.")
                 break
 
     print("Training completed.")

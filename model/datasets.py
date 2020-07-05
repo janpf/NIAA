@@ -84,7 +84,7 @@ class Pexels(torch.utils.data.Dataset):
         return len(self.edits)
 
     def __getitem__(self, idx) -> Dict[str, torch.Tensor]:
-        item = copy.deepcopy(self.edits[idx])
+        item = copy.deepcopy(dict(self.edits[idx]))
 
         item["img1"] = self.transforms(Image.open(item["img1"]).convert("RGB"))
         item["img2"] = self.transforms(Image.open(item["img2"]).convert("RGB"))
