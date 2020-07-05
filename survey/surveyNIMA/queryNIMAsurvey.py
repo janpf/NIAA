@@ -11,12 +11,12 @@ from PIL import Image
 
 
 sys.path.insert(0, ".")
-from model import *
+from model.NIMA import NIMA
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--model", default=str(Path("/data") / "pretrained.pkl"), type=str, help="path to pretrained model")
-parser.add_argument("--survey_csv", default=str(Path("/data") / "logs" / "survey.csv"), type=str, help="test csv file")
-parser.add_argument("--test_images", type=str, default=str(Path("/data") / "surveyimgs"), help="path to folder containing images")
+parser.add_argument("--model", default=str(Path("/data") / "pretrained_new.pth"), type=str, help="path to pretrained model")
+parser.add_argument("--survey_csv", default=str(Path("/data") / "pexels" / "logs" / "survey.csv"), type=str, help="test csv file")
+parser.add_argument("--test_images", type=str, default=str(Path("/data") / "pexels" / "surveyimgs"), help="path to folder containing images")
 args = parser.parse_args()
 
 df = pd.read_csv(args.survey_csv)  # type: pd.DataFrame
@@ -24,9 +24,8 @@ df = df[df.chosen != "error"]
 df = df[df.chosen != "unsure"]
 df = df.assign(leftNIMA=np.nan, rightNIMA=np.nan)
 
-base_model = models.vgg16(pretrained=False)  # pretrained dürfte nicht nötig sein, da eh gleich überschrieben wird
+base_model = models.vgg16(pretrained=True)
 model = NIMA(base_model)
-
 model.load_state_dict(torch.load(args.model))
 print("successfully loaded model")
 
@@ -38,7 +37,7 @@ model.eval()
 # fmt: off
 test_transform = transforms.Compose([
     transforms.Scale(256),
-    transforms.RandomCrop(224),
+    transforms.CenterCrop(224),
     transforms.ToTensor()
     ])
 # fmt: on

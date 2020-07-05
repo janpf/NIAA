@@ -47,6 +47,6 @@ spec:
             monitors:
               - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
             user: studpfister
-            path: "/scratch/stud/pfister/NIAA/pexels"
+            path: "/scratch/stud/pfister/NIAA"
             secretRef:
               name: studpfister-secret
