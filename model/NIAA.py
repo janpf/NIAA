@@ -12,7 +12,7 @@ class NIAA(nn.Module):
         self.device = device
         self.base_model_pretrained = base_model_pretrained
 
-        self.scores = torch.FloatTensor(list(range(1, num_classes + 1))).to(self.device)  # [1..10]
+        self.scores = torch.FloatTensor(list(range(1, num_classes + 1)), device=self.device)  # [1..10]
 
         if self.base_model_pretrained is not None:
             self.base_model = base_model(pretrained=base_model_pretrained)
@@ -31,9 +31,9 @@ class NIAA(nn.Module):
         out = self.features(x)
         out = out.view(out.size(0), -1)
         out = self.classifier(out)
-        out = out.matmul(self.scores)
 
         if score == True:  # return score 1..10
+            out = out.matmul(self.scores)
             return out
         else:  # return distribution like NIMA
             return out
