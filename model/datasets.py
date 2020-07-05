@@ -1,3 +1,4 @@
+import copy
 import math
 from pathlib import Path
 from typing import Dict, List
@@ -82,8 +83,8 @@ class Pexels(torch.utils.data.Dataset):
     def __len__(self) -> int:
         return len(self.edits)
 
-    def __getitem__(self, idx) -> Dict[str, str]:
-        item = self.edits[idx].copy()
+    def __getitem__(self, idx) -> Dict[str, torch.Tensor]:
+        item = copy.deepcopy(self.edits[idx])
 
         item["img1"] = self.transforms(Image.open(item["img1"]).convert("RGB"))
         item["img2"] = self.transforms(Image.open(item["img2"]).convert("RGB"))
