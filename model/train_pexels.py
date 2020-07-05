@@ -78,11 +78,11 @@ def main(config):
             loss.backward()
 
             optimizer.step()
-            print(f"Epoch: {epoch + 1}/{config.epochs} | Step: {i + 1}/{len(Pexels_train_loader)} | Training EMD loss: {loss.data[0]:.4f}")
+            print(f"Epoch: {epoch + 1}/{config.epochs} | Step: {i + 1}/{len(Pexels_train_loader)} | Training EMD loss: {loss.data[0]:.4f}", flush=True)
 
         avg_loss = sum(batch_losses) / len(Pexels_train_loader)
         train_losses.append(avg_loss)
-        print(f"Epoch {epoch + 1} averaged training EMD loss: {avg_loss:.4f}")
+        print(f"Epoch {epoch + 1} averaged training distance loss: {avg_loss:.4f}", flush=True)
 
         # exponential learning rate decay
         if (epoch + 1) % 10 == 0:
@@ -109,7 +109,7 @@ def main(config):
         avg_val_loss = sum(batch_val_losses) / len(Pexels_val_loader)
         val_losses.append(avg_val_loss)
 
-        print(f"Epoch {epoch + 1} completed. Averaged EMD loss on val set: {avg_val_loss:.4f}." % (epoch + 1, avg_val_loss))
+        print(f"Epoch {epoch + 1} completed. Averaged distance loss on val set: {avg_val_loss:.4f}." % (epoch + 1, avg_val_loss), flush=True)
 
         # Use early stopping to monitor training
         if avg_val_loss < init_val_loss:

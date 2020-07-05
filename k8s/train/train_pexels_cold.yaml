@@ -17,11 +17,11 @@ spec:
             limits:
               nvidia.com/gpu: "1"
               cpu: "4"
-              memory: "8Gi"
+              memory: "16Gi"
             requests:
               nvidia.com/gpu: "1"
               cpu: "4"
-              memory: "8Gi"
+              memory: "16Gi"
           volumeMounts:
             - mountPath: /workspace
               name: code
@@ -41,6 +41,10 @@ spec:
             - --parameters
             - brightness
             - contrast
+            - exposure
+            - tint
+            - temperature
+            - shadows
       volumes:
         - name: code
           cephfs:
