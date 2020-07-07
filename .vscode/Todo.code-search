@@ -3,8 +3,11 @@
 # Including: /home/stud/pfister/eclipse-workspace/NIAA, /home/stud/pfister/eclipse-workspace/Masterarbeit
 # Excluding: .gitignore
 
-2 results - 1 file
+3 results - 2 files
 
 NIAA • model/datasets.py:
-  27:         row = self.annotations.iloc[idx]  #  TODO wie funktioniert iloc?
-  29:         img = Image.open(self.root_dir / (row["img_id"] + ".jpg")).convert("RGB")  # TODO kontrollieren
+  32:         row = self.annotations.iloc[idx]  #  TODO wie funktioniert iloc?
+  34:         img = Image.open(self.root_dir / (row["img_id"] + ".jpg")).convert("RGB")  # FIXME, but not yet
+
+NIAA • model/NIAA.py:
+  31:             out = out.matmul(self.scores)  # FIXME? sure?
