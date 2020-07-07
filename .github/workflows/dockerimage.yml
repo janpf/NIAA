@@ -17,10 +17,10 @@ jobs:
         uses: actions/checkout@v2
 
       - name: build pytorch image
-        run: docker build . --file Dockerfile --tag docker.pkg.github.com/janpf/NIAA/pytorch:latest
+        run: docker build . --file Dockerfile --tag docker.pkg.github.com/janpf/niaa/pytorch:latest
 
       - name: docker push
-        run: docker push docker.pkg.github.com/janpf/NIAA/pytorch:latest
+        run: docker push docker.pkg.github.com/janpf/niaa/pytorch:latest
 
   build_flask:
     runs-on: ubuntu-latest
@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: build flask image
-        run: docker build . --file Dockerfile --tag docker.pkg.github.com/janpf/NIAA/general:latest
+        run: docker build . --file Dockerfile --tag docker.pkg.github.com/janpf/niaa/general:latest
 
       - name: docker push
-        run: docker push docker.pkg.github.com/janpf/NIAA/general:latest
+        run: docker push docker.pkg.github.com/janpf/niaa/general:latest
