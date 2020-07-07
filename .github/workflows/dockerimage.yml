@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: Docker Image Build
 
 on:
   push:
@@ -11,29 +11,29 @@ jobs:
 
     steps:
       - name: docker login
-        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
+        run: docker login docker.pkg.github.com --username janpf
 
       - name: checkout project
         uses: actions/checkout@v2
 
       - name: build pytorch image
-        run: docker build . --file Dockerfile --tag janpf/niaa:pytorch-latest
+        run: docker build . --file Dockerfile --tag docker.pkg.github.com/janpf/NIAA/pytorch:latest
 
       - name: docker push
-        run: docker push janpf/niaa:pytorch-latest
+        run: docker push docker.pkg.github.com/janpf/NIAA/pytorch:latest
 
   build_flask:
     runs-on: ubuntu-latest
 
     steps:
       - name: docker login
-        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
+        run: docker login docker.pkg.github.com --username janpf
 
       - name: checkout project
         uses: actions/checkout@v2
 
       - name: build flask image
-        run: docker build . --file ./survey/Dockerfile --tag janpf/niaa:flask-latest
+        run: docker build . --file Dockerfile --tag docker.pkg.github.com/janpf/NIAA/general:latest
 
       - name: docker push
-        run: docker push janpf/niaa:flask-latest
+        run: docker push docker.pkg.github.com/janpf/NIAA/general:latest
