@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: docker login
-        run: cat ~/GH_TOKEN.txt | docker login docker.pkg.github.com -u janpf --password-stdin
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u janpf --password-stdin
 
       - name: checkout project
         uses: actions/checkout@v2
@@ -27,7 +27,7 @@ jobs:
 
     steps:
       - name: docker login
-        run: cat ~/GH_TOKEN.txt | docker login docker.pkg.github.com -u janpf --password-stdin
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u janpf --password-stdin
 
       - name: checkout project
         uses: actions/checkout@v2
