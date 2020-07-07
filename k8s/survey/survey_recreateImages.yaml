@@ -12,7 +12,7 @@ spec:
       restartPolicy: "Never"
       containers:
         - name: survey-replicator
-          image: janpf/niaa:flask-latest
+          image: docker.pkg.github.com/janpf/niaa/general:latest
           imagePullPolicy: "Always"
           command:
             - python3

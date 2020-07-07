@@ -11,7 +11,7 @@ spec:
       restartPolicy: "OnFailure"
       containers:
         - name: image-processor-low
-          image: janpf/niaa:flask-latest
+          image: docker.pkg.github.com/janpf/niaa/general:latest
           imagePullPolicy: "Always"
           env:
             - name: HOME
