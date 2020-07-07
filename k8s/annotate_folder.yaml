@@ -8,7 +8,7 @@ spec:
       restartPolicy: "Never"
       containers:
         - name: annotate-folder
-          image: docker.pkg.github.com/janpf/niaa/pytorch:latest
+          image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
             - name: HOME

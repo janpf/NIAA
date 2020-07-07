@@ -15,7 +15,7 @@ spec:
       restartPolicy: "Always"
       containers:
         - name: survey-gunicorn
-          image: docker.pkg.github.com/janpf/niaa/general:latest
+          image: janpf/niaa:flask-latest
           imagePullPolicy: "Always"
           ports:
             - containerPort: 5000

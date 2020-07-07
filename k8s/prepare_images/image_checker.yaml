@@ -10,7 +10,7 @@ spec:
       restartPolicy: "OnFailure"
       containers:
         - name: image-checker
-          image: docker.pkg.github.com/janpf/niaa/general:latest
+          image: janpf/niaa:flask-latest
           imagePullPolicy: "Always"
           env:
             - name: HOME

@@ -1,3 +1,8 @@
+"""
+Obsolete as every change made to all images are already saved in 'edited_images'.
+Only needed if not all images have been preprocessed or 'queryNIMAsurvey.py' isn't adapted to use those images yet.
+"""
+
 import argparse
 import logging
 import sys
