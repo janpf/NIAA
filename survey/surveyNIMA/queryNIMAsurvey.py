@@ -48,7 +48,7 @@ test_transform = transforms.Compose([
 
 
 def predictImage(path: str):
-    im = Image.open(path)
+    im = Image.open(path).convert("RGB")
     imt = test_transform(im)
     imt = imt.unsqueeze(dim=0)
     imt = imt.to(device)
