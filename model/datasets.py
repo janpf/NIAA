@@ -3,11 +3,12 @@ import math
 from pathlib import Path
 from typing import Dict, List
 
+import multiprocessing as mp
 import pandas as pd
 import torch
-import multiprocessing as mp
 import torchvision.transforms as transforms
 from PIL import Image
+from ctypes import c_wchar_p
 
 from edit_image import parameter_range
 
@@ -64,8 +65,18 @@ class Pexels(torch.utils.data.Dataset):
         self.original_present: bool = original_present
         self.available_parameters: List[str] = available_parameters  # ["brightness", "contrast", ..]
         self.transforms: transforms = transforms
-        edits = []
 
+        length = 0
+        for img in self.file_list:
+            for parameter in self.available_parameters:
+                for change in parameter_range[parameter]["range"]:
+                    if self.original_present:
+                        if math.isclose(change, parameter_range[parameter]["default"]):
+                            continue
+                        length += 1
+        self.edits = mp.Array(c_wchar_p, length, lock=False)  # lock false, as the list will be effectively readonly
+
+        i = 0
         for img in self.file_list:
             for parameter in self.available_parameters:
                 for change in parameter_range[parameter]["range"]:
@@ -75,21 +86,16 @@ class Pexels(torch.utils.data.Dataset):
                         relDist = abs((parameter_range[parameter]["default"]) - (change))
                         relDist = 0 if math.isclose(relDist, 0) else relDist
                         relDist = round(relDist, 2)
-                        edits.append(
-                            {"img1": str(self.orig_dir / img), "img2": str(self.edited_dir / parameter / str(change) / img), "parameter": parameter, "changes1": parameter_range[parameter]["default"], "changes2": change, "relChanges1": 0, "relChanges2": relDist,}
-                        )
+                        self.edits[i] = json.dumps({"img1": str(self.orig_dir / img), "img2": str(self.edited_dir / parameter / str(change) / img), "parameter": parameter, "changes1": parameter_range[parameter]["default"], "changes2": change, "relChanges1": 0, "relChanges2": relDist})
+                        i += 1
                     else:
                         raise NotImplementedError("bruh")
-
-        self.edits = mp.shared_memory.ShareableList([json.dumps(val) for val in edits])  # https://docs.python.org/3.8/library/multiprocessing.shared_memory.html#multiprocessing.shared_memory.ShareableList
-        del edits
-        self.shm_name = self.edits.shm.name
 
     def __len__(self) -> int:
         return len(self.edits)
 
     def __getitem__(self, idx) -> Dict[str, torch.Tensor]:
-        item = json.loads(mp.shared_memory.ShareableList(name=self.shm_name)[idx])
+        item = json.loads(self.edits[idx])
 
         item["img1"] = self.transforms(Image.open(item["img1"]).convert("RGB"))
         item["img2"] = self.transforms(Image.open(item["img2"]).convert("RGB"))
