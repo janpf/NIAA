@@ -3,9 +3,9 @@ import math
 from pathlib import Path
 from typing import Dict, List
 
-import multiprocessing as mp
 import pandas as pd
 import torch
+import torch.multiprocessing as mp
 import torchvision.transforms as transforms
 from PIL import Image
 from ctypes import c_wchar_p
