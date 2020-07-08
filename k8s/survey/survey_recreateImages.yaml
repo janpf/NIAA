@@ -32,7 +32,7 @@ spec:
           volumeMounts:
             - mountPath: /workspace
               name: code
-            - mountPath: /scratch
+            - mountPath: /data
               name: scratch
       volumes:
         - name: code
