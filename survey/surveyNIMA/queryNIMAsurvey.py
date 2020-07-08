@@ -20,6 +20,7 @@ parser.add_argument("--model", default=str(Path("/scratch") / "pretrained_new.pt
 parser.add_argument("--survey_csv", default=str(Path("/scratch") / "pexels" / "logs" / "survey.csv"), type=str, help="test csv file")
 parser.add_argument("--original_img_dir", type=str, default="/scratch/pexels/images")
 parser.add_argument("--edited_img_dir", type=str, default="/scratch/pexels/edited_images")
+parser.add_argument("--test_images", type=str, default=str(Path("/scratch") / "pexels" / "surveyimgs"), help="path to folder containing images")  #  only for local contrast
 args = parser.parse_args()
 
 df = pd.read_csv(args.survey_csv)  # type: pd.DataFrame
@@ -71,12 +72,18 @@ for i, row in df.iterrows():
         if math.isclose(row["leftChanges"], parameter_range[row["parameter"]]["default"]):
             leftScore = predictImage(str(Path(args.original_img_dir) / f"{row['img'].replace('/img/', '')}"))
         else:
-            leftScore = predictImage(str(Path(args.edited_img_dir) / row["parameter"] / str(row["leftChanges"]) / f"{row['img'].replace('/img/', '')}"))
+            try:
+                leftScore = predictImage(str(Path(args.edited_img_dir) / row["parameter"] / str(row["leftChanges"]) / f"{row['img'].replace('/img/', '')}"))
+            except:
+                leftScore = predictImage(str(Path(args.edited_img_dir) / row["parameter"] / str(int(row["leftChanges"])) / f"{row['img'].replace('/img/', '')}"))
 
         if math.isclose(row["rightChanges"], parameter_range[row["parameter"]]["default"]):
             rightScore = predictImage(str(Path(args.original_img_dir) / f"{row['img'].replace('/img/', '')}"))
         else:
-            rightScore = predictImage(str(Path(args.edited_img_dir) / row["parameter"] / str(row["rightChanges"]) / f"{row['img'].replace('/img/', '')}"))
+            try:
+                rightScore = predictImage(str(Path(args.edited_img_dir) / row["parameter"] / str(row["rightChanges"]) / f"{row['img'].replace('/img/', '')}"))
+            except:
+                rightScore = predictImage(str(Path(args.edited_img_dir) / row["parameter"] / str(int(row["rightChanges"])) / f"{row['img'].replace('/img/', '')}"))
 
     df.at[i, "leftNIMA"] = leftScore
     df.at[i, "rightNIMA"] = rightScore
