@@ -1,10 +1,11 @@
-import copy
+import json
 import math
 from pathlib import Path
 from typing import Dict, List
 
 import pandas as pd
 import torch
+import multiprocessing as mp
 import torchvision.transforms as transforms
 from PIL import Image
 
@@ -63,7 +64,7 @@ class Pexels(torch.utils.data.Dataset):
         self.original_present: bool = original_present
         self.available_parameters: List[str] = available_parameters  # ["brightness", "contrast", ..]
         self.transforms: transforms = transforms
-        self.edits = []
+        edits = []
 
         for img in self.file_list:
             for parameter in self.available_parameters:
@@ -74,17 +75,21 @@ class Pexels(torch.utils.data.Dataset):
                         relDist = abs((parameter_range[parameter]["default"]) - (change))
                         relDist = 0 if math.isclose(relDist, 0) else relDist
                         relDist = round(relDist, 2)
-                        self.edits.append(
+                        edits.append(
                             {"img1": str(self.orig_dir / img), "img2": str(self.edited_dir / parameter / str(change) / img), "parameter": parameter, "changes1": parameter_range[parameter]["default"], "changes2": change, "relChanges1": 0, "relChanges2": relDist,}
                         )
                     else:
                         raise NotImplementedError("bruh")
 
+        self.edits = mp.shared_memory.ShareableList([json.dumps(val) for val in edits])  # https://docs.python.org/3.8/library/multiprocessing.shared_memory.html#multiprocessing.shared_memory.ShareableList
+        del edits
+        self.shm_name = self.edits.shm.name
+
     def __len__(self) -> int:
         return len(self.edits)
 
     def __getitem__(self, idx) -> Dict[str, torch.Tensor]:
-        item = copy.deepcopy(dict(self.edits[idx]))
+        item = json.loads(mp.shared_memory.ShareableList(name=self.shm_name)[idx])
 
         item["img1"] = self.transforms(Image.open(item["img1"]).convert("RGB"))
         item["img2"] = self.transforms(Image.open(item["img2"]).convert("RGB"))

@@ -88,4 +88,4 @@ for i, row in df.iterrows():
     df.at[i, "leftNIMA"] = leftScore
     df.at[i, "rightNIMA"] = rightScore
 
-df.to_csv(str(Path("/data") / "logs" / "survey_NIMA.csv"))
+df.to_csv(str(Path("/scratch") / "pexels" / "logs" / "survey_NIMA.csv"))
