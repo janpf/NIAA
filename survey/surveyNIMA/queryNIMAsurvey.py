@@ -8,15 +8,18 @@ import torch
 import torchvision.models as models
 import torchvision.transforms as transforms
 from PIL import Image
+import math
 
 
 sys.path.insert(0, ".")
 from model.NIMA import NIMA
+from edit_image import parameter_range
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--model", default=str(Path("/data") / "pretrained_new.pth"), type=str, help="path to pretrained model")
-parser.add_argument("--survey_csv", default=str(Path("/data") / "pexels" / "logs" / "survey.csv"), type=str, help="test csv file")
-parser.add_argument("--test_images", type=str, default=str(Path("/data") / "pexels" / "surveyimgs"), help="path to folder containing images")
+parser.add_argument("--model", default=str(Path("/scratch") / "pretrained_new.pth"), type=str, help="path to pretrained model")
+parser.add_argument("--survey_csv", default=str(Path("/scratch") / "pexels" / "logs" / "survey.csv"), type=str, help="test csv file")
+parser.add_argument("--original_img_dir", type=str, default="/scratch/pexels/images")
+parser.add_argument("--edited_img_dir", type=str, default="/scratch/pexels/edited_images")
 args = parser.parse_args()
 
 df = pd.read_csv(args.survey_csv)  # type: pd.DataFrame
@@ -60,8 +63,20 @@ def predictImage(path: str):
 for i, row in df.iterrows():
     print(f"working on {row['hashval']}")
     print(row)
-    leftScore = predictImage(str(Path(args.test_images) / f"{row['hashval']}l.jpg"))
-    rightScore = predictImage(str(Path(args.test_images) / f"{row['hashval']}r.jpg"))
+
+    if row["parameter"] == "lcontrast":  # those are not preprocessed
+        leftScore = predictImage(str(Path(args.test_images) / f"{row['hashval']}l.jpg"))
+        rightScore = predictImage(str(Path(args.test_images) / f"{row['hashval']}r.jpg"))
+    else:
+        if math.isclose(row["leftChanges"], parameter_range[row["parameter"]]["default"]):
+            leftScore = predictImage(str(Path(args.original_img_dir) / f"{row['img'].replace('/img/', '')}"))
+        else:
+            leftScore = predictImage(str(Path(args.edited_img_dir) / row["parameter"] / str(row["leftChanges"]) / f"{row['img'].replace('/img/', '')}"))
+
+        if math.isclose(row["rightChanges"], parameter_range[row["parameter"]]["default"]):
+            rightScore = predictImage(str(Path(args.original_img_dir) / f"{row['img'].replace('/img/', '')}"))
+        else:
+            rightScore = predictImage(str(Path(args.edited_img_dir) / row["parameter"] / str(row["rightChanges"]) / f"{row['img'].replace('/img/', '')}"))
 
     df.at[i, "leftNIMA"] = leftScore
     df.at[i, "rightNIMA"] = rightScore

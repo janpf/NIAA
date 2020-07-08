@@ -1,6 +1,7 @@
 debugpy
 matplotlib
 numpy
+opencv-python-headless
 pandas
 Pillow
 tensorboard
