@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: build pytorch image
-        run: docker build . --file Dockerfile --tag janpf/niaa:pytorch-latest
+        run: docker build . --file Dockerfile --tag janpf/niaa:pytorch-latest --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from janpf/niaa:pytorch-latest
 
       - name: docker push
         run: docker push janpf/niaa:pytorch-latest
@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: build flask image
-        run: docker build . --file ./survey/Dockerfile --tag janpf/niaa:flask-latest
+        run: docker build . --file ./survey/Dockerfile --tag janpf/niaa:flask-latest --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from janpf/niaa:flask-latest
 
       - name: docker push
         run: docker push janpf/niaa:flask-latest
