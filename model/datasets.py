@@ -1,14 +1,15 @@
 import json
 import math
 from pathlib import Path
+import random
 from typing import Dict, List
 
+from ctypes import c_wchar_p
 import pandas as pd
 import torch
 import torch.multiprocessing as mp
 import torchvision.transforms as transforms
 from PIL import Image
-from ctypes import c_wchar_p
 
 from edit_image import parameter_range
 
@@ -95,9 +96,10 @@ class Pexels(torch.utils.data.Dataset):
         return len(self.edits)
 
     def __getitem__(self, idx) -> Dict[str, torch.Tensor]:
-        item = json.loads(self.edits[idx])
-
-        item["img1"] = self.transforms(Image.open(item["img1"]).convert("RGB"))
-        item["img2"] = self.transforms(Image.open(item["img2"]).convert("RGB"))
-
-        return item
+        try:
+            item = json.loads(self.edits[idx])
+            item["img1"] = self.transforms(Image.open(item["img1"]).convert("RGB"))
+            item["img2"] = self.transforms(Image.open(item["img2"]).convert("RGB"))
+            return item
+        except:
+            return self[random.randint(0, len(self))]  # if an image is broken
