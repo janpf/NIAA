@@ -3,6 +3,7 @@ import json
 import math
 import sys
 from pathlib import Path
+import argparse
 
 import httpagentparser
 import matplotlib.pyplot as plt
@@ -18,23 +19,35 @@ from edit_image import parameter_range
 
 sns.set(style="whitegrid")
 
-submission_csv = Path.home() / "eclipse-workspace" / "NIAA" / "survey" / "survey.csv"  # type: Path
-# submission_csv = Path("/scratch") / "stud" / "pfister" / "NIAA" / "pexels" / "logs" / "survey_NIMA.csv"  # type: Path
-eval_mode = sys.argv[1]
-plot_dir = Path.home() / "eclipse-workspace" / "NIAA" / "analysis" / "survey" / eval_mode  # type: Path
+parser = argparse.ArgumentParser()
+parser.add_argument("--val", action="store_true")
+parser.add_argument("--test", action="store_true")
+parser.add_argument("--NIMA", action="store_true")
+args = parser.parse_args()
 
-if eval_mode == "val":
-    with open("/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/val_set.txt") as f:
-        selected = f.readlines()
-elif eval_mode == "test":
-    with open("/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/test_set.txt") as f:
-        selected = f.readlines()
+if not args.NIMA:
+    submission_csv = Path("/workspace") / "survey" / "survey.csv"  # type: Path
+    if args.val:
+        plot_dir = Path("/workspace") / "analysis" / "survey" / "val"  # type: Path
+    elif args.test:
+        plot_dir = Path("/workspace") / "analysis" / "survey" / "test"  # type: Path
 else:
-    raise NotImplementedError(f"you forgot to implement {eval_mode}")
+    submission_csv = Path("/workspace") / "survey" / "survey_NIMA.csv"  # type: Path
+    if args.val:
+        plot_dir = Path("/workspace") / "analysis" / "survey" / "NIMA" / "val"  # type: Path
+    elif args.test:
+        plot_dir = Path("/workspace") / "analysis" / "survey" / "NIMA" / "test"  # type: Path
+
+if args.val:
+    with open("/workspace/dataset_processing/val_set.txt") as f:
+        selected = f.readlines()
+elif args.test:
+    with open("/workspace/dataset_processing/test_set.txt") as f:
+        selected = f.readlines()
 
 selected = [val.strip() for val in selected]
 
-plot_dir.mkdir(parents=True, exist_ok=True)
+(plot_dir / "small_vs").mkdir(parents=True, exist_ok=True)
 
 try:
     r = redis.Redis(host="localhost", port=7000)
@@ -53,7 +66,6 @@ except:
 
 sub_df = pd.read_csv(submission_csv)  # type: pd.DataFrame
 sub_df = sub_df[sub_df["img"].isin({"/img/" + val for val in selected})]
-print(f"selecting {len(sub_df)} with mode {eval_mode}")
 # data reading done
 
 print()

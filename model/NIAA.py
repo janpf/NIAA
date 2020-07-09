@@ -28,7 +28,7 @@ class NIAA(nn.Module):
         out = self.classifier(out)
 
         if score == True:  # return score 1..10
-            out = out.matmul(self.scores)  # FIXME? sure?
+            out = out.matmul(self.scores)
             return out
         else:  # return distribution like NIMA
             return out

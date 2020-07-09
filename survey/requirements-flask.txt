@@ -2,6 +2,7 @@ debugpy
 flask
 gunicorn
 httpagentparser
+matplotlib
 numpy
 opencv-python-headless
 pandas
