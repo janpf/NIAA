@@ -8,3 +8,5 @@ opencv-python-headless
 pandas
 Pillow
 redis
+scipy
+seaborn
