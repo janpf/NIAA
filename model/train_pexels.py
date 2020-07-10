@@ -53,6 +53,7 @@ def main(config):
         {'params': model.classifier.parameters(), 'lr': config.dense_lr}],
         momentum=0.9)
     # fmt: on
+    writer.add_hparams({"features_lr": config.conv_base_lr, "classifier_lr": config.dense_lr})
 
     param_num = 0
     for param in model.parameters():
@@ -66,6 +67,7 @@ def main(config):
     Pexels_val_loader = torch.utils.data.DataLoader(Pexels_val, batch_size=config.val_batch_size, shuffle=False, num_workers=config.num_workers)
 
     count = 0  # for early stopping
+    global_step = 0
     init_val_loss = float("inf")
     train_losses = []
     val_losses = []
@@ -84,11 +86,17 @@ def main(config):
             loss.backward()
 
             optimizer.step()
+
             print(f"Epoch: {epoch + 1}/{config.epochs} | Step: {i + 1}/{len(Pexels_train_loader)} | Training dist loss: {loss.data[0]:.4f}", flush=True)
+            writer.add_scalar("progress/epoch", epoch, global_step)
+            writer.add_scalar("progess/step_in_epoch", i, global_step)
+            writer.add_scalar("loss/train", loss.data[0], global_step)
+            global_step += 1
 
         avg_loss = sum(batch_losses) / len(Pexels_train_loader)
         train_losses.append(avg_loss)
         print(f"Epoch {epoch + 1} averaged training distance loss: {avg_loss:.4f}", flush=True)
+        writer.add_scalar("avg_loss/train", avg_loss, global_step)
 
         # exponential learning rate decay
         if (epoch + 1) % 10 == 0:
@@ -100,6 +108,8 @@ def main(config):
                 {'params': model.classifier.parameters(), 'lr': dense_lr}],
                 momentum=0.9)
             # fmt: on
+            writer.add_scalar("hparams/features_lr", conv_base_lr, global_step)
+            writer.add_scalar("hparams/classifier_lr", dense_lr, global_step)
 
         # do validation after each epoch
         batch_val_losses = []
@@ -116,6 +126,7 @@ def main(config):
         val_losses.append(avg_val_loss)
 
         print(f"Epoch {epoch + 1} completed. Averaged distance loss on val set: {avg_val_loss:.4f}." % (epoch + 1, avg_val_loss), flush=True)
+        writer.add_scalar("avg_loss/val", avg_val_loss, global_step)
 
         # Use early stopping to monitor training
         if avg_val_loss < init_val_loss:
