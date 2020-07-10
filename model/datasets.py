@@ -103,3 +103,22 @@ class Pexels(torch.utils.data.Dataset):
             return item
         except:
             return self[random.randint(0, len(self))]  # if an image is broken
+
+
+class FileList(torch.utils.data.Dataset):
+    """FileList dataset
+
+    Args:
+        file_list: a list with filenames
+        transform: preprocessing and augmentation of the training images
+    """
+
+    def __init__(self, file_list: List[str], transforms: transforms):
+        self.file_list: List[str] = file_list
+        self.transforms: transforms = transforms
+
+    def __len__(self) -> int:
+        return len(self.file_list)
+
+    def __getitem__(self, idx) -> Dict[str, torch.Tensor]:
+        return self.transforms(Image.open(self.file_list[idx]).convert("RGB"))
