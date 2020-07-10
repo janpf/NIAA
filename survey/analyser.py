@@ -74,7 +74,8 @@ print(sub_df.groupby("chosen").chosen.count().to_string())
 print("---")
 print()
 
-# sub_df["chosen"] = sub_df.apply(lambda row: "leftImage" if row.leftNIMA > row.rightNIMA else "rightImage", axis=1)  #  if in NIMA is evaluated
+if args.NIMA:
+    sub_df["chosen"] = sub_df.apply(lambda row: "leftImage" if row.leftNIMA > row.rightNIMA else "rightImage", axis=1)
 
 sub_df["default"] = sub_df.apply(lambda row: parameter_range[row.parameter]["default"], axis=1)
 sub_df["leftChanges"] = sub_df.apply(lambda row: float(row.leftChanges), axis=1)
@@ -252,9 +253,9 @@ for i, key in enumerate(params):
         "\tbinomial test w/ orig. img. w/o unsure:\tp: {:05.4f}".format(binom_test(analyzeDict[key]["smallerChosenOrigPresent"], n=analyzeDict[key]["smallerChosenOrigPresent"] + analyzeDict[key]["largerChosenOrigPresent"])),
         f"(x={analyzeDict[key]['smallerChosenOrigPresent']} | n={analyzeDict[key]['smallerChosenOrigPresent'] + analyzeDict[key]['largerChosenOrigPresent']})",
     )
-    if "leftNIMA" in sub_df.columns and "rightNIMA" in sub_df.columns:
-        print("\tsurvey == NIMA: {:04.2f}%".format(analyzeDict[key]["sameNIMA"][True] / (analyzeDict[key]["sameNIMA"][True] + analyzeDict[key]["sameNIMA"][False]) * 100))
-        pass
+    if not args.NIMA:
+        if "leftNIMA" in sub_df.columns and "rightNIMA" in sub_df.columns:
+            print("\tsurvey == NIMA: {:04.2f}%".format(analyzeDict[key]["sameNIMA"][True] / (analyzeDict[key]["sameNIMA"][True] + analyzeDict[key]["sameNIMA"][False]) * 100))
 
     print(f"\tsmaller edit:\t\t{'{:.1f}%'.format(analyzeDict[key]['smallerChosenOrigPresent'] / (analyzeDict[key]['smallerChosenOrigPresent'] + analyzeDict[key]['largerChosenOrigPresent']) * 100)}\t| {analyzeDict[key]['smallerChosenOrigPresent']}")
     print(f"\tlarger edit:\t\t{'{:.1f}%'.format(analyzeDict[key]['largerChosenOrigPresent'] / (analyzeDict[key]['smallerChosenOrigPresent'] + analyzeDict[key]['largerChosenOrigPresent']) * 100)}\t| {analyzeDict[key]['largerChosenOrigPresent']}")

@@ -1,22 +1,21 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: survey-analyser-val
+  name: survey-analyser
 spec:
   template:
     metadata:
       labels:
-        app: survey-analyser-val
+        app: survey-analyser
     spec:
       restartPolicy: "Never"
       containers:
-        - name: survey-analyser-val
+        - name: survey-analyser
           image: janpf/niaa:flask-latest
           imagePullPolicy: "Always"
           command:
             - python3
             - /workspace/survey/analyser.py
-            - --val
           env:
             - name: HOME
               value: "/tmp"
