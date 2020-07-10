@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from torch.utils.tensorboard import SummaryWriter
 import torchvision.models as models
 import torchvision.transforms as transforms
 
@@ -14,6 +15,9 @@ from model.NIAA import NIAA, Distance_Loss
 
 
 def main(config):
+    Path(config.log_dir).mkdir(parents=True, exist_ok=True)
+    writer = SummaryWriter(log_dir=config.log_dir)
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # fmt: off
     Pexels_train_transform = transforms.Compose([
@@ -155,6 +159,7 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=100)
 
     # misc
+    parser.add_argument("--log_dir", type=str, default="/scratch/train_logs/pexels/cold")
     parser.add_argument("--ckpt_path", type=str, default="/scratch/ckpts/pexels/cold")
     parser.add_argument("--multi_gpu", action="store_true")
     parser.add_argument("--gpu_ids", type=list, default=None)

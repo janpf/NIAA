@@ -18,8 +18,8 @@ class NIAA(nn.Module):
         # fmt: off
         self.classifier = nn.Sequential(
             nn.Dropout(p=0.75),
-            nn.Linear(in_features=25088,
-            out_features=num_classes), nn.Softmax())
+            nn.Linear(in_features=25088, out_features=num_classes),
+            nn.Softmax())
         # fmt: on
 
     def _forwardSingle(self, x: torch.Tensor, score: bool):  # for AVA

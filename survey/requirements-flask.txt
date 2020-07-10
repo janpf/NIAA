@@ -10,3 +10,4 @@ Pillow
 redis
 scipy
 seaborn
+tensorboard

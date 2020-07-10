@@ -12,9 +12,10 @@ transform = transforms.Compose([transforms.Scale(256), transforms.CenterCrop(224
 
 print("loading dataset")
 dataset = Pexels(
-    file_list_path="/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/val_set.txt",
-    original_present=True,
-    available_parameters=["brightness", "contrast"],
+    file_list_path="/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/train_set.txt",
+    original_present=False,
+    compare_opposite_polarity=True,
+    available_parameters=["brightness", "contrast", "exposure", "highlights", "saturation", "shadows", "temperature", "tint", "vibrance"],
     transforms=transform,
     orig_dir="/scratch/stud/pfister/NIAA/pexels/images",
     edited_dir="/scratch/stud/pfister/NIAA/pexels/edited_images",

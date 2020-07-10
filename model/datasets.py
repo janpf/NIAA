@@ -57,40 +57,64 @@ class Pexels(torch.utils.data.Dataset):
         edited_dir: directory to the edited images
     """
 
-    def __init__(self, file_list_path: str, original_present: bool, available_parameters: List[str], transforms: transforms, orig_dir: str = "/scratch/stud/pfister/NIAA/pexels/images", edited_dir: str = "/scratch/stud/pfister/NIAA/pexels/edited_images"):
+    def __init__(self, file_list_path: str, original_present: bool, compare_opposite_polarity: bool, available_parameters: List[str], transforms: transforms, orig_dir: str = "/scratch/stud/pfister/NIAA/pexels/images", edited_dir: str = "/scratch/stud/pfister/NIAA/pexels/edited_images"):
+        print("initializing dataset")
         self.file_list_path: str = file_list_path
         with open(file_list_path) as f:
             self.file_list = [val.strip() for val in f.readlines()]
         self.orig_dir: Path = Path(orig_dir)
         self.edited_dir: Path = Path(edited_dir)
         self.original_present: bool = original_present
+        self.compare_opposite_polarity: bool = compare_opposite_polarity
         self.available_parameters: List[str] = available_parameters  # ["brightness", "contrast", ..]
         self.transforms: transforms = transforms
 
-        length = 0
-        for img in self.file_list:
-            for parameter in self.available_parameters:
-                for change in parameter_range[parameter]["range"]:
-                    if self.original_present:
-                        if math.isclose(change, parameter_range[parameter]["default"]):
-                            continue
-                        length += 1
-        self.edits = mp.Array(c_wchar_p, length, lock=False)  # lock false, as the list will be effectively readonly
+        edits = []
 
-        i = 0
         for img in self.file_list:
             for parameter in self.available_parameters:
-                for change in parameter_range[parameter]["range"]:
-                    if self.original_present:
+                if self.original_present:
+                    for change in parameter_range[parameter]["range"]:
                         if math.isclose(change, parameter_range[parameter]["default"]):
                             continue
                         relDist = abs((parameter_range[parameter]["default"]) - (change))
                         relDist = 0 if math.isclose(relDist, 0) else relDist
                         relDist = round(relDist, 2)
-                        self.edits[i] = json.dumps({"img1": str(self.orig_dir / img), "img2": str(self.edited_dir / parameter / str(change) / img), "parameter": parameter, "changes1": parameter_range[parameter]["default"], "changes2": change, "relChanges1": 0, "relChanges2": relDist})
-                        i += 1
-                    else:
-                        raise NotImplementedError("bruh")
+
+                        edits.append(json.dumps({"img1": str(self.orig_dir / img), "img2": str(self.edited_dir / parameter / str(change) / img), "parameter": parameter, "changes1": parameter_range[parameter]["default"], "changes2": change, "relChanges1": 0, "relChanges2": relDist}))
+
+                else:
+                    for lchange in parameter_range[parameter]["range"]:
+                        for rchange in parameter_range[parameter]["range"]:
+                            if math.isclose(lchange, rchange):
+                                continue
+                            if rchange < lchange:
+                                continue
+                            if not self.compare_opposite_polarity:
+                                if lchange < parameter_range[parameter]["default"] and rchange > parameter_range[parameter]["default"] or lchange > parameter_range[parameter]["default"] and rchange < parameter_range[parameter]["default"]:
+                                    continue
+
+                            lRelDist = abs((parameter_range[parameter]["default"]) - (lchange))
+                            rRelDist = abs((parameter_range[parameter]["default"]) - (rchange))
+                            lRelDist = round(lRelDist, 2)
+                            rRelDist = round(rRelDist, 2)
+                            if math.isclose(lchange, parameter_range[parameter]["default"]):
+                                imgl = str(self.orig_dir / img)
+                            else:
+                                imgl = str(self.edited_dir / parameter / str(lchange) / img)
+                            if math.isclose(rchange, parameter_range[parameter]["default"]):
+                                imgr = str(self.orig_dir / img)
+                            else:
+                                imgr = str(self.edited_dir / parameter / str(rchange) / img)
+
+                            edits.append(json.dumps({"img1": imgl, "img2": imgr, "parameter": parameter, "changes1": lchange, "changes2": rchange, "relChanges1": lRelDist, "relChanges2": rRelDist}))
+
+        print(f"created all {len(edits)} datapoints")
+        self.edits = mp.Array(c_wchar_p, len(edits), lock=False)  # lock false, as the list will be effectively readonly after insert
+        print("moving datapoints to /dev/shm")
+        for i in range(len(edits)):
+            self.edits[i] = edits.pop(0)
+        del edits
 
     def __len__(self) -> int:
         return len(self.edits)
