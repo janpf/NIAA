@@ -19,15 +19,7 @@ survey_imgs = [Path(val).name for val in survey_imgs]
 print(f"images in survey:{len(survey_imgs)}")
 print(f"ignored images in survey:{len(set(survey_imgs).intersection(ignored))}")
 survey_imgs = [val for val in survey_imgs if val not in ignored]
-survey_counter = Counter(survey_imgs)
-survey_imgs_count = sorted(list(dict(survey_counter).items()), key=lambda k: k[1], reverse=True)
-survey_once = [val[0] for val in survey_imgs_count if val[1] == 1]
-survey_more_than_once = [val[0] for val in survey_imgs_count if val[1] != 1]
-random.shuffle(survey_more_than_once)
-
 print(f"images in survey:{len(survey_imgs)}")
-print(f"images in survey once:{len(survey_once)}")
-print(f"images in survey more than once:{len(survey_more_than_once)}")
 
 all_imgs = [f.name for f in Path("/scratch/stud/pfister/NIAA/pexels/images").iterdir()]
 
@@ -42,38 +34,15 @@ print(f"images existing (after ignored): {len(all_imgs)}")
 all_imgs_rest = {val for val in all_imgs if val not in survey_imgs}
 print(f"images existing (without survey): {len(all_imgs_rest)}")
 
-val_survey_percentage = 0.5
 train_count = 100000
 val_count = test_count = 15000
 
-val_set = survey_more_than_once[len(survey_more_than_once) // 2 :]
-test_set = survey_more_than_once[: len(survey_more_than_once) // 2]
-
-tmp = []
-for val in val_set:
-    tmp.extend([val] * survey_counter[val])
-
-val_set = tmp
-
-tmp = []
-for val in test_set:
-    tmp.extend([val] * survey_counter[val])
-
-test_set = tmp
-del tmp
-
-for img in survey_once:
-    if len(val_set) < val_survey_percentage * len(survey_imgs):
-        val_set.append(img)
-    else:
-        test_set.append(img)
-
-val_set = set(val_set)
-test_set = set(test_set)
+test_set = set(survey_imgs)
 
 rest = list(all_imgs.difference(survey_imgs))
 random.shuffle(rest)
 train_set = set()
+val_set = set()
 
 
 for img in rest:
