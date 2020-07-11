@@ -54,6 +54,8 @@ def main(config):
         momentum=0.9)
     # fmt: on
     writer.add_hparams({"features_lr": config.conv_base_lr, "classifier_lr": config.dense_lr})
+    writer.add_scalar("hparams/features_lr", config.conv_base_lr, 0)
+    writer.add_scalar("hparams/classifier_lr", config.dense_lr, 0)
 
     param_num = 0
     for param in model.parameters():
@@ -63,8 +65,8 @@ def main(config):
     Pexels_train = Pexels(file_list_path=config.train_files, original_present=config.orig_present, available_parameters=config.parameters, transforms=Pexels_train_transform, orig_dir=config.original_img_dir, edited_dir=config.edited_img_dir)
     Pexels_val = Pexels(file_list_path=config.val_files, original_present=config.orig_present, available_parameters=config.parameters, transforms=Pexels_val_transform, orig_dir=config.original_img_dir, edited_dir=config.edited_img_dir)
 
-    Pexels_train_loader = torch.utils.data.DataLoader(Pexels_train, batch_size=config.train_batch_size, shuffle=True, num_workers=config.num_workers)
-    Pexels_val_loader = torch.utils.data.DataLoader(Pexels_val, batch_size=config.val_batch_size, shuffle=False, num_workers=config.num_workers)
+    Pexels_train_loader = torch.utils.data.DataLoader(Pexels_train, batch_size=config.train_batch_size, shuffle=True, drop_last=True, num_workers=config.num_workers)
+    Pexels_val_loader = torch.utils.data.DataLoader(Pexels_val, batch_size=config.val_batch_size, shuffle=False, drop_last=True, num_workers=config.num_workers)
 
     count = 0  # for early stopping
     global_step = 0
@@ -84,7 +86,6 @@ def main(config):
             batch_losses.append(loss.item())
 
             loss.backward()
-
             optimizer.step()
 
             print(f"Epoch: {epoch + 1}/{config.epochs} | Step: {i + 1}/{len(Pexels_train_loader)} | Training dist loss: {loss.data[0]:.4f}", flush=True)
@@ -145,6 +146,7 @@ def main(config):
                 break
 
     print("Training completed.")
+    writer.close()
 
 
 if __name__ == "__main__":

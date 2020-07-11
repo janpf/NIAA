@@ -84,11 +84,11 @@ class Pexels(torch.utils.data.Dataset):
                         edits.append(json.dumps({"img1": str(self.orig_dir / img), "img2": str(self.edited_dir / parameter / str(change) / img), "parameter": parameter, "changes1": parameter_range[parameter]["default"], "changes2": change, "relChanges1": 0, "relChanges2": relDist}))
 
                 else:
-                    for lchange in parameter_range[parameter]["range"]:
-                        for rchange in parameter_range[parameter]["range"]:
-                            if math.isclose(lchange, rchange):
+                    for lchange in parameter_range[parameter]["range"]:  # iterating over all possible changes
+                        for rchange in parameter_range[parameter]["range"]:  # iterating over all possible changes
+                            if math.isclose(lchange, rchange):  # don't compare 0.5 to 0.5 for example
                                 continue
-                            if rchange < lchange:
+                            if rchange < lchange:  # only compare 0.4 to 0.5 but not 0.5 to 0.4
                                 continue
                             if not self.compare_opposite_polarity:
                                 if lchange < parameter_range[parameter]["default"] and rchange > parameter_range[parameter]["default"] or lchange > parameter_range[parameter]["default"] and rchange < parameter_range[parameter]["default"]:
@@ -98,6 +98,10 @@ class Pexels(torch.utils.data.Dataset):
                             rRelDist = abs((parameter_range[parameter]["default"]) - (rchange))
                             lRelDist = round(lRelDist, 2)
                             rRelDist = round(rRelDist, 2)
+
+                            if lRelDist > rRelDist:  # smaller change always has to be img1/imgl, as the Distance Loss assumes the "more original" image is the first
+                                continue
+
                             if math.isclose(lchange, parameter_range[parameter]["default"]):
                                 imgl = str(self.orig_dir / img)
                             else:
