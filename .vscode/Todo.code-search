@@ -6,8 +6,8 @@
 3 results - 2 files
 
 NIAA • model/datasets.py:
-  32:         row = self.annotations.iloc[idx]  #  TODO wie funktioniert iloc?
-  34:         img = Image.open(self.root_dir / (row["img_id"] + ".jpg")).convert("RGB")  # FIXME, but not yet
+  35:         row = self.annotations.iloc[idx]  #  TODO wie funktioniert iloc?
+  37:         img = Image.open(self.root_dir / (row["img_id"] + ".jpg")).convert("RGB")  # FIXME, but not yet
 
-NIAA • model/NIAA.py:
-  31:             out = out.matmul(self.scores)  # FIXME? sure?
+NIAA • model/train_pexels.py:
+  76:     for epoch in range(config.warm_start_epoch, config.epochs):  # TODO pseudo epochs

@@ -73,7 +73,7 @@ def main(config):
     init_val_loss = float("inf")
     train_losses = []
     val_losses = []
-    for epoch in range(config.warm_start_epoch, config.epochs):
+    for epoch in range(config.warm_start_epoch, config.epochs):  # TODO pseudo epochs
         batch_losses = []
         for i, data in enumerate(Pexels_train_loader):
             img1 = data["img1"].to(device)
