@@ -70,15 +70,15 @@ print(f"train -> val intersection: {len(train_set.intersection(val_set))}")
 print(f"test -> val intersection: {len(test_set.intersection(val_set))}")
 
 with open("/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/train_set.txt", "w") as f:
-    for val in sorted(list(train_set)):
+    for val in list(train_set):
         f.write(val + "\n")
 
 
 with open("/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/val_set.txt", "w") as f:
-    for val in sorted(list(val_set)):
+    for val in list(val_set):
         f.write(val + "\n")
 
 
 with open("/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/test_set.txt", "w") as f:
-    for val in sorted(list(test_set)):
+    for val in list(test_set):
         f.write(val + "\n")

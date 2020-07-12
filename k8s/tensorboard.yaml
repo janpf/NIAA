@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tensorboard
+spec:
+  selector:
+    matchLabels:
+      app: tensorboard
+  template:
+    metadata:
+      labels:
+        app: tensorboard
+    spec:
+      containers:
+        - name: tensorboard
+          image: janpf/niaa:flask-latest
+          imagePullPolicy: "Always"
+          ports:
+            - containerPort: 6006
+          env:
+            - name: HOME
+              value: "/tmp"
+          resources:
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+            requests:
+              cpu: "2"
+              memory: "4Gi"
+          volumeMounts:
+            - mountPath: /scratch
+              name: scratch
+          command:
+            - tensorboard
+            - --logdir=/scratch/train_logs
+            - --bind_all
+      volumes:
+        - name: scratch
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studpfister
+            path: "/scratch/stud/pfister/NIAA"
+            secretRef:
+              name: studpfister-secret

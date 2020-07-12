@@ -36,10 +36,10 @@ def main(config):
 
     if config.warm_start:
         Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
-        model.load_state_dict(torch.load(str(Path(config.ckpt_path) / f"epoch-{config.warm_start_epoch}.pth")))
-        print(f"Successfully loaded model epoch-{config.warm_start_epoch}.pth")
+        model.load_state_dict(torch.load(str(Path(config.ckpt_path) / f"epoch{config.warm_start_epoch}-p_epoch{config.warm_start_p_epoch}.pth")))
+        print(f"Successfully loaded model epoch{config.warm_start_epoch}-p_epoch{config.warm_start_p_epoch}.pth")
     else:
-        print("starting cold")
+        print("starting cold", flush=True)
 
     if config.multi_gpu:
         model.features = torch.nn.DataParallel(model.features, device_ids=config.gpu_ids)
@@ -53,7 +53,7 @@ def main(config):
         {'params': model.classifier.parameters(), 'lr': config.dense_lr}],
         momentum=0.9)
     # fmt: on
-    writer.add_hparams({"features_lr": config.conv_base_lr, "classifier_lr": config.dense_lr})
+    writer.add_hparams({"features_lr": config.conv_base_lr, "classifier_lr": config.dense_lr}, {})
     writer.add_scalar("hparams/features_lr", config.conv_base_lr, 0)
     writer.add_scalar("hparams/classifier_lr", config.dense_lr, 0)
 
@@ -62,88 +62,111 @@ def main(config):
         param_num += int(np.prod(param.shape))
     print(f"Trainable params: {(param_num / 1e6):.2f} million")
 
-    Pexels_train = Pexels(file_list_path=config.train_files, original_present=config.orig_present, available_parameters=config.parameters, transforms=Pexels_train_transform, orig_dir=config.original_img_dir, edited_dir=config.edited_img_dir)
-    Pexels_val = Pexels(file_list_path=config.val_files, original_present=config.orig_present, available_parameters=config.parameters, transforms=Pexels_val_transform, orig_dir=config.original_img_dir, edited_dir=config.edited_img_dir)
+    Pexels_train = Pexels(
+        file_list_path=config.train_files, original_present=config.orig_present, compare_opposite_polarity=config.compare_opposite_polarity, available_parameters=config.parameters, transforms=Pexels_train_transform, orig_dir=config.original_img_dir, edited_dir=config.edited_img_dir
+    )
+    Pexels_val = Pexels(file_list_path=config.val_files, original_present=config.orig_present, compare_opposite_polarity=config.compare_opposite_polarity, available_parameters=config.parameters, transforms=Pexels_val_transform, orig_dir=config.original_img_dir, edited_dir=config.edited_img_dir)
 
-    Pexels_train_loader = torch.utils.data.DataLoader(Pexels_train, batch_size=config.train_batch_size, shuffle=True, drop_last=True, num_workers=config.num_workers)
+    Pexels_train_loader = torch.utils.data.DataLoader(Pexels_train, batch_size=config.train_batch_size, shuffle=False, drop_last=True, num_workers=config.num_workers)
     Pexels_val_loader = torch.utils.data.DataLoader(Pexels_val, batch_size=config.val_batch_size, shuffle=False, drop_last=True, num_workers=config.num_workers)
 
     count = 0  # for early stopping
     global_step = 0
     init_val_loss = float("inf")
     train_losses = []
-    val_losses = []
-    for epoch in range(config.warm_start_epoch, config.epochs):  # TODO pseudo epochs
+    p_train_losses = []
+    p_val_losses = []
+
+    p_epochs_per_epoch = (len(Pexels_train_loader) // config.img_per_p_epoch) // config.train_batch_size
+
+    for epoch in range(config.warm_start_epoch, config.epochs):
+        current_epoch_iter = iter(Pexels_train_loader)
         batch_losses = []
-        for i, data in enumerate(Pexels_train_loader):
-            img1 = data["img1"].to(device)
-            img2 = data["img2"].to(device)
-            out1, out2 = model(img1, img2, "siamese")
+        for _ in range(config.warm_start_p_epoch):  # skipping forwards in pseudo epoch
+            next(current_epoch_iter)
+        for pseudo_epoch in range(config.warm_start_p_epoch, p_epochs_per_epoch):
+            p_batch_losses = []
+            for i, data in enumerate(current_epoch_iter):
+                if i * config.train_batch_size > config.img_per_p_epoch:
+                    break
 
-            optimizer.zero_grad()
+                img1 = data["img1"].to(device)
+                img2 = data["img2"].to(device)
+                out1, out2 = model(img1, img2, "siamese")
 
-            loss = dist_loss(out1, out2)
-            batch_losses.append(loss.item())
+                optimizer.zero_grad()
 
-            loss.backward()
-            optimizer.step()
+                loss = dist_loss(out1, out2)
+                batch_losses.append(loss.item())
+                p_batch_losses.append(loss.item())
 
-            print(f"Epoch: {epoch + 1}/{config.epochs} | Step: {i + 1}/{len(Pexels_train_loader)} | Training dist loss: {loss.data[0]:.4f}", flush=True)
-            writer.add_scalar("progress/epoch", epoch, global_step)
-            writer.add_scalar("progess/step_in_epoch", i, global_step)
-            writer.add_scalar("loss/train", loss.data[0], global_step)
-            global_step += 1
+                loss.backward()
+                optimizer.step()
+
+                print(f"Epoch: {epoch + 1}/{config.epochs} | Pseudo-epoch: {pseudo_epoch + 1}/{p_epochs_per_epoch} | Step: {i + 1}/{config.img_per_p_epoch // config.train_batch_size} | Training dist loss: {loss.data[0]:.4f}", flush=True)
+                writer.add_scalar("progress/epoch", epoch, global_step)
+                writer.add_scalar("progress/p_epoch", pseudo_epoch, global_step)
+                writer.add_scalar("progess/step_in_p_epoch", i, global_step)
+                writer.add_scalar("loss/train", loss.data[0], global_step)
+                global_step += 1
+
+            p_avg_loss = sum(p_batch_losses) / config.img_per_p_epoch
+            p_train_losses.append(p_avg_loss)
+            print(f"Pseudo-epoch {pseudo_epoch + 1} averaged training distance loss: {p_avg_loss:.4f}", flush=True)
+            writer.add_scalar("p_avg_loss/train", avg_loss, global_step)
+
+            # exponential learning rate decay
+            if (pseudo_epoch + 1) % 10 == 0:
+                conv_base_lr = conv_base_lr * config.lr_decay_rate ** ((pseudo_epoch + 1) / config.lr_decay_freq)
+                dense_lr = dense_lr * config.lr_decay_rate ** ((pseudo_epoch + 1) / config.lr_decay_freq)
+                # fmt: off
+                optimizer = torch.optim.SGD([
+                    {'params': model.features.parameters(), 'lr': conv_base_lr},
+                    {'params': model.classifier.parameters(), 'lr': dense_lr}],
+                    momentum=0.9)
+                # fmt: on
+                writer.add_scalar("hparams/features_lr", conv_base_lr, global_step)
+                writer.add_scalar("hparams/classifier_lr", dense_lr, global_step)
+
+            # do validation after each epoch
+            batch_val_losses = []
+            for i, data in enumerate(Pexels_val_loader):
+                if i * config.val_batch_size > config.val_imgs_count:
+                    break
+                img1 = data["img1"].to(device)
+                img2 = data["img2"].to(device)
+
+                with torch.no_grad():
+                    out1, out2 = model(img1, img2, "siamese")
+
+                val_loss = dist_loss(out1, out2)
+                batch_val_losses.append(val_loss.item())
+            p_avg_val_loss = sum(batch_val_losses) / len(Pexels_val_loader)
+            p_val_losses.append(p_avg_val_loss)
+
+            print(f"Pseudo-epoch {pseudo_epoch + 1} completed. Averaged distance loss on val set: {p_avg_val_loss:.4f}.", flush=True)
+            writer.add_scalar("p_avg_loss/val", p_avg_val_loss, global_step)
+
+            # Use early stopping to monitor training
+            if p_avg_val_loss < init_val_loss:
+                init_val_loss = p_avg_val_loss
+                # save model weights if val loss decreases
+                print("Saving model...")
+                Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
+                torch.save(model.state_dict(), str(Path(config.ckpt_path) / f"epoch{epoch + 1}-p_epoch{pseudo_epoch+1}.pth"))
+                print("Done.\n")
+                # reset count
+                count = 0
+            elif p_avg_val_loss >= init_val_loss:
+                count += 1
+                if count == config.early_stopping_patience:
+                    print(f"Val dist loss has not decreased in {config.early_stopping_patience} pseudo-epochs. Training terminated.")
+                    break
 
         avg_loss = sum(batch_losses) / len(Pexels_train_loader)
         train_losses.append(avg_loss)
         print(f"Epoch {epoch + 1} averaged training distance loss: {avg_loss:.4f}", flush=True)
         writer.add_scalar("avg_loss/train", avg_loss, global_step)
-
-        # exponential learning rate decay
-        if (epoch + 1) % 10 == 0:
-            conv_base_lr = conv_base_lr * config.lr_decay_rate ** ((epoch + 1) / config.lr_decay_freq)
-            dense_lr = dense_lr * config.lr_decay_rate ** ((epoch + 1) / config.lr_decay_freq)
-            # fmt: off
-            optimizer = torch.optim.SGD([
-                {'params': model.features.parameters(), 'lr': conv_base_lr},
-                {'params': model.classifier.parameters(), 'lr': dense_lr}],
-                momentum=0.9)
-            # fmt: on
-            writer.add_scalar("hparams/features_lr", conv_base_lr, global_step)
-            writer.add_scalar("hparams/classifier_lr", dense_lr, global_step)
-
-        # do validation after each epoch
-        batch_val_losses = []
-        for data in Pexels_val_loader:
-            img1 = data["img1"].to(device)
-            img2 = data["img2"].to(device)
-
-            with torch.no_grad():
-                out1, out2 = model(img1, img2, "siamese")
-
-            val_loss = dist_loss(out1, out2)
-            batch_val_losses.append(val_loss.item())
-        avg_val_loss = sum(batch_val_losses) / len(Pexels_val_loader)
-        val_losses.append(avg_val_loss)
-
-        print(f"Epoch {epoch + 1} completed. Averaged distance loss on val set: {avg_val_loss:.4f}." % (epoch + 1, avg_val_loss), flush=True)
-        writer.add_scalar("avg_loss/val", avg_val_loss, global_step)
-
-        # Use early stopping to monitor training
-        if avg_val_loss < init_val_loss:
-            init_val_loss = avg_val_loss
-            # save model weights if val loss decreases
-            print("Saving model...")
-            Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
-            torch.save(model.state_dict(), str(Path(config.ckpt_path) / f"epoch-{epoch + 1}.pth"))
-            print("Done.\n")
-            # reset count
-            count = 0
-        elif avg_val_loss >= init_val_loss:
-            count += 1
-            if count == config.early_stopping_patience:
-                print(f"Val dist loss has not decreased in {config.early_stopping_patience} epochs. Training terminated.")
-                break
 
     print("Training completed.")
     writer.close()
@@ -158,7 +181,9 @@ if __name__ == "__main__":
     parser.add_argument("--edited_img_dir", type=str, default="/scratch/pexels/edited_images")
     parser.add_argument("--train_files", type=str, default="/workspace/dataset_processing/train_set.txt")
     parser.add_argument("--val_files", type=str, default="/workspace/dataset_processing/val_set.txt")
+    parser.add_argument("--val_imgs_count", type=int, default=500000)
     parser.add_argument("--orig_present", action="store_true")
+    parser.add_argument("--compare_opposite_polarity", action="store_true")
     parser.add_argument("--parameters", type=str, nargs="+")
 
     # training parameters
@@ -170,6 +195,7 @@ if __name__ == "__main__":
     parser.add_argument("--val_batch_size", type=int, default=64)
     parser.add_argument("--num_workers", type=int, default=24)
     parser.add_argument("--epochs", type=int, default=100)
+    parser.add_argument("--img_per_p_epoch", type=int, default=1000000)
 
     # misc
     parser.add_argument("--log_dir", type=str, default="/scratch/train_logs/pexels/cold")
@@ -178,6 +204,7 @@ if __name__ == "__main__":
     parser.add_argument("--gpu_ids", type=list, default=None)
     parser.add_argument("--warm_start", action="store_true")
     parser.add_argument("--warm_start_epoch", type=int, default=0)
+    parser.add_argument("--warm_start_p_epoch", type=int, default=0)
     parser.add_argument("--early_stopping_patience", type=int, default=5)
 
     config = parser.parse_args()

@@ -3,11 +3,8 @@
 # Including: /home/stud/pfister/eclipse-workspace/NIAA, /home/stud/pfister/eclipse-workspace/Masterarbeit
 # Excluding: .gitignore
 
-3 results - 2 files
+2 results - 1 file
 
 NIAA • model/datasets.py:
   35:         row = self.annotations.iloc[idx]  #  TODO wie funktioniert iloc?
   37:         img = Image.open(self.root_dir / (row["img_id"] + ".jpg")).convert("RGB")  # FIXME, but not yet
-
-NIAA • model/train_pexels.py:
-  76:     for epoch in range(config.warm_start_epoch, config.epochs):  # TODO pseudo epochs

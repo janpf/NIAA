@@ -37,7 +37,7 @@ spec:
             #            - 0.0.0.0:4444
             #            - --wait-for-client
             - /workspace/model/train_pexels.py
-            - --orig_present
+            - --compare_opposite_polarity
             - --parameters
             - brightness
             - contrast

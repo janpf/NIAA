@@ -58,7 +58,7 @@ class Pexels(torch.utils.data.Dataset):
     """
 
     def __init__(self, file_list_path: str, original_present: bool, compare_opposite_polarity: bool, available_parameters: List[str], transforms: transforms, orig_dir: str = "/scratch/stud/pfister/NIAA/pexels/images", edited_dir: str = "/scratch/stud/pfister/NIAA/pexels/edited_images"):
-        print("initializing dataset")
+        print("initializing dataset", flush=True)
         self.file_list_path: str = file_list_path
         with open(file_list_path) as f:
             self.file_list = [val.strip() for val in f.readlines()]
@@ -113,12 +113,17 @@ class Pexels(torch.utils.data.Dataset):
 
                             edits.append(json.dumps({"img1": imgl, "img2": imgr, "parameter": parameter, "changes1": lchange, "changes2": rchange, "relChanges1": lRelDist, "relChanges2": rRelDist}))
 
-        print(f"created all {len(edits)} datapoints")
-        self.edits = mp.Array(c_wchar_p, len(edits), lock=False)  # lock false, as the list will be effectively readonly after insert
-        print("moving datapoints to /dev/shm")
-        for i in range(len(edits)):
-            self.edits[i] = edits.pop(0)
+        print(f"created all {len(edits)} datapoints", flush=True)
+        print("moving datapoints to /dev/shm", flush=True)
+        if False:  # if enough memory as peak memory is quite a bit
+            self.edits = mp.Array(c_wchar_p, edits, lock=False)  # lock false, as the list will be effectively readonly after insert
+        else:
+            self.edits = mp.Array(c_wchar_p, len(edits), lock=False)  # lock false, as the list will be effectively readonly after insert
+            for i in range(len(edits)):
+                self.edits[i] = edits.pop(0)
+
         del edits
+        print("moved datapoints to /dev/shm", flush=True)
 
     def __len__(self) -> int:
         return len(self.edits)

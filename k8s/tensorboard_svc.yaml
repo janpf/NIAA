@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tensorboard
+spec:
+  type: NodePort
+  ports:
+    - port: 6006
+      protocol: TCP
+  selector:
+    app: tensorboard
