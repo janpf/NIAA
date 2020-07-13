@@ -1,11 +1,12 @@
 import json
 import math
-from pathlib import Path
 import random
+from ctypes import c_wchar_p
+from pathlib import Path
 from typing import Dict, List
 
-from ctypes import c_wchar_p
 import pandas as pd
+import redis
 import torch
 import torch.multiprocessing as mp
 import torchvision.transforms as transforms
@@ -58,6 +59,7 @@ class Pexels(torch.utils.data.Dataset):
     """
 
     def __init__(self, file_list_path: str, original_present: bool, compare_opposite_polarity: bool, available_parameters: List[str], transforms: transforms, orig_dir: str = "/scratch/stud/pfister/NIAA/pexels/images", edited_dir: str = "/scratch/stud/pfister/NIAA/pexels/edited_images"):
+        raise DeprecationWarning("has been replaced with PexelsRedis below")
         print("initializing dataset", flush=True)
         self.file_list_path: str = file_list_path
         with open(file_list_path) as f:
@@ -155,3 +157,36 @@ class FileList(torch.utils.data.Dataset):
 
     def __getitem__(self, idx) -> Dict[str, torch.Tensor]:
         return self.transforms(Image.open(self.file_list[idx]).convert("RGB"))
+
+
+class PexelsRedis(torch.utils.data.Dataset):
+    """Pexels dataset
+
+    Args:
+        mode: train, val or test
+        transform: preprocessing and augmentation of the training images
+    """
+
+    def __init__(self, mode: str, transforms: transforms):
+        self.mode = mode
+        self.transforms = transforms
+        if self.mode == "train":
+            self.db = 0
+        elif self.mode == "val":
+            self.db = 1
+        elif self.mode == "test":
+            self.db = 2
+        else:
+            raise NotImplementedError("?")
+
+    def __len__(self) -> int:
+        return redis.Redis(host="redis-dataset", db=self.db).dbsize()
+
+    def __getitem__(self, idx) -> Dict[str, torch.Tensor]:
+        try:
+            item = json.loads(redis.Redis(host="redis-dataset", db=self.db).get(idx))
+            item["img1"] = self.transforms(Image.open(item["img1"]).convert("RGB"))
+            item["img2"] = self.transforms(Image.open(item["img2"]).convert("RGB"))
+            return item
+        except:
+            return self[random.randint(0, len(self))]  # if an image is broken

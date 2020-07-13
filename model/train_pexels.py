@@ -10,7 +10,7 @@ import torchvision.transforms as transforms
 
 sys.path[0] = "/workspace"
 
-from model.datasets import Pexels
+from model.datasets import PexelsRedis
 from model.NIAA import NIAA, Distance_Loss
 
 
@@ -62,10 +62,8 @@ def main(config):
         param_num += int(np.prod(param.shape))
     print(f"Trainable params: {(param_num / 1e6):.2f} million")
 
-    Pexels_train = Pexels(
-        file_list_path=config.train_files, original_present=config.orig_present, compare_opposite_polarity=config.compare_opposite_polarity, available_parameters=config.parameters, transforms=Pexels_train_transform, orig_dir=config.original_img_dir, edited_dir=config.edited_img_dir
-    )
-    Pexels_val = Pexels(file_list_path=config.val_files, original_present=config.orig_present, compare_opposite_polarity=config.compare_opposite_polarity, available_parameters=config.parameters, transforms=Pexels_val_transform, orig_dir=config.original_img_dir, edited_dir=config.edited_img_dir)
+    Pexels_train = PexelsRedis(mode="train", transforms=Pexels_train_transform)
+    Pexels_val = PexelsRedis(mode="train", transforms=Pexels_val_transform)
 
     Pexels_train_loader = torch.utils.data.DataLoader(Pexels_train, batch_size=config.train_batch_size, shuffle=False, drop_last=True, num_workers=config.num_workers)
     Pexels_val_loader = torch.utils.data.DataLoader(Pexels_val, batch_size=config.val_batch_size, shuffle=False, drop_last=True, num_workers=config.num_workers)

@@ -5,21 +5,13 @@ import sys
 
 sys.path.insert(0, ".")
 
-from model.datasets import Pexels
+from model.datasets import PexelsRedis
 
 print("starting")
 transform = transforms.Compose([transforms.Scale(256), transforms.CenterCrop(224), transforms.ToTensor()])
 
 print("loading dataset")
-dataset = Pexels(
-    file_list_path="/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/train_set.txt",
-    original_present=False,
-    compare_opposite_polarity=True,
-    available_parameters=["brightness", "contrast", "exposure", "highlights", "saturation", "shadows", "temperature", "tint", "vibrance"],
-    transforms=transform,
-    orig_dir="/scratch/stud/pfister/NIAA/pexels/images",
-    edited_dir="/scratch/stud/pfister/NIAA/pexels/edited_images",
-)
+dataset = PexelsRedis(mode="train", transforms=transform)
 print(f"loaded: {len(dataset)}")
 
 print("iterating")
