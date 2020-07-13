@@ -31,7 +31,7 @@ elif args.mode == "test":
 else:
     raise NotImplementedError("?")
 
-r = redis.Redis(host="redis-dataset", db=db)
+r = redis.Redis(host="redisdataset", db=db)
 r.flushdb()
 pipeline = r.pipeline()
 

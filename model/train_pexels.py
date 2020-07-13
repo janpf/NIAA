@@ -63,9 +63,9 @@ def main(config):
     print(f"Trainable params: {(param_num / 1e6):.2f} million")
 
     Pexels_train = PexelsRedis(mode="train", transforms=Pexels_train_transform)
-    Pexels_val = PexelsRedis(mode="train", transforms=Pexels_val_transform)
+    Pexels_val = PexelsRedis(mode="val", transforms=Pexels_val_transform)
 
-    Pexels_train_loader = torch.utils.data.DataLoader(Pexels_train, batch_size=config.train_batch_size, shuffle=False, drop_last=True, num_workers=config.num_workers)
+    Pexels_train_loader = torch.utils.data.DataLoader(Pexels_train, batch_size=config.train_batch_size, shuffle=True, drop_last=True, num_workers=config.num_workers)  # FIXME broken, but dunno why. returns 0
     Pexels_val_loader = torch.utils.data.DataLoader(Pexels_val, batch_size=config.val_batch_size, shuffle=False, drop_last=True, num_workers=config.num_workers)
 
     count = 0  # for early stopping
@@ -76,13 +76,11 @@ def main(config):
     p_val_losses = []
 
     p_epochs_per_epoch = (len(Pexels_train_loader) // config.img_per_p_epoch) // config.train_batch_size
-
+    print(f"every epoch is going to consist of {p_epochs_per_epoch} pseudo epochs")
     for epoch in range(config.warm_start_epoch, config.epochs):
         current_epoch_iter = iter(Pexels_train_loader)
         batch_losses = []
-        for _ in range(config.warm_start_p_epoch):  # skipping forwards in pseudo epoch
-            next(current_epoch_iter)
-        for pseudo_epoch in range(config.warm_start_p_epoch, p_epochs_per_epoch):
+        for pseudo_epoch in range(p_epochs_per_epoch):
             p_batch_losses = []
             for i, data in enumerate(current_epoch_iter):
                 if i * config.train_batch_size > config.img_per_p_epoch:
@@ -202,7 +200,6 @@ if __name__ == "__main__":
     parser.add_argument("--gpu_ids", type=list, default=None)
     parser.add_argument("--warm_start", action="store_true")
     parser.add_argument("--warm_start_epoch", type=int, default=0)
-    parser.add_argument("--warm_start_p_epoch", type=int, default=0)
     parser.add_argument("--early_stopping_patience", type=int, default=5)
 
     config = parser.parse_args()

@@ -168,6 +168,7 @@ class PexelsRedis(torch.utils.data.Dataset):
     """
 
     def __init__(self, mode: str, transforms: transforms):
+        self.db_host = "redisdataset"
         self.mode = mode
         self.transforms = transforms
         if self.mode == "train":
@@ -179,12 +180,16 @@ class PexelsRedis(torch.utils.data.Dataset):
         else:
             raise NotImplementedError("?")
 
+        self.db = redis.Redis(host=self.db_host, db=self.db)
+        self.size = self.db.dbsize()
+
     def __len__(self) -> int:
-        return redis.Redis(host="redis-dataset", db=self.db).dbsize()
+        return self.size
 
     def __getitem__(self, idx) -> Dict[str, torch.Tensor]:
+        item = self.db.get(str(idx))  # redis keys are strings?
+        item = json.loads(item)
         try:
-            item = json.loads(redis.Redis(host="redis-dataset", db=self.db).get(idx))
             item["img1"] = self.transforms(Image.open(item["img1"]).convert("RGB"))
             item["img2"] = self.transforms(Image.open(item["img2"]).convert("RGB"))
             return item

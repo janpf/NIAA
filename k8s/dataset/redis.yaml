@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: redis-dataset
+  name: redisdataset
 spec:
   selector:
     matchLabels:
-      app: redis-dataset
+      app: redisdataset
   replicas: 1
   template:
     metadata:
       labels:
-        app: redis-dataset
+        app: redisdataset
     spec:
       restartPolicy: "Always"
       containers:
-        - name: redis
+        - name: redisdataset
           image: redis:latest
           args: ["--save"]
           imagePullPolicy: "Always"
@@ -23,7 +23,7 @@ spec:
           resources:
             limits:
               cpu: "2"
-              memory: "16Gi"
+              memory: "24Gi"
             requests:
               cpu: "2"
-              memory: "16Gi"
+              memory: "24Gi"

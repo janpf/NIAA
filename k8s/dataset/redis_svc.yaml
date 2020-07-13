@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: redis-dataset
+  name: redisdataset
 spec:
   ports:
     - port: 6379
       protocol: TCP
   selector:
-    app: redis-dataset
+    app: redisdataset
