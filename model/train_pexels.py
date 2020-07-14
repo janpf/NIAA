@@ -104,12 +104,14 @@ def main(config):
                 writer.add_scalar("progress/p_epoch", pseudo_epoch+1, global_step)
                 writer.add_scalar("progress/step_in_p_epoch", i+1, global_step)
                 writer.add_scalar("loss/train", loss.data[0], global_step)
+                writer.add_scalar("hparams/features_lr", conv_base_lr, global_step)
+                writer.add_scalar("hparams/classifier_lr", dense_lr, global_step)
                 global_step += 1
 
-            p_avg_loss = sum(p_batch_losses) / config.img_per_p_epoch
+            p_avg_loss = sum(p_batch_losses) / len(p_batch_losses)
             p_train_losses.append(p_avg_loss)
             print(f"Pseudo-epoch {pseudo_epoch + 1} averaged training distance loss: {p_avg_loss:.4f}", flush=True)
-            writer.add_scalar("p_avg_loss/train", avg_loss, global_step)
+            writer.add_scalar("p_avg_loss/train", p_avg_loss, global_step)
 
             # exponential learning rate decay
             if (pseudo_epoch + 1) % 10 == 0:
@@ -121,8 +123,6 @@ def main(config):
                     {'params': model.classifier.parameters(), 'lr': dense_lr}],
                     momentum=0.9)
                 # fmt: on
-                writer.add_scalar("hparams/features_lr", conv_base_lr, global_step)
-                writer.add_scalar("hparams/classifier_lr", dense_lr, global_step)
 
             # do validation after each epoch
             batch_val_losses = []
