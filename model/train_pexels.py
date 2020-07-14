@@ -65,8 +65,8 @@ def main(config):
     Pexels_train = PexelsRedis(mode="train", transforms=Pexels_train_transform)
     Pexels_val = PexelsRedis(mode="val", transforms=Pexels_val_transform)
 
-    Pexels_train_loader = torch.utils.data.DataLoader(Pexels_train, batch_size=config.train_batch_size, shuffle=True, drop_last=True)
-    Pexels_val_loader = torch.utils.data.DataLoader(Pexels_val, batch_size=config.val_batch_size, shuffle=False, drop_last=True)
+    Pexels_train_loader = torch.utils.data.DataLoader(Pexels_train, batch_size=config.train_batch_size, shuffle=True, drop_last=True, num_workers=config.num_workers)
+    Pexels_val_loader = torch.utils.data.DataLoader(Pexels_val, batch_size=config.val_batch_size, shuffle=False, drop_last=True, num_workers=config.num_workers)
 
     count = 0  # for early stopping
     global_step = 0
@@ -100,9 +100,9 @@ def main(config):
                 optimizer.step()
 
                 print(f"Epoch: {epoch + 1}/{config.epochs} | Pseudo-epoch: {pseudo_epoch + 1}/{p_epochs_per_epoch} | Step: {i + 1}/{config.img_per_p_epoch // config.train_batch_size} | Training dist loss: {loss.data[0]:.4f}", flush=True)
-                writer.add_scalar("progress/epoch", epoch, global_step)
-                writer.add_scalar("progress/p_epoch", pseudo_epoch, global_step)
-                writer.add_scalar("progess/step_in_p_epoch", i, global_step)
+                writer.add_scalar("progress/epoch", epoch +1 , global_step)
+                writer.add_scalar("progress/p_epoch", pseudo_epoch+1, global_step)
+                writer.add_scalar("progress/step_in_p_epoch", i+1, global_step)
                 writer.add_scalar("loss/train", loss.data[0], global_step)
                 global_step += 1
 
@@ -149,7 +149,7 @@ def main(config):
                 # save model weights if val loss decreases
                 print("Saving model...")
                 Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
-                torch.save(model.state_dict(), str(Path(config.ckpt_path) / f"epoch{epoch + 1}-p_epoch{pseudo_epoch+1}.pth"))
+                torch.save(model.state_dict(), str(Path(config.ckpt_path) / f"epoch{epoch + 1}-p_epoch{pseudo_epoch + 1}.pth"))
                 print("Done.\n")
                 # reset count
                 count = 0
