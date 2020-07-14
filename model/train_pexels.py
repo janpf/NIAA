@@ -69,7 +69,7 @@ def main(config):
     Pexels_val_loader = torch.utils.data.DataLoader(Pexels_val, batch_size=config.val_batch_size, shuffle=False, drop_last=True, num_workers=config.num_workers)
 
     count = 0  # for early stopping
-    global_step = 0
+    g_step = 0  # global step
     init_val_loss = float("inf")
     train_losses = []
     p_train_losses = []
@@ -100,18 +100,16 @@ def main(config):
                 optimizer.step()
 
                 print(f"Epoch: {epoch + 1}/{config.epochs} | Pseudo-epoch: {pseudo_epoch + 1}/{p_epochs_per_epoch} | Step: {i + 1}/{config.img_per_p_epoch // config.train_batch_size} | Training dist loss: {loss.data[0]:.4f}", flush=True)
-                writer.add_scalar("progress/epoch", epoch +1 , global_step)
-                writer.add_scalar("progress/p_epoch", pseudo_epoch+1, global_step)
-                writer.add_scalar("progress/step_in_p_epoch", i+1, global_step)
-                writer.add_scalar("loss/train", loss.data[0], global_step)
-                writer.add_scalar("hparams/features_lr", conv_base_lr, global_step)
-                writer.add_scalar("hparams/classifier_lr", dense_lr, global_step)
-                global_step += 1
+                writer.add_scalar("progress/epoch", epoch + 1, g_step)
+                writer.add_scalar("progress/p_epoch", pseudo_epoch + 1, g_step)
+                writer.add_scalar("progress/step_in_p_epoch", i + 1, g_step)
+                writer.add_scalar("loss/train", loss.data[0], g_step)
+                g_step += 1
 
             p_avg_loss = sum(p_batch_losses) / len(p_batch_losses)
             p_train_losses.append(p_avg_loss)
             print(f"Pseudo-epoch {pseudo_epoch + 1} averaged training distance loss: {p_avg_loss:.4f}", flush=True)
-            writer.add_scalar("p_avg_loss/train", p_avg_loss, global_step)
+            writer.add_scalar("p_avg_loss/train", p_avg_loss, g_step)
 
             # exponential learning rate decay
             if (pseudo_epoch + 1) % 10 == 0:
@@ -123,6 +121,8 @@ def main(config):
                     {'params': model.classifier.parameters(), 'lr': dense_lr}],
                     momentum=0.9)
                 # fmt: on
+                writer.add_scalar("hparams/features_lr", conv_base_lr, g_step)
+                writer.add_scalar("hparams/classifier_lr", dense_lr, g_step)
 
             # do validation after each epoch
             batch_val_losses = []
@@ -141,7 +141,7 @@ def main(config):
             p_val_losses.append(p_avg_val_loss)
 
             print(f"Pseudo-epoch {pseudo_epoch + 1} completed. Averaged distance loss on val set: {p_avg_val_loss:.4f}.", flush=True)
-            writer.add_scalar("p_avg_loss/val", p_avg_val_loss, global_step)
+            writer.add_scalar("p_avg_loss/val", p_avg_val_loss, g_step)
 
             # Use early stopping to monitor training
             if p_avg_val_loss < init_val_loss:
@@ -162,7 +162,7 @@ def main(config):
         avg_loss = sum(batch_losses) / len(Pexels_train_loader)
         train_losses.append(avg_loss)
         print(f"Epoch {epoch + 1} averaged training distance loss: {avg_loss:.4f}", flush=True)
-        writer.add_scalar("avg_loss/train", avg_loss, global_step)
+        writer.add_scalar("avg_loss/train", avg_loss, g_step)
 
     print("Training completed.")
     writer.close()
