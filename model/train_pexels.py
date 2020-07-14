@@ -65,8 +65,8 @@ def main(config):
     Pexels_train = PexelsRedis(mode="train", transforms=Pexels_train_transform)
     Pexels_val = PexelsRedis(mode="val", transforms=Pexels_val_transform)
 
-    Pexels_train_loader = torch.utils.data.DataLoader(Pexels_train, batch_size=config.train_batch_size, shuffle=True, drop_last=True, num_workers=config.num_workers)  # FIXME broken, but dunno why. returns 0
-    Pexels_val_loader = torch.utils.data.DataLoader(Pexels_val, batch_size=config.val_batch_size, shuffle=False, drop_last=True, num_workers=config.num_workers)
+    Pexels_train_loader = torch.utils.data.DataLoader(Pexels_train, batch_size=config.train_batch_size, shuffle=True, drop_last=True)
+    Pexels_val_loader = torch.utils.data.DataLoader(Pexels_val, batch_size=config.val_batch_size, shuffle=False, drop_last=True)
 
     count = 0  # for early stopping
     global_step = 0
@@ -75,7 +75,7 @@ def main(config):
     p_train_losses = []
     p_val_losses = []
 
-    p_epochs_per_epoch = len(Pexels_train_loader) // config.img_per_p_epoch
+    p_epochs_per_epoch = len(Pexels_train) // config.img_per_p_epoch
     print(f"every epoch is going to consist of {p_epochs_per_epoch} pseudo epochs")
     for epoch in range(config.warm_start_epoch, config.epochs):
         current_epoch_iter = iter(Pexels_train_loader)
@@ -173,10 +173,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # input parameters
-    parser.add_argument("--original_img_dir", type=str, default="/scratch/pexels/images")
-    parser.add_argument("--edited_img_dir", type=str, default="/scratch/pexels/edited_images")
-    parser.add_argument("--train_files", type=str, default="/workspace/dataset_processing/train_set.txt")
-    parser.add_argument("--val_files", type=str, default="/workspace/dataset_processing/val_set.txt")
     parser.add_argument("--val_imgs_count", type=int, default=500000)
     parser.add_argument("--orig_present", action="store_true")
     parser.add_argument("--compare_opposite_polarity", action="store_true")

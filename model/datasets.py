@@ -180,8 +180,10 @@ class PexelsRedis(torch.utils.data.Dataset):
         else:
             raise NotImplementedError("?")
 
+        print(f"connecting to {mode} db ({self.db})")
         self.db = redis.Redis(host=self.db_host, db=self.db)
         self.size = self.db.dbsize()
+        print(f"{self.size} datapoints in db")
 
     def __len__(self) -> int:
         return self.size

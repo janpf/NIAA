@@ -31,11 +31,11 @@ spec:
               name: dshm
           command:
             - python3
-            #            - -m
-            #            - debugpy
-            #            - --listen
-            #            - 0.0.0.0:4444
-            #            - --wait-for-client
+            # - -m
+            # - debugpy
+            # - --listen
+            # - 0.0.0.0:4444
+            # - --wait-for-client
             - /workspace/model/train_pexels.py
             - --compare_opposite_polarity
             - --parameters

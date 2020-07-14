@@ -9,8 +9,8 @@ import redis
 sys.path[0] = "/workspace"
 from edit_image import parameter_range
 
-orig_dir: Path = Path("/scratch/stud/pfister/NIAA/pexels/images")
-edited_dir: Path = Path("/scratch/stud/pfister/NIAA/pexels/edited_images")
+orig_dir: Path = Path("/scratch/pexels/images")
+edited_dir: Path = Path("/scratch/pexels/edited_images")
 
 parser = argparse.ArgumentParser()
 
