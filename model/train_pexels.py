@@ -75,7 +75,7 @@ def main(config):
     p_train_losses = []
     p_val_losses = []
 
-    p_epochs_per_epoch = (len(Pexels_train_loader) // config.img_per_p_epoch) // config.train_batch_size
+    p_epochs_per_epoch = len(Pexels_train_loader) // config.img_per_p_epoch
     print(f"every epoch is going to consist of {p_epochs_per_epoch} pseudo epochs")
     for epoch in range(config.warm_start_epoch, config.epochs):
         current_epoch_iter = iter(Pexels_train_loader)
@@ -83,7 +83,7 @@ def main(config):
         for pseudo_epoch in range(p_epochs_per_epoch):
             p_batch_losses = []
             for i, data in enumerate(current_epoch_iter):
-                if i * config.train_batch_size > config.img_per_p_epoch:
+                if i * config.train_batch_size >= config.img_per_p_epoch:
                     break
 
                 img1 = data["img1"].to(device)

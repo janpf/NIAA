@@ -187,7 +187,7 @@ class PexelsRedis(torch.utils.data.Dataset):
         return self.size
 
     def __getitem__(self, idx) -> Dict[str, torch.Tensor]:
-        item = self.db.get(str(idx))  # redis keys are strings?
+        item = self.db.get(idx)
         item = json.loads(item)
         try:
             item["img1"] = self.transforms(Image.open(item["img1"]).convert("RGB"))

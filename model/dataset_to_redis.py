@@ -72,7 +72,7 @@ for img in files:
                     lRelDist = round(lRelDist, 2)
                     rRelDist = round(rRelDist, 2)
 
-                    if lRelDist > rRelDist:  # smaller change always has to be img1/imgl, as the Distance Loss assumes the "more original" image is the first
+                    if lRelDist > rRelDist or math.isclose(lRelDist, rRelDist):  # smaller change always has to be img1/imgl, as the Distance Loss assumes the "more original" image is the first
                         continue
 
                     if math.isclose(lchange, parameter_range[parameter]["default"]):
