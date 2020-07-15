@@ -47,13 +47,15 @@ def main(config):
     else:
         model = model.to(device)
 
+    conv_base_lr = config.conv_base_lr
+    dense_lr = config.dense_lr
+
     # fmt: off
     optimizer = torch.optim.SGD([
         {'params': model.features.parameters(), 'lr': config.conv_base_lr},
         {'params': model.classifier.parameters(), 'lr': config.dense_lr}],
         momentum=0.9)
     # fmt: on
-    writer.add_hparams({"features_lr": config.conv_base_lr, "classifier_lr": config.dense_lr}, {})
     writer.add_scalar("hparams/features_lr", config.conv_base_lr, 0)
     writer.add_scalar("hparams/classifier_lr", config.dense_lr, 0)
 
@@ -74,10 +76,12 @@ def main(config):
     train_losses = []
     p_train_losses = []
     p_val_losses = []
+    current_epoch_iter = None
 
     p_epochs_per_epoch = len(Pexels_train) // config.img_per_p_epoch
     print(f"every epoch is going to consist of {p_epochs_per_epoch} pseudo epochs")
     for epoch in range(config.warm_start_epoch, config.epochs):
+        del current_epoch_iter
         current_epoch_iter = iter(Pexels_train_loader)
         batch_losses = []
         for pseudo_epoch in range(p_epochs_per_epoch):
@@ -104,6 +108,8 @@ def main(config):
                 writer.add_scalar("progress/p_epoch", pseudo_epoch + 1, g_step)
                 writer.add_scalar("progress/step_in_p_epoch", i + 1, g_step)
                 writer.add_scalar("loss/train", loss.data[0], g_step)
+                writer.add_scalar("hparams/features_lr", conv_base_lr, g_step)
+                writer.add_scalar("hparams/classifier_lr", dense_lr, g_step)
                 g_step += 1
 
             p_avg_loss = sum(p_batch_losses) / len(p_batch_losses)
@@ -121,8 +127,6 @@ def main(config):
                     {'params': model.classifier.parameters(), 'lr': dense_lr}],
                     momentum=0.9)
                 # fmt: on
-                writer.add_scalar("hparams/features_lr", conv_base_lr, g_step)
-                writer.add_scalar("hparams/classifier_lr", dense_lr, g_step)
 
             # do validation after each epoch
             batch_val_losses = []
