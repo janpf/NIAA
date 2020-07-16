@@ -104,3 +104,17 @@ class Distance_Loss(nn.Module):
         for i in range(mini_batch_size):
             loss_vector.append(self._single_distance_loss(x1[i], x2[i], epsilon=epsilon))
         return sum(loss_vector) / mini_batch_size
+
+
+class SiameseBatchAccuracy(nn.Module):
+    """Accuracy for first image better than second"""
+
+    def forward(self, x1: torch.Tensor, x2: torch.Tensor):
+        """x1 better than x2 by at least epsilon == 0"""
+        assert x1.shape == x2.shape, "Shape of the two inputs must be the same."
+        mini_batch_size = x1.shape[0]
+        correct = 0
+        for i in range(mini_batch_size):
+            if x1[i] > x2[i]:
+                correct += 1
+        return correct / mini_batch_size
