@@ -1,0 +1,41 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: survey-analyser-nima
+spec:
+  template:
+    metadata:
+      labels:
+        app: survey-analyser-nima
+    spec:
+      restartPolicy: "Never"
+      containers:
+        - name: survey-analyser
+          image: janpf/niaa:flask-latest
+          imagePullPolicy: "Always"
+          command:
+            - python3
+            - /workspace/survey/analyser.py
+            - --NIMA
+          env:
+            - name: HOME
+              value: "/tmp"
+          resources:
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+            requests:
+              cpu: "1"
+              memory: "2Gi"
+          volumeMounts:
+            - mountPath: /workspace
+              name: code
+      volumes:
+        - name: code
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studpfister
+            path: "/home/stud/pfister/eclipse-workspace/NIAA"
+            secretRef:
+              name: studpfister-secret
