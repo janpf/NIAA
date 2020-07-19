@@ -1,0 +1,274 @@
+no redis connection available => 'kctl port-forward svc/redis 7000:6379'
+
+6182 images compared in 69 sessions
+chosen
+leftImage     3187
+rightImage    2995
+---
+
+exposure:	748 | 12.099644128113878
+	binomial test overall w/o unsure:	p: 0.0000 (x=708 | n=740)
+	binomial test w/ orig. img. w/o unsure:	p: 0.0000 (x=586 | n=599)
+	smaller edit:		97.8%	| 586
+	larger edit:		2.2%	| 13
+	unsure and equal:	0.0%	| 0
+	unsure but not equal:	0.0%	| 0
+	not unsure but equal:	1.1%	| 8
+	corr. for pos. changes | one image original | larger relative changes == more clicks for original image?:
+		pearson:	corr. coeff: -0.045 p: 0.9433
+		spearman:	corr. coeff: 0.200 p: 0.7471
+		linregr:	slope: -0.001 intercept: 0.967 corr. coeff: -0.045 p: 0.9433 stderr: 0.016
+	corr. for neg. changes | one image original | larger relative changes == more clicks for original image?:
+		pearson:	corr. coeff: -0.861 p: 0.0610
+		spearman:	corr. coeff: -0.783 p: 0.1176
+		linregr:	slope: -0.009 intercept: 1.009 corr. coeff: -0.861 p: 0.0610 stderr: 0.003
+	corr. for pos. changes | all | larger relative changes == more clicks for (more) original image?:
+		pearson:	corr. coeff: 0.546 p: 0.3413
+		spearman:	corr. coeff: 0.300 p: 0.6238
+		linregr:	slope: 0.013 intercept: 0.915 corr. coeff: 0.546 p: 0.3413 stderr: 0.011
+	corr. for neg. changes | all | larger relative changes == more clicks for (more) original image?:
+		pearson:	corr. coeff: -0.466 p: 0.4284
+		spearman:	corr. coeff: -0.600 p: 0.2848
+		linregr:	slope: -0.005 intercept: 0.988 corr. coeff: -0.466 p: 0.4284 stderr: 0.005
+
+contrast:	660 | 10.676156583629894
+	binomial test overall w/o unsure:	p: 0.0000 (x=557 | n=648)
+	binomial test w/ orig. img. w/o unsure:	p: 0.0000 (x=421 | n=498)
+	smaller edit:		84.5%	| 421
+	larger edit:		15.5%	| 77
+	unsure and equal:	0.0%	| 0
+	unsure but not equal:	0.0%	| 0
+	not unsure but equal:	1.8%	| 12
+	corr. for pos. changes | one image original | larger relative changes == more clicks for original image?:
+		pearson:	corr. coeff: -0.408 p: 0.4955
+		spearman:	corr. coeff: -0.100 p: 0.8729
+		linregr:	slope: -0.122 intercept: 0.786 corr. coeff: -0.408 p: 0.4955 stderr: 0.158
+	corr. for neg. changes | one image original | larger relative changes == more clicks for original image?:
+		pearson:	corr. coeff: 0.390 p: 0.5166
+		spearman:	corr. coeff: 0.600 p: 0.2848
+		linregr:	slope: 0.013 intercept: 0.976 corr. coeff: 0.390 p: 0.5166 stderr: 0.017
+	corr. for pos. changes | all | larger relative changes == more clicks for (more) original image?:
+		pearson:	corr. coeff: -0.359 p: 0.5530
+		spearman:	corr. coeff: -0.300 p: 0.6238
+		linregr:	slope: -0.084 intercept: 0.777 corr. coeff: -0.359 p: 0.5530 stderr: 0.126
+	corr. for neg. changes | all | larger relative changes == more clicks for (more) original image?:
+		pearson:	corr. coeff: 0.545 p: 0.3423
+		spearman:	corr. coeff: 0.600 p: 0.2848
+		linregr:	slope: 0.027 intercept: 0.963 corr. coeff: 0.545 p: 0.3423 stderr: 0.024
+
+tint:	727 | 11.759948236816564
+	binomial test overall w/o unsure:	p: 0.0000 (x=601 | n=714)
+	binomial test w/ orig. img. w/o unsure:	p: 0.0000 (x=513 | n=575)
+	smaller edit:		89.2%	| 513
+	larger edit:		10.8%	| 62
+	unsure and equal:	0.0%	| 0
+	unsure but not equal:	0.0%	| 0
+	not unsure but equal:	1.8%	| 13
+	corr. for pos. changes | one image original | larger relative changes == more clicks for original image?:
+		pearson:	corr. coeff: -0.925 p: 0.0244
+		spearman:	corr. coeff: -0.872 p: 0.0539
+		linregr:	slope: -1.670 intercept: 1.121 corr. coeff: -0.925 p: 0.0244 stderr: 0.396
+	corr. for neg. changes | one image original | larger relative changes == more clicks for original image?:
+		pearson:	corr. coeff: -0.389 p: 0.5174
+		spearman:	corr. coeff: -0.300 p: 0.6238
+		linregr:	slope: -0.248 intercept: 0.948 corr. coeff: -0.389 p: 0.5174 stderr: 0.338
+	corr. for pos. changes | all | larger relative changes == more clicks for (more) original image?:
+		pearson:	corr. coeff: -0.843 p: 0.0726
+		spearman:	corr. coeff: -0.700 p: 0.1881
+		linregr:	slope: -0.998 intercept: 0.934 corr. coeff: -0.843 p: 0.0726 stderr: 0.367
+	corr. for neg. changes | all | larger relative changes == more clicks for (more) original image?:
+		pearson:	corr. coeff: 0.013 p: 0.9837
+		spearman:	corr. coeff: 0.300 p: 0.6238
+		linregr:	slope: 0.005 intercept: 0.891 corr. coeff: 0.013 p: 0.9837 stderr: 0.226
+
+brightness:	725 | 11.7275962471692
+	binomial test overall w/o unsure:	p: 0.0000 (x=592 | n=703)
+	binomial test w/ orig. img. w/o unsure:	p: 0.0000 (x=480 | n=562)
+	smaller edit:		85.4%	| 480
+	larger edit:		14.6%	| 82
+	unsure and equal:	0.0%	| 0
+	unsure but not equal:	0.0%	| 0
+	not unsure but equal:	3.0%	| 22
+	corr. for pos. changes | one image original | larger relative changes == more clicks for original image?:
+		pearson:	corr. coeff: -0.184 p: 0.7667
+		spearman:	corr. coeff: -0.112 p: 0.8579
+		linregr:	slope: -0.010 intercept: 0.994 corr. coeff: -0.184 p: 0.7667 stderr: 0.031
+	corr. for neg. changes | one image original | larger relative changes == more clicks for original image?:
+		pearson:	corr. coeff: 0.778 p: 0.1212
+		spearman:	corr. coeff: 0.600 p: 0.2848
+		linregr:	slope: 0.044 intercept: 0.712 corr. coeff: 0.778 p: 0.1212 stderr: 0.021
+	corr. for pos. changes | all | larger relative changes == more clicks for (more) original image?:
+		pearson:	corr. coeff: 0.376 p: 0.5333
+		spearman:	corr. coeff: 0.300 p: 0.6238
+		linregr:	slope: 0.023 intercept: 0.964 corr. coeff: 0.376 p: 0.5333 stderr: 0.032
+	corr. for neg. changes | all | larger relative changes == more clicks for (more) original image?:
+		pearson:	corr. coeff: 0.472 p: 0.4223
+		spearman:	corr. coeff: 0.300 p: 0.6238
+		linregr:	slope: 0.047 intercept: 0.694 corr. coeff: 0.472 p: 0.4223 stderr: 0.050
+
+lcontrast:	652 | 10.54674862504044
+	binomial test overall w/o unsure:	p: 0.0000 (x=122 | n=641)
+	binomial test w/ orig. img. w/o unsure:	p: 0.0000 (x=63 | n=366)
+	smaller edit:		17.2%	| 63
+	larger edit:		82.8%	| 303
+	unsure and equal:	0.0%	| 0
+	unsure but not equal:	0.0%	| 0
+	not unsure but equal:	1.7%	| 11
+	corr. for pos. changes | one image original | larger relative changes == more clicks for original image?:
+		pearson:	corr. coeff: -0.386 p: 0.1029
+		spearman:	corr. coeff: -0.429 p: 0.0667
+		linregr:	slope: -0.004 intercept: 0.250 corr. coeff: -0.386 p: 0.1029 stderr: 0.002
+	corr. for pos. changes | all | larger relative changes == more clicks for (more) original image?:
+		pearson:	corr. coeff: 0.234 p: 0.0950
+		spearman:	corr. coeff: 0.138 p: 0.3309
+		linregr:	slope: 0.006 intercept: 0.335 corr. coeff: 0.234 p: 0.0950 stderr: 0.004
+
+temperature:	708 | 11.452604335166612
+	binomial test overall w/o unsure:	p: 0.0000 (x=534 | n=699)
+	binomial test w/ orig. img. w/o unsure:	p: 0.0000 (x=460 | n=554)
+	smaller edit:		83.0%	| 460
+	larger edit:		17.0%	| 94
+	unsure and equal:	0.0%	| 0
+	unsure but not equal:	0.0%	| 0
+	not unsure but equal:	1.3%	| 9
+	corr. for pos. changes | one image original | larger relative changes == more clicks for original image?:
+		pearson:	corr. coeff: -0.684 p: 0.0290
+		spearman:	corr. coeff: -0.661 p: 0.0376
+		linregr:	slope: -0.000 intercept: 0.839 corr. coeff: -0.684 p: 0.0290 stderr: 0.000
+	corr. for neg. changes | one image original | larger relative changes == more clicks for original image?:
+		pearson:	corr. coeff: -0.346 p: 0.6541
+		spearman:	corr. coeff: -0.400 p: 0.6000
+		linregr:	slope: -0.000 intercept: 0.957 corr. coeff: -0.346 p: 0.6541 stderr: 0.000
+	corr. for pos. changes | all | larger relative changes == more clicks for (more) original image?:
+		pearson:	corr. coeff: -0.252 p: 0.2053
+		spearman:	corr. coeff: -0.203 p: 0.3110
+		linregr:	slope: -0.000 intercept: 0.604 corr. coeff: -0.252 p: 0.2053 stderr: 0.000
+	corr. for neg. changes | all | larger relative changes == more clicks for (more) original image?:
+		pearson:	corr. coeff: 0.262 p: 0.5307
+		spearman:	corr. coeff: 0.286 p: 0.4927
+		linregr:	slope: 0.000 intercept: 0.876 corr. coeff: 0.262 p: 0.5307 stderr: 0.000
+
+vibrance:	372 | 6.017470074409577
+	binomial test overall w/o unsure:	p: 0.0000 (x=287 | n=330)
+	binomial test w/ orig. img. w/o unsure:	p: 0.0000 (x=247 | n=255)
+	smaller edit:		96.9%	| 247
+	larger edit:		3.1%	| 8
+	unsure and equal:	0.0%	| 0
+	unsure but not equal:	0.0%	| 0
+	not unsure but equal:	11.3%	| 42
+	corr. for pos. changes | one image original | larger relative changes == more clicks for original image?:
+		pearson:	corr. coeff: 0.863 p: 0.1372
+		spearman:	corr. coeff: 0.800 p: 0.2000
+		linregr:	slope: 0.000 intercept: 0.933 corr. coeff: 0.863 p: 0.1372 stderr: 0.000
+	corr. for pos. changes | all | larger relative changes == more clicks for (more) original image?:
+		pearson:	corr. coeff: 0.223 p: 0.6312
+		spearman:	corr. coeff: 0.357 p: 0.4316
+		linregr:	slope: 0.002 intercept: 0.699 corr. coeff: 0.223 p: 0.6312 stderr: 0.004
+
+highlights:	447 | 7.230669686185701
+	binomial test overall w/o unsure:	p: 0.0000 (x=343 | n=430)
+	binomial test w/ orig. img. w/o unsure:	p: 0.0000 (x=302 | n=342)
+	smaller edit:		88.3%	| 302
+	larger edit:		11.7%	| 40
+	unsure and equal:	0.0%	| 0
+	unsure but not equal:	0.0%	| 0
+	not unsure but equal:	3.8%	| 17
+	corr. for pos. changes | one image original | larger relative changes == more clicks for original image?:
+		pearson:	corr. coeff: -0.577 p: 0.1340
+		spearman:	corr. coeff: -0.577 p: 0.1340
+		linregr:	slope: -0.001 intercept: 1.044 corr. coeff: -0.577 p: 0.1340 stderr: 0.001
+	corr. for neg. changes | one image original | larger relative changes == more clicks for original image?:
+		pearson:	corr. coeff: -0.996 p: 0.0540
+		spearman:	corr. coeff: -1.000 p: 0.0000
+		linregr:	slope: -0.005 intercept: 0.986 corr. coeff: -0.996 p: 0.0540 stderr: 0.000
+	corr. for pos. changes | all | larger relative changes == more clicks for (more) original image?:
+		pearson:	corr. coeff: -0.117 p: 0.6776
+		spearman:	corr. coeff: -0.121 p: 0.6686
+		linregr:	slope: -0.001 intercept: 0.811 corr. coeff: -0.117 p: 0.6776 stderr: 0.002
+	corr. for neg. changes | all | larger relative changes == more clicks for (more) original image?:
+		pearson:	corr. coeff: -0.056 p: 0.9435
+		spearman:	corr. coeff: -0.400 p: 0.6000
+		linregr:	slope: -0.001 intercept: 0.735 corr. coeff: -0.056 p: 0.9435 stderr: 0.010
+
+saturation:	632 | 10.223228728566806
+	binomial test overall w/o unsure:	p: 0.0000 (x=458 | n=610)
+	binomial test w/ orig. img. w/o unsure:	p: 0.0000 (x=409 | n=495)
+	smaller edit:		82.6%	| 409
+	larger edit:		17.4%	| 86
+	unsure and equal:	0.0%	| 0
+	unsure but not equal:	0.0%	| 0
+	not unsure but equal:	3.5%	| 22
+	corr. for pos. changes | one image original | larger relative changes == more clicks for original image?:
+		pearson:	corr. coeff: -0.320 p: 0.6000
+		spearman:	corr. coeff: -0.600 p: 0.2848
+		linregr:	slope: -0.077 intercept: 0.941 corr. coeff: -0.320 p: 0.6000 stderr: 0.133
+	corr. for neg. changes | one image original | larger relative changes == more clicks for original image?:
+		pearson:	corr. coeff: -0.985 p: 0.0022
+		spearman:	corr. coeff: -1.000 p: 0.0000
+		linregr:	slope: -0.440 intercept: 1.052 corr. coeff: -0.985 p: 0.0022 stderr: 0.045
+	corr. for pos. changes | all | larger relative changes == more clicks for (more) original image?:
+		pearson:	corr. coeff: 0.097 p: 0.8769
+		spearman:	corr. coeff: -0.100 p: 0.8729
+		linregr:	slope: 0.019 intercept: 0.847 corr. coeff: 0.097 p: 0.8769 stderr: 0.111
+	corr. for neg. changes | all | larger relative changes == more clicks for (more) original image?:
+		pearson:	corr. coeff: -0.302 p: 0.6211
+		spearman:	corr. coeff: 0.000 p: 1.0000
+		linregr:	slope: -0.055 intercept: 0.696 corr. coeff: -0.302 p: 0.6211 stderr: 0.101
+
+shadows:	511 | 8.265933354901327
+	binomial test overall w/o unsure:	p: 0.0000 (x=375 | n=492)
+	binomial test w/ orig. img. w/o unsure:	p: 0.0000 (x=334 | n=407)
+	smaller edit:		82.1%	| 334
+	larger edit:		17.9%	| 73
+	unsure and equal:	0.0%	| 0
+	unsure but not equal:	0.0%	| 0
+	not unsure but equal:	3.7%	| 19
+	corr. for pos. changes | one image original | larger relative changes == more clicks for original image?:
+		pearson:	corr. coeff: -0.978 p: 0.1327
+		spearman:	corr. coeff: -1.000 p: 0.0000
+		linregr:	slope: -0.002 intercept: 0.878 corr. coeff: -0.978 p: 0.1327 stderr: 0.000
+	corr. for neg. changes | one image original | larger relative changes == more clicks for original image?:
+		pearson:	corr. coeff: 0.163 p: 0.7003
+		spearman:	corr. coeff: 0.310 p: 0.4556
+		linregr:	slope: 0.000 intercept: 0.806 corr. coeff: 0.163 p: 0.7003 stderr: 0.001
+	corr. for pos. changes | all | larger relative changes == more clicks for (more) original image?:
+		pearson:	corr. coeff: -0.118 p: 0.8496
+		spearman:	corr. coeff: -0.300 p: 0.6238
+		linregr:	slope: -0.001 intercept: 0.749 corr. coeff: -0.118 p: 0.8496 stderr: 0.005
+	corr. for neg. changes | all | larger relative changes == more clicks for (more) original image?:
+		pearson:	corr. coeff: 0.138 p: 0.6236
+		spearman:	corr. coeff: 0.182 p: 0.5155
+		linregr:	slope: 0.001 intercept: 0.596 corr. coeff: 0.138 p: 0.6236 stderr: 0.001
+
+---
+
+decision duration:
+average time for decision: 4.6 seconds
+---
+
+useragent distribution:
+Counter({'Chrome': 3851, 'Firefox': 1676, 'Safari': 411, 'Microsoft Internet Explorer': 148, 'MSEdge': 96})
+Counter({'Windows': 4916, 'Macintosh': 786, 'Linux': 480})
+Counter({'Ubuntu': 146, 'Android': 112})
+---
+
+Top 5 longest sessions:
+average number of decisions: 89.6
+                                  count
+userid                                 
+c88e8e7a6299a0812f609c8c2d5b36ae    369
+962e15e995528855c89ad38d4141f7a8    362
+7e5c637038e5dd135d21a27669c796df    347
+067d0ea51219886c5170c21a096493d6    325
+e073e41ecf87df2f85a2db4770cc21fd    319
+---
+
+3 most recent comparisons:
+      Unnamed: 0  RTT(s)  ...  chosenNIMA sameNIMA
+6179        8121       3  ...  rightImage     True
+6180        8122       2  ...   leftImage     True
+6181        8123       1  ...  rightImage     True
+
+[3 rows x 33 columns]
+---
+
