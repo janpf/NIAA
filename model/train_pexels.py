@@ -41,6 +41,8 @@ def main(config):
         print(f"Successfully loaded model epoch{config.warm_start_epoch}-p_epoch{config.warm_start_p_epoch}.pth")
     else:
         print("starting cold", flush=True)
+        if Path(config.ckpt_path).exists():
+            raise "model already trained, but cold training was used"
 
     if config.multi_gpu:
         model.features = torch.nn.DataParallel(model.features, device_ids=config.gpu_ids)
