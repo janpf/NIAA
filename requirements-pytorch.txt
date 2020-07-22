@@ -10,3 +10,6 @@ torch
 torchvision
 # temporary:
 imageai
+tensorflow
+keras
+opencv-python
