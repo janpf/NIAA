@@ -1,6 +1,14 @@
 from pathlib import Path
 from imageai.Prediction import ImagePrediction
 
+import requests
+
+print("downloading model")
+r = requests.get("https://github.com/OlafenwaMoses/ImageAI/releases/download/1.0/DenseNet-BC-121-32.h5")
+with open("/tmp/DenseNet-BC-121-32.h5", "wb") as f:
+    f.write(r.content)
+
+print("loading model")
 orig_dir: Path = Path("/scratch/pexels/images")
 
 prediction = ImagePrediction()
