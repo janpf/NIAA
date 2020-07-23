@@ -28,7 +28,6 @@ spec:
           command:
             - python3
             - /workspace/model/dataset_to_redis.py
-            - --compare_opposite_polarity
             - --mode
             - val
             - --file_list
