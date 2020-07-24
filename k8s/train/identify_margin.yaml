@@ -27,6 +27,8 @@ spec:
               name: code
             - mountPath: /scratch
               name: scratch
+            - mountPath: /dev/shm
+              name: dshm
           command:
             - python3
             # - -m
@@ -52,3 +54,6 @@ spec:
             path: "/scratch/stud/pfister/NIAA"
             secretRef:
               name: studpfister-secret
+        - name: dshm
+          emptyDir:
+            medium: Memory

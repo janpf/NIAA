@@ -1,3 +1,13 @@
+import redis
+import json
+
+r = redis.Redis(host="localhost")
+for i in range(100):
+    print(json.dumps(json.loads(r.get(i)), indent=1))
+    input()
+exit()
+
+
 import torch
 import torchvision.transforms as transforms
 

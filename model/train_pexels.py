@@ -96,7 +96,7 @@ def main(config):
 
                 optimizer.zero_grad()
 
-                loss = dist_loss(out1, out2)
+                loss = dist_loss(out1, out2, epsilon=config.margin)
                 p_batch_losses.append(loss.item())
 
                 acc = accuracy(out1, out2)
@@ -145,7 +145,7 @@ def main(config):
                 with torch.no_grad():
                     out1, out2 = model(img1, img2, "siamese")
 
-                val_loss = dist_loss(out1, out2)
+                val_loss = dist_loss(out1, out2, epsilon=config.margin)
                 batch_val_losses.append(val_loss.item())
 
                 val_acc = accuracy(out1, out2)
@@ -186,12 +186,12 @@ if __name__ == "__main__":
     # input parameters
     parser.add_argument("--val_imgs_count", type=int, default=500000)
     parser.add_argument("--orig_present", action="store_true")
-    parser.add_argument("--compare_opposite_polarity", action="store_true")
     parser.add_argument("--parameters", type=str, nargs="+")
 
     # training parameters
     parser.add_argument("--conv_base_lr", type=float, default=3e-7)
     parser.add_argument("--dense_lr", type=float, default=3e-6)
+    parser.add_argument("--margin", type=float, default=0.1)
     parser.add_argument("--lr_decay_rate", type=float, default=0.95)
     parser.add_argument("--lr_decay_freq", type=int, default=10)
     parser.add_argument("--train_batch_size", type=int, default=64)
