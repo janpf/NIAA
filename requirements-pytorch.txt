@@ -7,6 +7,7 @@ Pillow
 redis
 tensorboard
 torch
+torchtext
 torchvision
 # temporary:
 imageai

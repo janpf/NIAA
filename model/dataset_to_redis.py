@@ -59,8 +59,6 @@ for img in files:
         else:
             for lchange in parameter_range[parameter]["range"]:  # iterating over all possible changes
                 for rchange in parameter_range[parameter]["range"]:  # iterating over all possible changes
-                    if rchange < lchange:  # only compare 0.4 to 0.5 but not 0.5 to 0.4
-                        continue
                     if math.isclose(lchange, rchange):  # don't compare 0.5 to 0.5 for example
                         continue
                     if not args.compare_opposite_polarity:
