@@ -7,5 +7,4 @@ Pillow
 redis
 tensorboard
 torch
-torchtext
 torchvision
