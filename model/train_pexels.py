@@ -189,9 +189,9 @@ if __name__ == "__main__":
     parser.add_argument("--parameters", type=str, nargs="+")
 
     # training parameters
-    parser.add_argument("--conv_base_lr", type=float, default=3e-7)
-    parser.add_argument("--dense_lr", type=float, default=3e-6)
-    parser.add_argument("--margin", type=float, default=0.1)
+    parser.add_argument("--conv_base_lr", type=float, default=0.0005)  # https://github.com/kentsyx/Neural-IMage-Assessment/issues/16
+    parser.add_argument("--dense_lr", type=float, default=0.005)  # https://github.com/kentsyx/Neural-IMage-Assessment/issues/16
+    parser.add_argument("--margin", type=float)
     parser.add_argument("--lr_decay_rate", type=float, default=0.95)
     parser.add_argument("--lr_decay_freq", type=int, default=10)
     parser.add_argument("--train_batch_size", type=int, default=64)

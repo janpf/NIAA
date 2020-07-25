@@ -93,11 +93,10 @@ class Distance_Loss(nn.Module):
         self.zero_cmp = torch.zeros(1, device=torch.device("cuda" if torch.cuda.is_available() else "cpu"))
 
     def _single_distance_loss(self, x1: torch.Tensor, x2: torch.Tensor, epsilon: float):
-        """x1 better than x2 by at least epsilon == 0"""
         return torch.max((x2 - x1) + epsilon, self.zero_cmp)
 
-    def forward(self, x1: torch.Tensor, x2: torch.Tensor, epsilon: float = 0.1):
-        """x1 better than x2 by at least epsilon == 0"""
+    def forward(self, x1: torch.Tensor, x2: torch.Tensor, epsilon: float):
+        """(x1 better than x2 by at least epsilon) == 0"""
         assert x1.shape == x2.shape, "Shape of the two inputs must be the same."
         mini_batch_size = x1.shape[0]
         loss_vector = []
@@ -110,7 +109,6 @@ class SiameseBatchAccuracy(nn.Module):
     """Accuracy for first image better than second"""
 
     def forward(self, x1: torch.Tensor, x2: torch.Tensor):
-        """x1 better than x2 by at least epsilon == 0"""
         assert x1.shape == x2.shape, "Shape of the two inputs must be the same."
         mini_batch_size = x1.shape[0]
         correct = 0
