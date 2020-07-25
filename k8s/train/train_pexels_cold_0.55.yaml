@@ -1,13 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: train-pexels-cold
+  name: train-pexels-cold-0-55
 spec:
   template:
     spec:
+      priorityClassName: research-low
       restartPolicy: "Never"
       containers:
-        - name: train-pexels-cold
+        - name: train-pexels-cold-0-55
           image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
@@ -37,7 +38,10 @@ spec:
             # - 0.0.0.0:4444
             # - --wait-for-client
             - /workspace/model/train_pexels.py
-            - --compare_opposite_polarity
+            - --margin
+            - "0.1074"
+            - --dir_name
+            - cold/m0.55
             - --parameters
             - brightness
             - contrast

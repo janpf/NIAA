@@ -113,6 +113,7 @@ def main(config):
                 writer.add_scalar("acc/train", acc, g_step)
                 writer.add_scalar("hparams/features_lr", conv_base_lr, g_step)
                 writer.add_scalar("hparams/classifier_lr", dense_lr, g_step)
+                writer.add_scalar("hparams/margin", float(config.margin), g_step)  # muss bei dynamischer margin hier natürlich auch so geloggt werden
                 g_step += 1
 
             p_avg_loss = sum(p_batch_losses) / len(p_batch_losses)
@@ -201,8 +202,9 @@ if __name__ == "__main__":
     parser.add_argument("--img_per_p_epoch", type=int, default=1000000)
 
     # misc
-    parser.add_argument("--log_dir", type=str, default="/scratch/train_logs/pexels/cold")
-    parser.add_argument("--ckpt_path", type=str, default="/scratch/ckpts/pexels/cold")
+    parser.add_argument("--log_dir", type=str, default="/scratch/train_logs/pexels/")
+    parser.add_argument("--ckpt_path", type=str, default="/scratch/ckpts/pexels/")
+    parser.add_argument("--dir_name", type=str, default="cold")
     parser.add_argument("--multi_gpu", action="store_true")
     parser.add_argument("--gpu_ids", type=list, default=None)
     parser.add_argument("--warm_start", action="store_true")
@@ -210,5 +212,8 @@ if __name__ == "__main__":
     parser.add_argument("--early_stopping_patience", type=int, default=5)
 
     config = parser.parse_args()
+
+    config.log_dir = config.log_dir + config.dir_name
+    config.ckpt_path = config.ckpt_path + config.dir_name
 
     main(config)
