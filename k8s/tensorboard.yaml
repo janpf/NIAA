@@ -34,6 +34,8 @@ spec:
             - tensorboard
             - --logdir=/scratch/train_logs
             - --bind_all
+            - --reload_multifile=true
+            - --reload_multifile_inactive_secs=10000
       volumes:
         - name: scratch
           cephfs:
