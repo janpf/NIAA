@@ -2,19 +2,23 @@
     "folders": [
         {
             "name": "NIAA",
-            "uri": "vscode-remote://ssh-remote+vingilot/home/stud/pfister/eclipse-workspace/NIAA"
+            "path": ".."
         },
         {
             "name": "Masterarbeit",
-            "uri": "vscode-remote://ssh-remote+vingilot/home/stud/pfister/eclipse-workspace/Masterarbeit"
+            "path": "../../Masterarbeit"
+        },
+        {
+            "name": "Masterarbeit.wiki",
+            "path": "../../Masterarbeit.wiki"
         },
         {
             "name": "pexels-scraper",
-            "uri": "vscode-remote://ssh-remote+vingilot/home/stud/pfister/eclipse-workspace/pexels-scraper"
+            "path": "../../pexels-scraper"
         },
         {
             "name": "NIAA",
-            "uri": "vscode-remote://ssh-remote+vingilot/scratch/stud/pfister/NIAA"
+            "path": "../../../../../../scratch/stud/pfister/NIAA"
         }
     ],
     "remoteAuthority": "ssh-remote+vingilot",
