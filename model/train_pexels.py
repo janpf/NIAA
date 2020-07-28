@@ -15,6 +15,8 @@ from model.NIAA import NIAA, Distance_Loss, SiameseBatchAccuracy
 
 
 def main(config):
+    if not config.warm_start and Path(config.log_dir).exists():
+        raise "train script got restarted, although previous run exists"
     Path(config.log_dir).mkdir(parents=True, exist_ok=True)
     writer = SummaryWriter(log_dir=config.log_dir)
 
@@ -187,7 +189,6 @@ if __name__ == "__main__":
     # input parameters
     parser.add_argument("--val_imgs_count", type=int, default=500000)
     parser.add_argument("--orig_present", action="store_true")
-    parser.add_argument("--parameters", type=str, nargs="+")
 
     # training parameters
     parser.add_argument("--conv_base_lr", type=float, default=0.0005)  # https://github.com/kentsyx/Neural-IMage-Assessment/issues/16

@@ -1,14 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: train-pexels-cold-0-51
+  name: train-pexels-cold-0-70
 spec:
   template:
     spec:
       priorityClassName: research-low
       restartPolicy: "Never"
       containers:
-        - name: train-pexels-cold-0-51
+        - name: train-pexels-cold-0-70
           image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
@@ -39,9 +39,9 @@ spec:
             # - --wait-for-client
             - /workspace/model/train_pexels.py
             - --margin
-            - "0.0274"
+            - "0.4351"
             - --dir_name
-            - cold/m0.51
+            - cold/m0.70
       volumes:
         - name: code
           cephfs:

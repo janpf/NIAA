@@ -42,16 +42,6 @@ spec:
             - "0.1074"
             - --dir_name
             - cold/m0.55
-            - --parameters
-            - brightness
-            - contrast
-            - exposure
-            - highlights
-            - saturation
-            - shadows
-            - temperature
-            - tint
-            - vibrance
       volumes:
         - name: code
           cephfs:
