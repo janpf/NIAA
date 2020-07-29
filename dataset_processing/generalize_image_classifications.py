@@ -1,4 +1,5 @@
 from collections import Counter
+from nltk.corpus import wordnet as wn
 
 with open("/home/stud/pfister/eclipse-workspace/NIAA/analysis/dataset_classes.csv") as f:
     content = f.readlines()
@@ -8,27 +9,61 @@ content = [val.split(",") for val in content]
 
 topchoices = Counter([val[1].split(":")[0] for val in content])
 
-for choice in topchoices.most_common():
-    print(f"{choice[1]}\t{choice[0]}")
+# for choice in topchoices.most_common():
+#    print(f"{choice[1]}\t{choice[0]}")
 
-exit()
-# yeah no. just gonna do it manually
-import matplotlib.pyplot as plt
-import networkx as nx
-from networkx.drawing.nx_agraph import graphviz_layout
-from nltk.corpus import wordnet as wn
+# fmt: off
+imagenet_topclasses = [
+    "plant", "flora", "plant_life",
+    "geological_formation", "formation",
+    "natural_object",
+    "sport", "athletics",
+    "artifact", "artefact",
+    "fungus",
+    "person", "individual", "someone", "somebody", "mortal", "soul",
+    "animal", "animate_being", "beast", "brute", "creature", "fauna"
+    ]
+# fmt: on
 
-G = nx.DiGraph()
-print(topchoices.most_common(10))
-for word in topchoices.most_common(10):
+imagenet_topclasses_counter = dict()
+
+for val in imagenet_topclasses:
+    imagenet_topclasses_counter[val] = 0
+
+hierarchies = []
+
+for word in topchoices.most_common():
+    word_hierarchy = []
     word = word[0]
-    word = f"{word}.n.01"  # most likely noun i guess? # TODO check
-    try:
-        hypernym = wn.synset(word).hypernyms()[0].name()
-    except:
-        hypernym = "none"
-    print(word, hypernym)
-    G.add_edge(word, hypernym)
-pos = graphviz_layout(G, prog="dot")
-nx.draw(G, pos, with_labels=True)
-plt.savefig("graph.png")
+    word = f"{word}.n.01"  # primary noun I guess? # TODO check
+    word_hierarchy.append(word)
+    while True:
+        try:
+            word = wn.synset(word).hypernyms()[0].name()
+            word_hierarchy.append(word)
+        except:
+            break
+    word_hierarchy = [val[: val.index(".")] for val in word_hierarchy]
+    hierarchies.append(word_hierarchy)
+
+# print(hierarchies)
+
+for hier in hierarchies:
+    current_classes = []
+    for val in imagenet_topclasses:
+        if val in hier:
+            current_classes.append(val)
+    if len(current_classes) > 1:
+        print(f"{hier[0]} is in classes {current_classes}")
+    elif len(current_classes) == 0:
+        print(f"{hier[0]} is in no class: {hier}")
+    if len(current_classes) > 0:
+        # choosing top most class
+        imagenet_topclasses_counter[current_classes[-1]] += topchoices[hier[0]]
+
+for clazz in list(imagenet_topclasses_counter.keys()):
+    if imagenet_topclasses_counter[clazz] == 0:
+        del imagenet_topclasses_counter[clazz]
+
+print(imagenet_topclasses_counter)
+# {'plant': 3480, 'geological_formation': 13140, 'natural_object': 2470, 'artifact': 78429, 'fungus': 493, 'person': 2984, 'animal': 11435}
