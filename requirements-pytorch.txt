@@ -10,7 +10,7 @@ torch
 torchvision
 # temporary:
 imageai
-tensorflow
+tensorflow==1.13.1
 keras
 opencv-python
 requests
