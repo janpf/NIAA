@@ -8,3 +8,9 @@ redis
 tensorboard
 torch
 torchvision
+# temporary:
+imageai
+tensorflow==1.14.0
+keras
+opencv-python
+requests
