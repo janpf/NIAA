@@ -10,6 +10,7 @@ with open("/tmp/resnet50_coco_best_v2.0.1.h5", "wb") as f:
 
 print("loading model")
 orig_dir: Path = Path("/scratch/pexels/images")
+out_dir: Path = Path("/scratch/pexels/detected_images")
 
 detector = ObjectDetection()
 detector.setModelTypeAsRetinaNet()  # https://github.com/OlafenwaMoses/ImageAI/releases/download/1.0/resnet50_coco_best_v2.0.1.h5
@@ -19,7 +20,7 @@ detector.loadModel()
 for img in orig_dir.iterdir():
     print(img.name, end="")
     print(",", end="")
-    detections = detector.detectObjectsFromImage(input_image=str(img), minimum_percentage_probability=30)
+    detections = detector.detectObjectsFromImage(input_image=str(img), output_image_path=str(out_dir / img.name), minimum_percentage_probability=30)
     for obj in detections:
         print(f"{obj['name']}:{obj['percentage_probability']},", end="")
     print(flush=True)
