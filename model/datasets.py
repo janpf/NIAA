@@ -197,3 +197,47 @@ class PexelsRedis(torch.utils.data.Dataset):
             return item
         except:
             return self[random.randint(0, len(self))]  # if an image is broken
+
+
+class PexelsDistortRedis(torch.utils.data.Dataset):
+    """Pexels dataset
+
+    Args:
+        mode: train, val or test
+        transform: preprocessing and augmentation of the training images
+    """
+
+    def __init__(self, mode: str, transforms: transforms, distortion_fn, **dist_kwargs):
+        self.db_host = "redisdataset"
+        self.mode = mode
+        self.transforms = transforms
+
+        self.distortion_fn = distortion_fn
+        self.dist_kwargs = dist_kwargs
+
+        if self.mode == "train":
+            self.db = 0
+        elif self.mode == "val":
+            self.db = 1
+        elif self.mode == "test":
+            self.db = 2
+        else:
+            raise NotImplementedError("?")
+
+        print(f"connecting to {mode} db ({self.db})")
+        self.db = redis.Redis(host=self.db_host, db=self.db)
+        self.size = self.db.dbsize()
+        print(f"{self.size} datapoints in db")
+
+    def __len__(self) -> int:
+        return self.size
+
+    def __getitem__(self, idx) -> Dict[str, torch.Tensor]:
+        item = self.db.get(idx)
+        item = json.loads(item)
+        try:
+            item["img1"] = self.transforms(self.distortion_fn(item["img1"], self.dist_kwargs))
+            item["img2"] = self.transforms(self.distortion_fn(item["img2"], self.dist_kwargs))
+            return item
+        except:
+            return self[random.randint(0, len(self))]  # if an image is broken
