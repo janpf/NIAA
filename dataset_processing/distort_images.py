@@ -12,7 +12,9 @@ def jpeg_compress(in_path: str, compression_quality: int) -> Image.Image:
     img: Image.Image = Image.open(in_path)
     img = img.convert("RGB")
     tmp_file = SpooledTemporaryFile(suffix=Path(in_path).suffix)
+
     img.save(tmp_file, quality=compression_quality)
+
     return Image.open(tmp_file)
 
 
@@ -37,16 +39,13 @@ def reverse_slices(in_path: str, count: int, mode: str = "vertical") -> Image.Im
         out_img.paste(top, box_destination)
 
     return out_img
-    # out_img.save(out_path)
 
 
 def shuffle_lines(in_path: str, mode: str = "horizontal") -> Image.Image:
     img: Image.Image = Image.open(in_path)
     img = img.convert("RGB")
-
     if mode == "vertical":
         img = img.rotate(90)
-
     img_np = np.array(img)
 
     np.random.shuffle(img_np)
@@ -56,7 +55,6 @@ def shuffle_lines(in_path: str, mode: str = "horizontal") -> Image.Image:
         out_img = out_img.rotate(-90)
 
     return out_img
-    # out_img.save(out_path)
 
 
 def random_swap(in_path: str, distance: int) -> Image.Image:
@@ -75,7 +73,6 @@ def random_swap(in_path: str, distance: int) -> Image.Image:
         pixels[x_dest, y_dest], pixels[x_origin, y_origin] = pixels[x_origin, y_origin], pixels[x_dest, y_dest]  # swapperoni
 
     return img
-    # img.save(out_path)
 
 
 def rotate_blocks(in_path: str, max_size: int) -> Image.Image:
@@ -99,13 +96,12 @@ def rotate_blocks(in_path: str, max_size: int) -> Image.Image:
                 img.paste(square, square_box)
 
     return img
-    # img.save(out_path)
 
 
 def blur(in_path: int, radius: int) -> Image.Image:
     img: Image.Image = Image.open(in_path)
     img = img.convert("RGB")
+
     img = img.filter(ImageFilter.GaussianBlur(radius))
 
     return img
-    # img.save(out_path)
