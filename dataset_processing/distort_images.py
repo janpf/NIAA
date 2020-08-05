@@ -4,14 +4,19 @@ import random
 import numpy as np
 from PIL import Image, ImageFilter
 
+from tempfile import SpooledTemporaryFile
+from pathlib import Path
 
-def jpeg_compress(in_path, out_path, compression_quality):
+
+def jpeg_compress(in_path: str, compression_quality: int) -> Image.Image:
     img: Image.Image = Image.open(in_path)
     img = img.convert("RGB")
-    img.save(out_path, quality=compression_quality)
+    tmp_file = SpooledTemporaryFile(suffix=Path(in_path).suffix)
+    img.save(tmp_file, quality=compression_quality)
+    return Image.open(tmp_file)
 
 
-def reverse_slices(in_path, out_path, count, mode="vertical"):
+def reverse_slices(in_path: str, count: int, mode: str = "vertical") -> Image.Image:
     img: Image.Image = Image.open(in_path)
     img = img.convert("RGB")
     x, y = img.size
@@ -28,14 +33,14 @@ def reverse_slices(in_path, out_path, count, mode="vertical"):
         elif mode == "horizontal":
             box_origin = (0, cuts[i], x, cuts[i + 1])
             box_destination = (0, cuts[-(i + 2)], x, cuts[-(i + 1)])
-        print(box_origin, "->", box_destination)
         top = img.crop(box_origin)
         out_img.paste(top, box_destination)
 
-    out_img.save(out_path)
+    return out_img
+    # out_img.save(out_path)
 
 
-def shuffle_lines(in_path, out_path, mode="horizontal"):
+def shuffle_lines(in_path: str, mode: str = "horizontal") -> Image.Image:
     img: Image.Image = Image.open(in_path)
     img = img.convert("RGB")
 
@@ -49,10 +54,12 @@ def shuffle_lines(in_path, out_path, mode="horizontal"):
     out_img: Image.Image = Image.fromarray(img_np)
     if mode == "vertical":
         out_img = out_img.rotate(-90)
-    out_img.save(out_path)
+
+    return out_img
+    # out_img.save(out_path)
 
 
-def random_swap(in_path, out_path, distance):
+def random_swap(in_path: str, distance: int) -> Image.Image:
     img: Image.Image = Image.open(in_path)
     img = img.convert("RGB")
     x, y = img.size
@@ -66,10 +73,12 @@ def random_swap(in_path, out_path, distance):
         x_dest = (x_origin - diff) % x
         y_dest = (y_origin - diff) % y
         pixels[x_dest, y_dest], pixels[x_origin, y_origin] = pixels[x_origin, y_origin], pixels[x_dest, y_dest]  # swapperoni
-    img.save(out_path)
+
+    return img
+    # img.save(out_path)
 
 
-def rotate_blocks(in_path, out_path, max_size):
+def rotate_blocks(in_path: str, max_size: int) -> Image.Image:
     img: Image.Image = Image.open(in_path)
     img = img.convert("RGB")
     x, y = img.size
@@ -88,11 +97,15 @@ def rotate_blocks(in_path, out_path, max_size):
                 square = img.crop(square_box)
                 square = square.rotate(180)
                 img.paste(square, square_box)
-    img.save(out_path)
+
+    return img
+    # img.save(out_path)
 
 
-def blur(in_path, out_path, radius):
+def blur(in_path: int, radius: int) -> Image.Image:
     img: Image.Image = Image.open(in_path)
     img = img.convert("RGB")
     img = img.filter(ImageFilter.GaussianBlur(radius))
-    img.save(out_path)
+
+    return img
+    # img.save(out_path)
