@@ -13,7 +13,7 @@ from jinja2 import Template
 from PIL import Image
 
 
-def edit_image(img_path: str, change: str, value: float) -> Image:
+def edit_image(img_path: str, change: str, value: float) -> Image.Image:
     if math.isclose(parameter_range[change]["default"], value):
         print(f"default called: {change}: {value}")
         return Image.open(img_path)
