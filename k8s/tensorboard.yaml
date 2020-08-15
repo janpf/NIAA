@@ -35,7 +35,7 @@ spec:
             - --logdir=/scratch/train_logs
             - --bind_all
             - --reload_multifile=true
-            - --reload_multifile_inactive_secs=10000
+            - --reload_multifile_inactive_secs=50000
       volumes:
         - name: scratch
           cephfs:

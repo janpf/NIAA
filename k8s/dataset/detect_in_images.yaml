@@ -3,8 +3,10 @@ kind: Job
 metadata:
   name: detect-in-images
 spec:
+  parallelism: 150
   template:
     spec:
+      priorityClassName: research-low
       restartPolicy: "Never"
       containers:
         - name: detect-in-images
@@ -16,10 +18,10 @@ spec:
           resources:
             limits:
               cpu: "2"
-              memory: "4Gi"
+              memory: "8Gi"
             requests:
               cpu: "2"
-              memory: "4Gi"
+              memory: "8Gi"
           volumeMounts:
             - mountPath: /workspace
               name: code
