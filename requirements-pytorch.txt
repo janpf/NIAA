@@ -1,4 +1,6 @@
+captum
 debugpy
+imagenet-c
 matplotlib
 numpy
 opencv-python-headless
@@ -8,9 +10,10 @@ redis
 tensorboard
 torch
 torchvision
+
 # temporary:
-imageai
-tensorflow<2
-keras<2.4.0
-opencv-python
-requests
+#imageai
+#tensorflow<2
+#keras<2.4.0
+#opencv-python
+#requests
