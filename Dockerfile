@@ -1,7 +1,7 @@
 FROM pytorch/pytorch:latest
 
 RUN apt-get update
-RUN apt-get install -y libgtk2.0-dev
+RUN apt-get install -y libgtk2.0-dev libmagickwand-dev
 
 COPY ./requirements-pytorch.txt /workspace/
 WORKDIR /workspace
