@@ -3,8 +3,10 @@ debugpy
 imagenet-c
 numpy
 #opencv-python-headless
+pandas
 Pillow
 redis
+scikit-image
 torch
 torchvision
 
