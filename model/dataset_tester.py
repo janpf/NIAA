@@ -1,32 +1,22 @@
-import redis
 import json
-
-r = redis.Redis(host="localhost")
-for i in range(100):
-    print(json.dumps(json.loads(r.get(i)), indent=1))
-    input()
-exit()
-# TODO test DistortDataset
-
 import torch
 import torchvision.transforms as transforms
-
+from PIL import Image
 import sys
 
 sys.path.insert(0, ".")
 
-from model.datasets import PexelsRedis
+from model.datasets import FileListDistorted
 
 print("starting")
-transform = transforms.Compose([transforms.Scale(256), transforms.CenterCrop(224), transforms.ToTensor()])
-
 print("loading dataset")
-dataset = PexelsRedis(mode="train", transforms=transform)
-print(f"loaded: {len(dataset)}")
+dataset = FileListDistorted(["/home/stud/pfister/eclipse-workspace/NIAA/analysis/demo/bee.jpg"])
 
 print("iterating")
-dataloader = torch.utils.data.DataLoader(dataset, batch_size=10, shuffle=True, num_workers=8)
+dataloader = torch.utils.data.DataLoader(dataset)
 
 for i, data in enumerate(dataloader):
-    print(data)
-    exit()
+    for c in range(1, data["num_corrs"] + 1):
+        for s in range(1, 6):
+            img: Image.Image = transforms.ToPILImage()(data[f"img{c}-{s}"])
+            img.save(f"/home/stud/pfister/eclipse-workspace/NIAA/analysis/demo/bee{data[f'corr_{c}']}-{s}.jpg")
