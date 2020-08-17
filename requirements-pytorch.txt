@@ -3,11 +3,10 @@ debugpy
 imagenet-c
 matplotlib
 numpy
-opencv-python-headless
+#opencv-python-headless
 pandas
 Pillow
 redis
-tensorboard
 torch
 torchvision
 

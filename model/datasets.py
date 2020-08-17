@@ -10,6 +10,7 @@ import redis
 import torch
 import torch.multiprocessing as mp
 import torchvision.transforms as transforms
+from imagenet_c import corrupt
 from PIL import Image
 
 from edit_image import parameter_range
@@ -156,7 +157,7 @@ class FileList(torch.utils.data.Dataset):
         return len(self.file_list)
 
     def __getitem__(self, idx) -> Dict[str, torch.Tensor]:
-        return self.transforms(Image.open(self.file_list[idx]).convert("RGB"))
+        return {"img": self.transforms(Image.open(self.file_list[idx]).convert("RGB")), "path": self.file_list[idx]}
 
 
 class PexelsRedis(torch.utils.data.Dataset):
