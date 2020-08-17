@@ -1,11 +1,14 @@
-from pathlib import Path
+import sys
 from itertools import chain
+from pathlib import Path
+
 import torch
 import torchvision.models as models
 import torchvision.transforms as transforms
 
-from model import NIMA
+sys.path[0] = "/workspace"
 from model.datasets import FileList
+from model.NIMA import NIMA
 
 test_file = "/workspace/dataset_processing/test_set.txt"
 model_path = "/scratch/pretrained_new.pth"
@@ -46,6 +49,7 @@ for i, data in enumerate(batch_loader):
     img = data["img"].to(device)
     with torch.no_grad():
         out = model(img)
-    f.write(f"{data['path']}, {out}")
+    for p, s in zip(data["path"], out):
+        out_file.write(f"{p}, {s.tolist()}\n")
 
-f.close()
+out_file.close()

@@ -10,7 +10,8 @@ import redis
 import torch
 import torch.multiprocessing as mp
 import torchvision.transforms as transforms
-from imagenet_c import corrupt
+
+# from imagenet_c import corrupt
 from PIL import Image
 
 from edit_image import parameter_range
