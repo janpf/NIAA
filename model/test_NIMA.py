@@ -20,7 +20,7 @@ with open(test_file) as f:
     test_set = f.readlines()
 test_set = set([val.strip() for val in test_set])
 
-test_imgs = [val for val in chain(Path(orig_imgs).rglob("*"), Path(edited_imgs).rglob("*")) if val.name in test_set]
+test_imgs = [str(val) for val in chain(Path(orig_imgs).rglob("*"), Path(edited_imgs).rglob("*")) if val.name in test_set]
 print(f"{len(test_imgs)} files in testset")
 
 # fmt: off
