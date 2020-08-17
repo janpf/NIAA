@@ -5,13 +5,13 @@ from ctypes import c_wchar_p
 from pathlib import Path
 from typing import Dict, List
 
+import numpy as np
 import pandas as pd
 import redis
 import torch
 import torch.multiprocessing as mp
 import torchvision.transforms as transforms
-
-# from imagenet_c import corrupt
+from imagenet_c import corrupt
 from PIL import Image
 
 from edit_image import parameter_range
@@ -161,6 +161,35 @@ class FileList(torch.utils.data.Dataset):
         return {"img": self.transforms(Image.open(self.file_list[idx]).convert("RGB")), "path": self.file_list[idx]}
 
 
+class FileListDistorted(torch.utils.data.Dataset):
+    """FileList dataset
+
+    Args:
+        file_list: a list with filenames
+        transform: preprocessing and augmentation of the training images
+    """
+
+    def __init__(self, file_list: List[str]):
+        self.file_list: List[str] = file_list
+        self.transforms: transforms = transforms.Compose([transforms.Scale(256), transforms.CenterCrop(224)])
+        self.to_tensor = transforms.ToTensor()
+
+    def __len__(self) -> int:
+        return len(self.file_list)
+
+    def __getitem__(self, idx) -> Dict[str, torch.Tensor]:
+        img: Image.Image = self.transforms(Image.open(self.file_list[idx]).convert("RGB"))
+        arr = np.array(img)
+        data = {"path": self.file_list[idx]}
+        for i, corr in enumerate(["gaussian_noise", "shot_noise", "impulse_noise", "defocus_blur", "glass_blur", "motion_blur", "zoom_blur", "elastic_transform", "pixelate", "jpeg_compression", "speckle_noise", "gaussian_blur", "spatter"]):
+            data[f"corr_{i}"] = corr
+            for s in range(1, 6):
+                corr_arr = corrupt(arr, severity=s, corruption_name=corr)
+                data[f"img{i}-{s}"] = self.to_tensor(Image.fromarray(corr_arr.astype("uint8"), "RGB"))
+        data["num_corrs"] = i
+        return data
+
+
 class PexelsRedis(torch.utils.data.Dataset):
     """Pexels dataset
 
@@ -196,50 +225,6 @@ class PexelsRedis(torch.utils.data.Dataset):
         try:
             item["img1"] = self.transforms(Image.open(item["img1"]).convert("RGB"))
             item["img2"] = self.transforms(Image.open(item["img2"]).convert("RGB"))
-            return item
-        except:
-            return self[random.randint(0, len(self))]  # if an image is broken
-
-
-class PexelsDistortRedis(torch.utils.data.Dataset):
-    """Pexels dataset
-
-    Args:
-        mode: train, val or test
-        transform: preprocessing and augmentation of the training images
-    """
-
-    def __init__(self, mode: str, transforms: transforms, distortion_fn, **dist_kwargs):
-        self.db_host = "redisdataset"
-        self.mode = mode
-        self.transforms = transforms
-
-        self.distortion_fn = distortion_fn
-        self.dist_kwargs = dist_kwargs
-
-        if self.mode == "train":
-            self.db = 0
-        elif self.mode == "val":
-            self.db = 1
-        elif self.mode == "test":
-            self.db = 2
-        else:
-            raise NotImplementedError("?")
-
-        print(f"connecting to {mode} db ({self.db})")
-        self.db = redis.Redis(host=self.db_host, db=self.db)
-        self.size = self.db.dbsize()
-        print(f"{self.size} datapoints in db")
-
-    def __len__(self) -> int:
-        return self.size
-
-    def __getitem__(self, idx) -> Dict[str, torch.Tensor]:
-        item = self.db.get(idx)
-        item = json.loads(item)
-        try:
-            item["img1"] = self.transforms(self.distortion_fn(item["img1"], self.dist_kwargs))
-            item["img2"] = self.transforms(self.distortion_fn(item["img2"], self.dist_kwargs))
             return item
         except:
             return self[random.randint(0, len(self))]  # if an image is broken
