@@ -134,3 +134,4 @@ dmypy.json
 margins.csv
 dataset_classes.csv
 detected_in_images.csv
+NIMA_test_scores.csv
