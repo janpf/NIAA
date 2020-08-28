@@ -41,6 +41,7 @@ config = parser.parse_args()
 config.log_dir = config.log_dir + config.base_model
 config.ckpt_path = config.ckpt_path + config.base_model
 
+logging.basicConfig(level=logging.DEBUG)
 
 if not config.warm_start and Path(config.log_dir).exists():
     raise "train script got restarted, although previous run exists"
