@@ -7,6 +7,7 @@ pandas
 Pillow
 redis
 scikit-image
+tensorboard
 torch
 torchvision
 
