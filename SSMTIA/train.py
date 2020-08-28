@@ -19,6 +19,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--conv_base_lr", type=float, default=0.0045)  # https://github.com/kentsyx/Neural-IMage-Assessment/issues/16
 parser.add_argument("--dense_lr", type=float, default=0.045)  # https://github.com/kentsyx/Neural-IMage-Assessment/issues/16
 parser.add_argument("--margin", type=float)
+parser.add_argument("--base_model", type=str)
 parser.add_argument("--lr_decay_rate", type=float, default=0.95)
 parser.add_argument("--lr_decay_freq", type=int, default=10)
 parser.add_argument("--train_batch_size", type=int, default=64)
@@ -29,15 +30,14 @@ parser.add_argument("--epochs", type=int, default=100)
 # misc
 parser.add_argument("--log_dir", type=str, default="/scratch/train_logs/pexels/")
 parser.add_argument("--ckpt_path", type=str, default="/scratch/ckpts/SSMTIA/pexels/")
-parser.add_argument("--dir_name", type=str, default="cold")
 parser.add_argument("--warm_start", action="store_true")
 parser.add_argument("--warm_start_epoch", type=int, default=0)
 parser.add_argument("--early_stopping_patience", type=int, default=5)
 
 config = parser.parse_args()
 
-config.log_dir = config.log_dir + config.dir_name
-config.ckpt_path = config.ckpt_path + config.dir_name
+config.log_dir = config.log_dir + config.base_model
+config.ckpt_path = config.ckpt_path + config.base_model
 
 
 if not config.warm_start and Path(config.log_dir).exists():
@@ -48,7 +48,7 @@ writer = SummaryWriter(log_dir=config.log_dir)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # initializing model
-ssmtia = SSMTIA("mobilenet", mapping).to(device)
+ssmtia = SSMTIA(config.base_model, mapping).to(device)
 ssmtia.half()
 
 # loading checkpoints, ... or not
@@ -111,7 +111,7 @@ def step(batch, batch_size: int) -> (torch.Tensor, torch.Tensor, torch.Tensor):
                 for change in mapping[distortion][parameter][polarity]:
                     results[change] = ssmtia(batch[change].to(device))
 
-                ranking_losses_step.append(erloss(original, x=results, polarity=polarity, score=f"{distortion}_score"))
+                ranking_losses_step.append(erloss(original, x=results, polarity=polarity, score=f"{distortion}_score", margin=config.margin))
 
                 for change in mapping[distortion][parameter][polarity]:
                     if polarity == "pos":
@@ -247,8 +247,5 @@ for epoch in range(config.warm_start_epoch, config.epochs):
 logging.info("Training complete!")
 writer.close()
 
-
-# TODO find best batchsize
 # TODO k8s files
 # TODO nochmal die vergleiche printen
-# TODO nur ein noise
