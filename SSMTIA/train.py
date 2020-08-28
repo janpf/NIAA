@@ -139,7 +139,6 @@ val_not_improved = 0
 
 for epoch in range(config.warm_start_epoch, config.epochs):
     for i, data in enumerate(Pexels_train_loader):
-        # TODO accuracy usw
         optimizer.zero_grad()
 
         # forward pass + loss calculation
@@ -217,3 +216,8 @@ for epoch in range(config.warm_start_epoch, config.epochs):
 
 logging.info("Training complete!")
 writer.close()
+
+
+# TODO writer
+# TODO find best batchsize
+# TODO k8s files

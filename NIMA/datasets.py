@@ -35,9 +35,9 @@ class AVA(torch.utils.data.Dataset):
         return len(self.annotations)
 
     def __getitem__(self, idx) -> Dict[str, str]:
-        row = self.annotations.iloc[idx]  #  TODO wie funktioniert iloc?
+        row = self.annotations.iloc[idx]
 
-        img = Image.open(self.root_dir / (row["img_id"] + ".jpg")).convert("RGB")  # FIXME, but not yet
+        img = Image.open(self.root_dir / (row["img_id"] + ".jpg")).convert("RGB")
         img = self.transforms(img)
 
         distribution = list(row.loc[:, "1":"10"])
