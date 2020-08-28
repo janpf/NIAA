@@ -34,7 +34,7 @@ class EfficientRankingLoss(torch.nn.Module):
         super(EfficientRankingLoss, self).__init__()
         self.smrloss = SoftMarginRankingLoss()
 
-    def forward(self, original, x, polarity: str, score: str, margin=0.2):
+    def forward(self, original, x, polarity: str, score: str, margin:float):
         loss = []
         for idx1, change1 in enumerate(x.keys()):
             print(score, "\t", "original", "\t", change1)

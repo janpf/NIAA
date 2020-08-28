@@ -15,13 +15,9 @@ from SSMTIA.utils import mapping
 
 parser = argparse.ArgumentParser()
 
-# input parameters
-parser.add_argument("--val_imgs_count", type=int, default=500000)
-parser.add_argument("--orig_present", action="store_true")
-
 # training parameters
-parser.add_argument("--conv_base_lr", type=float, default=0.0005)  # https://github.com/kentsyx/Neural-IMage-Assessment/issues/16
-parser.add_argument("--dense_lr", type=float, default=0.005)  # https://github.com/kentsyx/Neural-IMage-Assessment/issues/16
+parser.add_argument("--conv_base_lr", type=float, default=0.0045)  # https://github.com/kentsyx/Neural-IMage-Assessment/issues/16
+parser.add_argument("--dense_lr", type=float, default=0.045)  # https://github.com/kentsyx/Neural-IMage-Assessment/issues/16
 parser.add_argument("--margin", type=float)
 parser.add_argument("--lr_decay_rate", type=float, default=0.95)
 parser.add_argument("--lr_decay_freq", type=int, default=10)
@@ -29,14 +25,11 @@ parser.add_argument("--train_batch_size", type=int, default=64)
 parser.add_argument("--val_batch_size", type=int, default=64)
 parser.add_argument("--num_workers", type=int, default=24)
 parser.add_argument("--epochs", type=int, default=100)
-parser.add_argument("--img_per_p_epoch", type=int, default=1000000)
 
 # misc
 parser.add_argument("--log_dir", type=str, default="/scratch/train_logs/pexels/")
-parser.add_argument("--ckpt_path", type=str, default="/scratch/ckpts/pexels/")
+parser.add_argument("--ckpt_path", type=str, default="/scratch/ckpts/SSMTIA/pexels/")
 parser.add_argument("--dir_name", type=str, default="cold")
-parser.add_argument("--multi_gpu", action="store_true")
-parser.add_argument("--gpu_ids", type=list, default=None)
 parser.add_argument("--warm_start", action="store_true")
 parser.add_argument("--warm_start_epoch", type=int, default=0)
 parser.add_argument("--early_stopping_patience", type=int, default=5)
@@ -61,8 +54,8 @@ ssmtia.half()
 # loading checkpoints, ... or not
 if config.warm_start:
     Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
-    ssmtia.load_state_dict(torch.load(str(Path(config.ckpt_path) / f"epoch{config.warm_start_epoch}-p_epoch{config.warm_start_p_epoch}.pth")))
-    logging.info(f"Successfully loaded model epoch{config.warm_start_epoch}-p_epoch{config.warm_start_p_epoch}.pth")
+    ssmtia.load_state_dict(torch.load(str(Path(config.ckpt_path) / f"epoch-{config.warm_start_epoch}.pth")))
+    logging.info(f"Successfully loaded model epoch-{config.warm_start_epoch}.pth")
 else:
     logging.info("starting cold")
     if Path(config.ckpt_path).exists():
@@ -72,15 +65,19 @@ else:
 conv_base_lr = config.conv_base_lr
 dense_lr = config.dense_lr
 
-# fmt: off
-optimizer = torch.optim.RMSprop([
-    {"params": ssmtia.features.parameters(), "lr": conv_base_lr, "weight_decay": 0.00004, "momentum": 0.9},
-    {"params": ssmtia.classifier.parameters(), "lr": dense_lr, "weight_decay": 0.00004, "momentum": 0.9}], # FIXME, parameters
-    momentum=0.9)
-# fmt: on
-
-writer.add_scalar("hparams/features_lr", config.conv_base_lr, 0)
-writer.add_scalar("hparams/classifier_lr", config.dense_lr, 0)
+optimizer = torch.optim.RMSprop(
+    [
+        {"params": ssmtia.features.parameters(), "lr": conv_base_lr},
+        {"params": ssmtia.style_score.parameters(), "lr": dense_lr},
+        {"params": ssmtia.technical_score.parameters(), "lr": dense_lr},
+        {"params": ssmtia.composition_score.parameters(), "lr": dense_lr},
+        {"params": ssmtia.style_change_strength.parameters(), "lr": dense_lr},
+        {"params": ssmtia.technical_change_strength.parameters(), "lr": dense_lr},
+        {"params": ssmtia.composition_change_strength.parameters(), "lr": dense_lr},
+    ],
+    momentum=0.9,
+    weight_decay=0.00004,
+)
 
 # counting parameters
 param_num = 0
@@ -129,7 +126,6 @@ def step(batch, batch_size: int) -> (torch.Tensor, torch.Tensor, torch.Tensor):
     for distortion in ["styles", "technical", "composition"]:
         perfect_losses_step.append(ploss(original[f"{distortion}_score"]))
 
-    # TODO is everything float?
     return sum(ranking_losses_step), sum(change_losses_step), sum(perfect_losses_step)
 
 
@@ -143,29 +139,53 @@ for epoch in range(config.warm_start_epoch, config.epochs):
 
         # forward pass + loss calculation
         ranking_loss_batch, change_loss_batch, perfect_loss_batch = step(data, config.train_batch_size)
+
+        writer.add_scalar("loss_ranking/train", ranking_loss_batch.data[0], g_step)
+        writer.add_scalar("loss_change/train", change_loss_batch.data[0], g_step)
+        writer.add_scalar("loss_perfect/train", perfect_loss_batch.data[0], g_step)
+        writer.add_scalar("loss_overall/train", sum([ranking_loss_batch, change_loss_batch, perfect_loss_batch]).data[0], g_step)
+
         # scale losses
         ranking_loss_batch = h(ranking_loss_batch)
         change_loss_batch = h(change_loss_batch)
         perfect_loss_batch = h(perfect_loss_batch)
         loss = ranking_loss_batch + change_loss_batch + perfect_loss_batch
 
+        writer.add_scalar("loss_scaled_ranking/train", ranking_loss_batch.data[0], g_step)
+        writer.add_scalar("loss_scaled_change/train", change_loss_batch.data[0], g_step)
+        writer.add_scalar("loss_scaled_perfect/train", perfect_loss_batch.data[0], g_step)
+        writer.add_scalar("loss_scaled_overall/train", loss.data[0], g_step)
+
         # optimizing
         loss.backward()
         optimizer.step()
 
         logging.info(f"Epoch: {epoch + 1}/{config.epochs} | Step: {i + 1}/{len(Pexels_train_loader)} | Training loss: {loss.data[0]:.4f}")
+
+        writer.add_scalar("progress/epoch", epoch + 1, g_step)
+        writer.add_scalar("progress/step", i + 1, g_step)
+        writer.add_scalar("hparams/features_lr", conv_base_lr, g_step)
+        writer.add_scalar("hparams/classifier_lr", dense_lr, g_step)
+        writer.add_scalar("hparams/margin", float(config.margin), g_step)
         g_step += 1
 
-    # learning rate decay:
+    # exponential learning rate decay:
     conv_base_lr = conv_base_lr * config.lr_decay_rate ** ((epoch + 1) / config.lr_decay_freq)
     dense_lr = dense_lr * config.lr_decay_rate ** ((epoch + 1) / config.lr_decay_freq)
 
-    # fmt: off
-    optimizer = torch.optim.RMSprop([
-        {"params": ssmtia.features.parameters(), "lr": conv_base_lr, "weight_decay": 0.00004, "momentum": 0.9},
-        {"params": ssmtia.classifier.parameters(), "lr": dense_lr, "weight_decay": 0.00004, "momentum": 0.9}],
-        momentum=0.9)
-    # fmt: on
+    optimizer = torch.optim.RMSprop(
+        [
+            {"params": ssmtia.features.parameters(), "lr": conv_base_lr},
+            {"params": ssmtia.style_score.parameters(), "lr": dense_lr},
+            {"params": ssmtia.technical_score.parameters(), "lr": dense_lr},
+            {"params": ssmtia.composition_score.parameters(), "lr": dense_lr},
+            {"params": ssmtia.style_change_strength.parameters(), "lr": dense_lr},
+            {"params": ssmtia.technical_change_strength.parameters(), "lr": dense_lr},
+            {"params": ssmtia.composition_change_strength.parameters(), "lr": dense_lr},
+        ],
+        momentum=0.9,
+        weight_decay=0.00004,
+    )
 
     logging.info("validating")
 
@@ -200,13 +220,23 @@ for epoch in range(config.warm_start_epoch, config.epochs):
     change_loss_scaled = sum(change_loss_scaled) / val_counts
     perfect_loss_scaled = sum(perfect_loss_scaled) / val_counts
 
+    writer.add_scalar("loss_ranking/val", ranking_loss.data[0], g_step)
+    writer.add_scalar("loss_change/val", change_loss.data[0], g_step)
+    writer.add_scalar("loss_perfect/val", perfect_loss.data[0], g_step)
+    writer.add_scalar("loss_overall/val", overall_loss.data[0], g_step)
+
+    writer.add_scalar("loss_scaled_ranking/val", ranking_loss_scaled.data[0], g_step)
+    writer.add_scalar("loss_scaled_change/val", change_loss_scaled.data[0], g_step)
+    writer.add_scalar("loss_scaled_perfect/val", perfect_loss_scaled.data[0], g_step)
+    writer.add_scalar("loss_scaled_overall/val", overall_loss_scaled.data[0], g_step)
+
     # Use early stopping to monitor training
     if overall_loss < lowest_val_loss:
         lowest_val_loss = overall_loss
 
         logging.info("New best model! Saving...")
         Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
-        torch.save(ssmtia.state_dict(), str(Path(config.ckpt_path) / f"epoch{epoch + 1}.pth"))
+        torch.save(ssmtia.state_dict(), str(Path(config.ckpt_path) / f"epoch-{epoch + 1}.pth"))
         # reset count
         val_not_improved = 0
     else:
@@ -218,6 +248,7 @@ logging.info("Training complete!")
 writer.close()
 
 
-# TODO writer
 # TODO find best batchsize
 # TODO k8s files
+# TODO nochmal die vergleiche printen
+# TODO nur ein noise
