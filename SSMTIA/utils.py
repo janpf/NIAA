@@ -19,12 +19,8 @@ mapping["technical"]["pixelate"] = dict()
 mapping["technical"]["pixelate"]["pos"] = [f"pixelate;{i}" for i in range(1, 6)]
 mapping["technical"]["gaussian_noise"] = dict()
 mapping["technical"]["gaussian_noise"]["pos"] = [f"gaussian_noise;{i}" for i in range(1, 6)]
-mapping["technical"]["shot_noise"] = dict()
-mapping["technical"]["shot_noise"]["pos"] = [f"shot_noise;{i}" for i in range(1, 6)]
 mapping["technical"]["impulse_noise"] = dict()
 mapping["technical"]["impulse_noise"]["pos"] = [f"impulse_noise;{i}" for i in range(1, 6)]
-mapping["technical"]["speckle_noise"] = dict()
-mapping["technical"]["speckle_noise"]["pos"] = [f"speckle_noise;{i}" for i in range(1, 6)]
 
 mapping["composition"] = dict()
 mapping["composition"]["rotate"] = dict()
