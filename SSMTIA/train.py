@@ -247,5 +247,4 @@ for epoch in range(config.warm_start_epoch, config.epochs):
 logging.info("Training complete!")
 writer.close()
 
-# TODO k8s files
 # TODO nochmal die vergleiche printen

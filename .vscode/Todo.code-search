@@ -3,7 +3,7 @@
 # Including: /home/stud/pfister/eclipse-workspace/NIAA, /home/stud/pfister/eclipse-workspace/Masterarbeit
 # Excluding: .gitignore
 
-7 results - 3 files
+3 results - 3 files
 
 NIAA • dataset_processing/generalize_image_classifications.py:
   38:     word = f"{word}.n.01"  # primary noun I guess? # TODO check
@@ -12,8 +12,4 @@ NIAA • dataset_processing/generalize_image_detections.py:
   47:     word = f"{word}.n.01"  # primary noun I guess? # TODO check
 
 NIAA • SSMTIA/train.py:
-   78:     {"params": ssmtia.classifier.parameters(), "lr": dense_lr, "weight_decay": 0.00004, "momentum": 0.9}], # FIXME, parameters
-  132:     # TODO is everything float?
-  221: # TODO writer
-  222: # TODO find best batchsize
-  223: # TODO k8s files
+  250: # TODO nochmal die vergleiche printen
