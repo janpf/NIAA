@@ -1,4 +1,5 @@
 import torch
+import logging
 
 
 class PerfectLoss(torch.nn.Module):
@@ -7,11 +8,12 @@ class PerfectLoss(torch.nn.Module):
     def __init__(self):
         super(PerfectLoss, self).__init__()
         self.mse = torch.nn.MSELoss()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, x: torch.Tensor):
         """if the image is unedited force a score of 1"""
         mini_batch_size = x.shape[0]
-        return self.mse(torch.squeeze(x).float(), torch.ones(mini_batch_size).to(torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")))  #  pull it to 1
+        return self.mse(torch.squeeze(x).float(), torch.ones(mini_batch_size).to(self.device))  #  pull it to 1
 
 
 class SoftMarginRankingLoss(torch.nn.Module):
@@ -34,23 +36,23 @@ class EfficientRankingLoss(torch.nn.Module):
         super(EfficientRankingLoss, self).__init__()
         self.smrloss = SoftMarginRankingLoss()
 
-    def forward(self, original, x, polarity: str, score: str, margin:float):
+    def forward(self, original, x, polarity: str, score: str, margin: float):
         loss = []
         for idx1, change1 in enumerate(x.keys()):
-            print(score, "\t", "original", "\t", change1)
+            logging.debug(f"score\toriginal\t{change1}")
             loss.append(self.smrloss(original[score], x[change1][score], margin))
             for idx2, change2 in enumerate(x.keys()):
                 if idx1 >= idx2:
                     continue
                 if polarity == "pos":
-                    print(score, "\t", change1, "\t", change2)
+                    logging.debug(f"score\t{change1}\t{change2}")
                     loss.append(self.smrloss(x[change1][score], x[change2][score], margin))
                 elif polarity == "neg":
-                    print(score, "\t", change2, "\t", change1)
+                    logging.debug(f"score\t{change2}\t{change1}")
                     loss.append(self.smrloss(x[change2][score], x[change1][score], margin))
         return sum(loss)
 
 
-def h(z: torch.Tensor, T=50):
+def h(z: torch.Tensor, T: int = 50):
     """loss balancing function: https://arxiv.org/pdf/2002.04792.pdf"""
     return torch.exp(z / T)
