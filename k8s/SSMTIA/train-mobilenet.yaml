@@ -37,8 +37,12 @@ spec:
             # - 0.0.0.0:4444
             # - --wait-for-client
             - /workspace/SSMTIA/train.py
-            - --margin
+            - --style_margin
             - "0.1"
+            - --technical_margin
+            - "0.2"
+            - --composition_margin
+            - "0.2"
             - --base_model
             - mobilenet
       volumes:

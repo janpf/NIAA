@@ -18,7 +18,9 @@ parser = argparse.ArgumentParser()
 # training parameters
 parser.add_argument("--conv_base_lr", type=float, default=0.0045)  # https://github.com/kentsyx/Neural-IMage-Assessment/issues/16
 parser.add_argument("--dense_lr", type=float, default=0.045)  # https://github.com/kentsyx/Neural-IMage-Assessment/issues/16
-parser.add_argument("--margin", type=float)
+parser.add_argument("--style_margin", type=float)
+parser.add_argument("--technical_margin", type=float)
+parser.add_argument("--composition_margin", type=float)
 parser.add_argument("--base_model", type=str)
 parser.add_argument("--lr_decay_rate", type=float, default=0.95)
 parser.add_argument("--lr_decay_freq", type=int, default=10)
@@ -28,7 +30,7 @@ parser.add_argument("--num_workers", type=int, default=24)
 parser.add_argument("--epochs", type=int, default=100)
 
 # misc
-parser.add_argument("--log_dir", type=str, default="/scratch/train_logs/pexels/")
+parser.add_argument("--log_dir", type=str, default="/scratch/train_logs/SSMTIA/pexels/")
 parser.add_argument("--ckpt_path", type=str, default="/scratch/ckpts/SSMTIA/pexels/")
 parser.add_argument("--warm_start", action="store_true")
 parser.add_argument("--warm_start_epoch", type=int, default=0)
