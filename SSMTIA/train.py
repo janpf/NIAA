@@ -16,8 +16,8 @@ from SSMTIA.utils import mapping
 parser = argparse.ArgumentParser()
 
 # training parameters
-parser.add_argument("--conv_base_lr", type=float, default=0.0000045)
-parser.add_argument("--dense_lr", type=float, default=0.045)
+parser.add_argument("--conv_base_lr", type=float, default=0.00001)
+parser.add_argument("--dense_lr", type=float, default=0.0001)
 parser.add_argument("--styles_margin", type=float)
 parser.add_argument("--technical_margin", type=float)
 parser.add_argument("--composition_margin", type=float)
