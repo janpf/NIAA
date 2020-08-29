@@ -48,11 +48,11 @@ class SSPexels(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         try:
-            return self._getitem(idx)
+            return self._actualgetitem(idx)
         except:
             return self[random.randint(0, len(self))]
 
-    def _getitem(self, idx):
+    def _actualgetitem(self, idx):
         data = dict()
         data["original"] = transforms.Resize(224)(Image.open(str(Path(self.orig_dir) / self.file_list[idx])).convert("RGB"))
 
@@ -135,5 +135,36 @@ class SSPexels(torch.utils.data.Dataset):
         for k in data.keys():
             data[k] = self.pad_square(data[k])
             data[k] = transforms.ToTensor()(data[k]).half()
+
+        return data
+
+
+class SSPexelsDummy(torch.utils.data.Dataset):
+    def __init__(self, file_list_path: str, mapping):
+        self.file_list_path = file_list_path
+        self.mapping = mapping
+
+        with open(file_list_path) as f:
+            file_list = f.readlines()
+
+        self.file_list = [line.strip() for line in file_list]
+
+    def __len__(self) -> int:
+        return len(self.file_list)
+
+    def __getitem__(self, idx):
+        items = ["original"]
+        for style_change in self.mapping["style_changes"]:
+            items.append(style_change)
+
+        for technical_change in self.mapping["technical_changes"]:
+            items.append(technical_change)
+
+        for composition_change in self.mapping["composition_changes"]:
+            items.append(composition_change)
+
+        data = dict()
+        for item in items:
+            data[item] = torch.rand(3, 224, 224).half()
 
         return data
