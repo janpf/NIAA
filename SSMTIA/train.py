@@ -18,15 +18,15 @@ parser = argparse.ArgumentParser()
 # training parameters
 parser.add_argument("--conv_base_lr", type=float, default=0.0045)  # https://github.com/kentsyx/Neural-IMage-Assessment/issues/16
 parser.add_argument("--dense_lr", type=float, default=0.045)  # https://github.com/kentsyx/Neural-IMage-Assessment/issues/16
-parser.add_argument("--style_margin", type=float)
+parser.add_argument("--styles_margin", type=float)
 parser.add_argument("--technical_margin", type=float)
 parser.add_argument("--composition_margin", type=float)
 parser.add_argument("--base_model", type=str)
 parser.add_argument("--lr_decay_rate", type=float, default=0.95)
 parser.add_argument("--lr_decay_freq", type=int, default=10)
-parser.add_argument("--train_batch_size", type=int, default=64)
-parser.add_argument("--val_batch_size", type=int, default=64)
-parser.add_argument("--num_workers", type=int, default=24)
+parser.add_argument("--train_batch_size", type=int, default=2)
+parser.add_argument("--val_batch_size", type=int, default=2)
+parser.add_argument("--num_workers", type=int, default=3)
 parser.add_argument("--epochs", type=int, default=100)
 
 # misc
@@ -41,7 +41,13 @@ config = parser.parse_args()
 config.log_dir = config.log_dir + config.base_model
 config.ckpt_path = config.ckpt_path + config.base_model
 
-logging.basicConfig(level=logging.DEBUG)
+margin = dict()
+margin["styles"] = config.styles_margin
+margin["technical"] = config.technical_margin
+margin["composition"] = config.composition_margin
+
+# logging.basicConfig(level=logging.DEBUG)
+# logging.getLogger("PIL.PngImagePlugin").setLevel(logging.INFO)
 
 if not config.warm_start and Path(config.log_dir).exists():
     raise "train script got restarted, although previous run exists"
@@ -86,15 +92,16 @@ optimizer = torch.optim.RMSprop(
 param_num = 0
 for param in ssmtia.parameters():
     param_num += int(np.prod(param.shape))
-logging.info(f"Trainable params: {(param_num / 1e6):.2f} million")
+logging.info(f"trainable params: {(param_num / 1e6):.2f} million")
 
+logging.info("creating datasets")
 # datasets
 SSPexels_train = SSPexels(file_list_path="/workspace/dataset_processing/train_set.txt", mapping=mapping)
 SSPexels_val = SSPexels(file_list_path="/workspace/dataset_processing/val_set.txt", mapping=mapping)
 
 Pexels_train_loader = torch.utils.data.DataLoader(SSPexels_train, batch_size=config.train_batch_size, shuffle=True, drop_last=True, num_workers=config.num_workers)
 Pexels_val_loader = torch.utils.data.DataLoader(SSPexels_val, batch_size=config.val_batch_size, shuffle=False, drop_last=True, num_workers=config.num_workers)
-
+logging.info("datasets created")
 # losses
 erloss = EfficientRankingLoss()
 ploss = PerfectLoss()
@@ -114,7 +121,7 @@ def step(batch, batch_size: int) -> (torch.Tensor, torch.Tensor, torch.Tensor):
                 for change in mapping[distortion][parameter][polarity]:
                     results[change] = ssmtia(batch[change].to(device))
 
-                ranking_losses_step.append(erloss(original, x=results, polarity=polarity, score=f"{distortion}_score", margin=config.margin))
+                ranking_losses_step.append(erloss(original, x=results, polarity=polarity, score=f"{distortion}_score", margin=margin[distortion]))
 
                 for change in mapping[distortion][parameter][polarity]:
                     if polarity == "pos":
@@ -135,7 +142,7 @@ def step(batch, batch_size: int) -> (torch.Tensor, torch.Tensor, torch.Tensor):
 g_step = 0
 lowest_val_loss = float("inf")
 val_not_improved = 0
-
+logging.info("start training")
 for epoch in range(config.warm_start_epoch, config.epochs):
     for i, data in enumerate(Pexels_train_loader):
         optimizer.zero_grad()
@@ -143,9 +150,9 @@ for epoch in range(config.warm_start_epoch, config.epochs):
         # forward pass + loss calculation
         ranking_loss_batch, change_loss_batch, perfect_loss_batch = step(data, config.train_batch_size)
 
-        writer.add_scalar("loss_ranking/train", ranking_loss_batch.data[0], g_step)
-        writer.add_scalar("loss_change/train", change_loss_batch.data[0], g_step)
-        writer.add_scalar("loss_perfect/train", perfect_loss_batch.data[0], g_step)
+        writer.add_scalar("loss_ranking/train", ranking_loss_batch.data, g_step)
+        writer.add_scalar("loss_change/train", change_loss_batch.data, g_step)
+        writer.add_scalar("loss_perfect/train", perfect_loss_batch.data, g_step)
         writer.add_scalar("loss_overall/train", sum([ranking_loss_batch, change_loss_batch, perfect_loss_batch]).data[0], g_step)
 
         # scale losses
@@ -154,10 +161,10 @@ for epoch in range(config.warm_start_epoch, config.epochs):
         perfect_loss_batch = h(perfect_loss_batch)
         loss = ranking_loss_batch + change_loss_batch + perfect_loss_batch
 
-        writer.add_scalar("loss_scaled_ranking/train", ranking_loss_batch.data[0], g_step)
-        writer.add_scalar("loss_scaled_change/train", change_loss_batch.data[0], g_step)
-        writer.add_scalar("loss_scaled_perfect/train", perfect_loss_batch.data[0], g_step)
-        writer.add_scalar("loss_scaled_overall/train", loss.data[0], g_step)
+        writer.add_scalar("loss_scaled_ranking/train", ranking_loss_batch.data, g_step)
+        writer.add_scalar("loss_scaled_change/train", change_loss_batch.data, g_step)
+        writer.add_scalar("loss_scaled_perfect/train", perfect_loss_batch.data, g_step)
+        writer.add_scalar("loss_scaled_overall/train", loss.data, g_step)
 
         # optimizing
         loss.backward()
@@ -169,7 +176,9 @@ for epoch in range(config.warm_start_epoch, config.epochs):
         writer.add_scalar("progress/step", i + 1, g_step)
         writer.add_scalar("hparams/features_lr", conv_base_lr, g_step)
         writer.add_scalar("hparams/classifier_lr", dense_lr, g_step)
-        writer.add_scalar("hparams/margin", float(config.margin), g_step)
+        writer.add_scalar("hparams/styles_margin", float(config.styles_margin), g_step)
+        writer.add_scalar("hparams/technical_margin", float(config.technical_margin), g_step)
+        writer.add_scalar("hparams/composition_margin", float(config.composition_margin), g_step)
         g_step += 1
 
     # exponential learning rate decay:
