@@ -4,6 +4,8 @@ mapping = dict()
 mapping["styles"] = dict()
 
 for style in parameter_range.keys():
+    if style == "lcontrast":
+        continue
     mapping["styles"][style] = dict()
     mapping["styles"][style]["neg"] = [f"{style};{i}" for i in parameter_range[style]["range"] if i < parameter_range[style]["default"]]
     mapping["styles"][style]["pos"] = [f"{style};{i}" for i in parameter_range[style]["range"] if i > parameter_range[style]["default"]]
@@ -48,7 +50,8 @@ for distortion in ["styles", "technical", "composition"]:
     for parameter in mapping[distortion]:
         mapping["change_steps"][distortion][parameter] = dict()
         for polarity in mapping[distortion][parameter]:
-            mapping["change_steps"][distortion][parameter][polarity] = 1 / len(mapping[distortion][parameter][polarity])
+            if len(mapping[distortion][parameter][polarity]) > 0:
+                mapping["change_steps"][distortion][parameter][polarity] = 1 / len(mapping[distortion][parameter][polarity])
 
 mapping["all_changes"] = ["original"]
 
