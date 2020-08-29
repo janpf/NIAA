@@ -258,5 +258,3 @@ for epoch in range(config.warm_start_epoch, config.epochs):
 
 logging.info("Training complete!")
 writer.close()
-
-# TODO nochmal die vergleiche printen

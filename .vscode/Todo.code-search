@@ -3,13 +3,10 @@
 # Including: /home/stud/pfister/eclipse-workspace/NIAA, /home/stud/pfister/eclipse-workspace/Masterarbeit
 # Excluding: .gitignore
 
-3 results - 3 files
+2 results - 2 files
 
 NIAA • dataset_processing/generalize_image_classifications.py:
   38:     word = f"{word}.n.01"  # primary noun I guess? # TODO check
 
 NIAA • dataset_processing/generalize_image_detections.py:
   47:     word = f"{word}.n.01"  # primary noun I guess? # TODO check
-
-NIAA • SSMTIA/train.py:
-  250: # TODO nochmal die vergleiche printen
