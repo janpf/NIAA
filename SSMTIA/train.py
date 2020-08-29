@@ -16,8 +16,8 @@ from SSMTIA.utils import mapping
 parser = argparse.ArgumentParser()
 
 # training parameters
-parser.add_argument("--conv_base_lr", type=float, default=0.0045)  # https://github.com/kentsyx/Neural-IMage-Assessment/issues/16
-parser.add_argument("--dense_lr", type=float, default=0.045)  # https://github.com/kentsyx/Neural-IMage-Assessment/issues/16
+parser.add_argument("--conv_base_lr", type=float, default=0.0000045)
+parser.add_argument("--dense_lr", type=float, default=0.045)
 parser.add_argument("--styles_margin", type=float)
 parser.add_argument("--technical_margin", type=float)
 parser.add_argument("--composition_margin", type=float)
@@ -26,7 +26,7 @@ parser.add_argument("--lr_decay_rate", type=float, default=0.95)
 parser.add_argument("--lr_decay_freq", type=int, default=10)
 parser.add_argument("--train_batch_size", type=int, default=2)
 parser.add_argument("--val_batch_size", type=int, default=2)
-parser.add_argument("--num_workers", type=int, default=3)
+parser.add_argument("--num_workers", type=int, default=24)
 parser.add_argument("--epochs", type=int, default=100)
 
 # misc
@@ -46,7 +46,7 @@ margin["styles"] = config.styles_margin
 margin["technical"] = config.technical_margin
 margin["composition"] = config.composition_margin
 
-# logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 # logging.getLogger("PIL.PngImagePlugin").setLevel(logging.INFO)
 
 if not config.warm_start and Path(config.log_dir).exists():
@@ -56,12 +56,14 @@ writer = SummaryWriter(log_dir=config.log_dir)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# initializing model
+logging.info("loading model")
 ssmtia = SSMTIA(config.base_model, mapping).to(device)
+logging.info("using half precision")
 ssmtia.half()
 
 # loading checkpoints, ... or not
 if config.warm_start:
+    logging.info("loading checkpoint")
     Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
     ssmtia.load_state_dict(torch.load(str(Path(config.ckpt_path) / f"epoch-{config.warm_start_epoch}.pth")))
     logging.info(f"Successfully loaded model epoch-{config.warm_start_epoch}.pth")
@@ -70,7 +72,7 @@ else:
     if Path(config.ckpt_path).exists():
         raise "model already trained, but cold training was used"
 
-# settings learnrates
+logging.info("setting learnrates")
 conv_base_lr = config.conv_base_lr
 dense_lr = config.dense_lr
 
@@ -166,11 +168,13 @@ for epoch in range(config.warm_start_epoch, config.epochs):
         writer.add_scalar("loss_scaled_perfect/train", perfect_loss_batch.data, g_step)
         writer.add_scalar("loss_scaled_overall/train", loss.data, g_step)
 
+        logging.info(f"Epoch: {epoch + 1}/{config.epochs} | Step: {i + 1}/{len(Pexels_train_loader)} | Training loss: {loss.data[0]}")
+
         # optimizing
         loss.backward()
+        ssmtia.float()  # https://stackoverflow.com/a/58622937/6388328
         optimizer.step()
-
-        logging.info(f"Epoch: {epoch + 1}/{config.epochs} | Step: {i + 1}/{len(Pexels_train_loader)} | Training loss: {loss.data[0]:.4f}")
+        ssmtia.half()
 
         writer.add_scalar("progress/epoch", epoch + 1, g_step)
         writer.add_scalar("progress/step", i + 1, g_step)
