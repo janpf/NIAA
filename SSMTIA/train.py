@@ -25,8 +25,8 @@ parser.add_argument("--base_model", type=str)
 parser.add_argument("--lr_decay_rate", type=float, default=0.95)
 parser.add_argument("--lr_decay_freq", type=int, default=10)
 parser.add_argument("--train_batch_size", type=int, default=2)
-parser.add_argument("--val_batch_size", type=int, default=2)
-parser.add_argument("--num_workers", type=int, default=24)
+parser.add_argument("--val_batch_size", type=int, default=30)
+parser.add_argument("--num_workers", type=int, default=32)
 parser.add_argument("--epochs", type=int, default=100)
 
 # misc
@@ -46,7 +46,7 @@ margin["styles"] = config.styles_margin
 margin["technical"] = config.technical_margin
 margin["composition"] = config.composition_margin
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
 # logging.getLogger("PIL.PngImagePlugin").setLevel(logging.INFO)
 
 if not config.warm_start and Path(config.log_dir).exists():
@@ -102,7 +102,7 @@ SSPexels_train = SSPexels(file_list_path="/workspace/dataset_processing/train_se
 SSPexels_val = SSPexels(file_list_path="/workspace/dataset_processing/val_set.txt", mapping=mapping)
 
 Pexels_train_loader = torch.utils.data.DataLoader(SSPexels_train, batch_size=config.train_batch_size, shuffle=True, drop_last=True, num_workers=config.num_workers)
-Pexels_val_loader = torch.utils.data.DataLoader(SSPexels_val, batch_size=config.val_batch_size, shuffle=False, drop_last=True, num_workers=config.num_workers)
+Pexels_val_loader = torch.utils.data.DataLoader(SSPexels_val, batch_size=config.val_batch_size, shuffle=False, drop_last=True, num_workers=config.num_workers // 3)
 logging.info("datasets created")
 # losses
 erloss = EfficientRankingLoss()
@@ -147,6 +147,7 @@ val_not_improved = 0
 logging.info("start training")
 for epoch in range(config.warm_start_epoch, config.epochs):
     for i, data in enumerate(Pexels_train_loader):
+        logging.info(f"batch loaded: step {i}")
         optimizer.zero_grad()
 
         # forward pass + loss calculation
@@ -184,6 +185,7 @@ for epoch in range(config.warm_start_epoch, config.epochs):
         writer.add_scalar("hparams/technical_margin", float(config.technical_margin), g_step)
         writer.add_scalar("hparams/composition_margin", float(config.composition_margin), g_step)
         g_step += 1
+        logging.info(f"waiting for new batch")
 
     # exponential learning rate decay:
     conv_base_lr = conv_base_lr * config.lr_decay_rate ** ((epoch + 1) / config.lr_decay_freq)
@@ -214,6 +216,7 @@ for epoch in range(config.warm_start_epoch, config.epochs):
     perfect_loss_scaled = []
 
     for i, data in enumerate(Pexels_val_loader):
+        logging.info(f"validation step {i} / {len(Pexels_val_loader)}")
         with torch.no_grad():
             ranking_loss_batch, change_loss_batch, perfect_loss_batch = step(data, config.val_batch_size)
 
@@ -224,6 +227,7 @@ for epoch in range(config.warm_start_epoch, config.epochs):
         ranking_loss_scaled.append(h(ranking_loss_batch).item())
         change_loss_scaled.append(h(change_loss_batch).item())
         perfect_loss_scaled.append(h(perfect_loss_batch).item())
+        logging.info(f"waiting for new batch")
 
     val_counts = len(ranking_loss)
     overall_loss = (sum(ranking_loss) + sum(change_loss) + sum(perfect_loss)) / val_counts
