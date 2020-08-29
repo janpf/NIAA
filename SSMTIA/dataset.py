@@ -1,5 +1,6 @@
 import math
 from pathlib import Path
+import random
 
 import numpy as np
 import torch
@@ -46,6 +47,12 @@ class SSPexels(torch.utils.data.Dataset):
         return len(self.file_list)
 
     def __getitem__(self, idx):
+        try:
+            return self._getitem(idx)
+        except:
+            return self[random.randint(0, len(self))]
+
+    def _getitem(self, idx):
         data = dict()
         data["original"] = transforms.Resize(224)(Image.open(str(Path(self.orig_dir) / self.file_list[idx])).convert("RGB"))
 
