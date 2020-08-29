@@ -9,7 +9,7 @@ from PIL import Image
 
 
 class SSPexels(torch.utils.data.Dataset):
-    def __init__(self, file_list_path: str, mapping, orig_dir: str = "/scratch/stud/pfister/NIAA/pexels/images", edited_dir: str = "/scratch/stud/pfister/NIAA/pexels/edited_images"):
+    def __init__(self, file_list_path: str, mapping, orig_dir: str = "/scratch/pexels/images", edited_dir: str = "/scratch/pexels/edited_images"):
         self.file_list_path = file_list_path
         self.mapping = mapping
 
@@ -47,12 +47,12 @@ class SSPexels(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         data = dict()
-        data["original"] = transforms.Resize(224)(Image.open(str(Path(self.orig_dir) / self.file_list[idx])))
+        data["original"] = transforms.Resize(224)(Image.open(str(Path(self.orig_dir) / self.file_list[idx])).convert("RGB"))
 
         for style_change in self.mapping["style_changes"]:
             parameter, change = style_change.split(";")
             change = float(change) if "." in change else int(change)
-            data[style_change] = transforms.Resize(224)(Image.open(str(Path(self.edited_dir) / parameter / str(change) / self.file_list[idx])))
+            data[style_change] = transforms.Resize(224)(Image.open(str(Path(self.edited_dir) / parameter / str(change) / self.file_list[idx])).convert("RGB"))
 
         for technical_change in self.mapping["technical_changes"]:
             parameter, change = technical_change.split(";")
@@ -127,6 +127,6 @@ class SSPexels(torch.utils.data.Dataset):
 
         for k in data.keys():
             data[k] = self.pad_square(data[k])
-            data[k] = transforms.ToTensor()(data[k])
+            data[k] = transforms.ToTensor()(data[k]).half()
 
         return data

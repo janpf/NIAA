@@ -31,13 +31,13 @@ spec:
               name: dshm
           command:
             - python3
-            # - -m
-            # - debugpy
-            # - --listen
-            # - 0.0.0.0:4444
-            # - --wait-for-client
+            #- -m
+            #- debugpy
+            #- --listen
+            #- 0.0.0.0:4444
+            #- --wait-for-client
             - /workspace/SSMTIA/train.py
-            - --style_margin
+            - --styles_margin
             - "0.1"
             - --technical_margin
             - "0.2"
