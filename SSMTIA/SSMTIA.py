@@ -31,15 +31,15 @@ class SSMTIA(torch.nn.Module):
 
         self.style_change_strength = torch.nn.Sequential(
             torch.nn.Dropout(0.2),
-            torch.nn.Linear(in_features=1280, out_features=len(self.mapping["style_changes"])),
+            torch.nn.Linear(in_features=1280, out_features=len(self.mapping["styles"])),
             torch.nn.Tanh())
         self.technical_change_strength = torch.nn.Sequential(
             torch.nn.Dropout(0.2),
-            torch.nn.Linear(in_features=1280, out_features=len(self.mapping["technical_changes"])),
+            torch.nn.Linear(in_features=1280, out_features=len(self.mapping["technical"])),
             torch.nn.Sigmoid())
         self.composition_change_strength = torch.nn.Sequential(
             torch.nn.Dropout(0.2),
-            torch.nn.Linear(in_features=1280, out_features=len(self.mapping["composition_changes"])),
+            torch.nn.Linear(in_features=1280, out_features=len(self.mapping["composition"])),
             torch.nn.Tanh())
         # fmt: on
 
