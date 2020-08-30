@@ -263,6 +263,7 @@ for epoch in range(config.warm_start_epoch, config.epochs):
         val_not_improved += 1
         if val_not_improved >= config.early_stopping_patience:
             logging.info("early stopping")
+            break
 
 logging.info("Training complete!")
 writer.close()
