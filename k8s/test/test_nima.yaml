@@ -5,7 +5,6 @@ metadata:
 spec:
   template:
     spec:
-      priorityClassName: research-low
       restartPolicy: "Never"
       containers:
         - name: test-nima
@@ -18,11 +17,11 @@ spec:
             limits:
               nvidia.com/gpu: "1"
               cpu: "4"
-              memory: "24Gi"
+              memory: "64Gi"
             requests:
               nvidia.com/gpu: "1"
               cpu: "4"
-              memory: "24Gi"
+              memory: "64Gi"
           volumeMounts:
             - mountPath: /workspace
               name: code
@@ -37,7 +36,7 @@ spec:
             # - --listen
             # - 0.0.0.0:4444
             # - --wait-for-client
-            - /workspace/model/test_NIMA.py
+            - /workspace/NIMA/test_NIMA.py
       volumes:
         - name: code
           cephfs:
