@@ -10,10 +10,11 @@ from PIL import Image
 
 
 class SSPexels(torch.utils.data.Dataset):
-    def __init__(self, file_list_path: str, mapping, orig_dir: str = "/scratch/pexels/images", edited_dir: str = "/scratch/pexels/edited_images"):
+    def __init__(self, file_list_path: str, mapping, return_file_name: bool = False, orig_dir: str = "/scratch/pexels/images", edited_dir: str = "/scratch/pexels/edited_images"):
         self.file_list_path = file_list_path
         self.mapping = mapping
 
+        self.return_file_name = return_file_name
         self.orig_dir = orig_dir
         self.edited_dir = edited_dir
 
@@ -136,6 +137,8 @@ class SSPexels(torch.utils.data.Dataset):
             data[k] = self.pad_square(data[k])
             data[k] = transforms.ToTensor()(data[k]).half()
 
+        if self.return_file_name:
+            data["file_name"] = self.file_list[idx]
         return data
 
 
