@@ -14,6 +14,8 @@ test_file = "/workspace/dataset_processing/test_set.txt"
 model_path = "/scratch/pretrained_new.pth"
 out_file = "/workspace/analysis/not_uploaded/NIMA_test_scores.csv"
 
+logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
+
 model = NIMA(models.vgg16(pretrained=False))
 
 model.load_state_dict(torch.load(model_path))
