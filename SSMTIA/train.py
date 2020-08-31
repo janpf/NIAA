@@ -24,14 +24,14 @@ parser.add_argument("--composition_margin", type=float)
 parser.add_argument("--base_model", type=str)
 parser.add_argument("--lr_decay_rate", type=float, default=0.95)
 parser.add_argument("--lr_decay_freq", type=int, default=10)
-parser.add_argument("--train_batch_size", type=int, default=2)
-parser.add_argument("--val_batch_size", type=int, default=30)
-parser.add_argument("--num_workers", type=int, default=32)
+parser.add_argument("--train_batch_size", type=int, default=50)
+parser.add_argument("--val_batch_size", type=int, default=50)
+parser.add_argument("--num_workers", type=int, default=10)
 parser.add_argument("--epochs", type=int, default=100)
 
 # misc
-parser.add_argument("--log_dir", type=str, default="/scratch/train_logs/SSMTIA/pexels/")
-parser.add_argument("--ckpt_path", type=str, default="/scratch/ckpts/SSMTIA/pexels/")
+parser.add_argument("--log_dir", type=str, default="/scratch/train_logs/SSMTIA-CP/pexels/")
+parser.add_argument("--ckpt_path", type=str, default="/scratch/ckpts/SSMTIA-CP/pexels/")
 parser.add_argument("--warm_start", action="store_true")
 parser.add_argument("--warm_start_epoch", type=int, default=0)
 parser.add_argument("--early_stopping_patience", type=int, default=5)
@@ -102,7 +102,7 @@ SSPexels_train = SSPexels(file_list_path="/workspace/dataset_processing/train_se
 SSPexels_val = SSPexels(file_list_path="/workspace/dataset_processing/val_set.txt", mapping=mapping)
 
 Pexels_train_loader = torch.utils.data.DataLoader(SSPexels_train, batch_size=config.train_batch_size, shuffle=True, drop_last=True, num_workers=config.num_workers)
-Pexels_val_loader = torch.utils.data.DataLoader(SSPexels_val, batch_size=config.val_batch_size, shuffle=False, drop_last=True, num_workers=config.num_workers // 3)
+Pexels_val_loader = torch.utils.data.DataLoader(SSPexels_val, batch_size=config.val_batch_size, shuffle=False, drop_last=True, num_workers=config.num_workers)
 logging.info("datasets created")
 # losses
 erloss = EfficientRankingLoss()
@@ -250,13 +250,15 @@ for epoch in range(config.warm_start_epoch, config.epochs):
     writer.add_scalar("loss_scaled_perfect/val", perfect_loss_scaled.data[0], g_step)
     writer.add_scalar("loss_scaled_overall/val", overall_loss_scaled.data[0], g_step)
 
+    logging.info("saving!")
+    Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
+    torch.save(ssmtia.state_dict(), str(Path(config.ckpt_path) / f"epoch-{epoch + 1}.pth"))
+
     # Use early stopping to monitor training
     if overall_loss < lowest_val_loss:
         lowest_val_loss = overall_loss
 
-        logging.info("New best model! Saving...")
-        Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
-        torch.save(ssmtia.state_dict(), str(Path(config.ckpt_path) / f"epoch-{epoch + 1}.pth"))
+        logging.info("New best model!")
         # reset count
         val_not_improved = 0
     else:

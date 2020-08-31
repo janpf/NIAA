@@ -1,5 +1,17 @@
 import torch
+from torch.utils.checkpoint import checkpoint_sequential
 from torchvision.models.mobilenet import mobilenet_v2
+
+
+class CheckpointModule(torch.nn.Module):
+    def __init__(self, module, num_segments=1):
+        super(CheckpointModule, self).__init__()
+        assert num_segments == 1 or isinstance(module, torch.nn.Sequential)
+        self.module = module
+        self.num_segments = num_segments
+
+    def forward(self, *inputs):
+        return checkpoint_sequential(self.module, self.num_segments, *inputs)
 
 
 class SSMTIA(torch.nn.Module):
@@ -12,7 +24,7 @@ class SSMTIA(torch.nn.Module):
             raise NotImplementedError()
 
         self.mapping = mapping
-        self.features = base_model.features
+        self.features = CheckpointModule(module=base_model.features, num_segments=len(base_model.features))
 
         # "self.classifiers"
         # fmt: off
