@@ -23,9 +23,9 @@
     ],
     "remoteAuthority": "ssh-remote+vingilot",
     "settings": {
-        "python.pythonPath": "venv/bin/python",
         "python.autoComplete.extraPaths": [
             "NIAA"
         ],
+        "python.pythonPath": "venv/bin/python",
     }
 }
