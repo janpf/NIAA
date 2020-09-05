@@ -24,8 +24,11 @@
     "remoteAuthority": "ssh-remote+vingilot",
     "settings": {
         "python.autoComplete.extraPaths": [
-            "NIAA"
+            "${workspaceFolder}"
         ],
-        "python.pythonPath": "venv/bin/python",
+        "python.pythonPath": "${workspaceFolder}/venv/bin/python",
+        "python.analysis.extraPaths": [
+            "${workspaceFolder}"
+        ],
     }
 }
