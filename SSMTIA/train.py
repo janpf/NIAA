@@ -24,9 +24,9 @@ parser.add_argument("--composition_margin", type=float)
 parser.add_argument("--base_model", type=str)
 parser.add_argument("--lr_decay_rate", type=float, default=0.95)
 parser.add_argument("--lr_decay_freq", type=int, default=10)
-parser.add_argument("--train_batch_size", type=int, default=50)
-parser.add_argument("--val_batch_size", type=int, default=50)
-parser.add_argument("--num_workers", type=int, default=10)
+parser.add_argument("--train_batch_size", type=int, default=25)
+parser.add_argument("--val_batch_size", type=int, default=25)
+parser.add_argument("--num_workers", type=int, default=32)
 parser.add_argument("--epochs", type=int, default=100)
 
 # misc
@@ -64,7 +64,7 @@ ssmtia.half()
 # loading checkpoints, ... or not
 if config.warm_start:
     logging.info("loading checkpoint")
-    Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
+    # Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
     ssmtia.load_state_dict(torch.load(str(Path(config.ckpt_path) / f"epoch-{config.warm_start_epoch}.pth")))
     logging.info(f"Successfully loaded model epoch-{config.warm_start_epoch}.pth")
 else:
@@ -75,6 +75,12 @@ else:
 logging.info("setting learnrates")
 conv_base_lr = config.conv_base_lr
 dense_lr = config.dense_lr
+
+if config.warm_start:
+    for epoch in range(config.warm_start_epoch):
+        # exponential learning rate decay:
+        conv_base_lr = conv_base_lr * config.lr_decay_rate ** ((epoch + 1) / config.lr_decay_freq)
+        dense_lr = dense_lr * config.lr_decay_rate ** ((epoch + 1) / config.lr_decay_freq)
 
 optimizer = torch.optim.RMSprop(
     [
@@ -141,7 +147,11 @@ def step(batch, batch_size: int) -> (torch.Tensor, torch.Tensor, torch.Tensor):
     return sum(ranking_losses_step), sum(change_losses_step), sum(perfect_losses_step)
 
 
-g_step = 0
+if config.warm_start:
+    g_step = config.warm_start_epoch * len(Pexels_train_loader)
+else:
+    g_step = 0
+
 lowest_val_loss = float("inf")
 val_not_improved = 0
 logging.info("start training")
@@ -185,7 +195,7 @@ for epoch in range(config.warm_start_epoch, config.epochs):
         writer.add_scalar("hparams/technical_margin", float(config.technical_margin), g_step)
         writer.add_scalar("hparams/composition_margin", float(config.composition_margin), g_step)
         g_step += 1
-        logging.info(f"waiting for new batch")
+        logging.info("waiting for new batch")
 
     # exponential learning rate decay:
     conv_base_lr = conv_base_lr * config.lr_decay_rate ** ((epoch + 1) / config.lr_decay_freq)
@@ -205,6 +215,10 @@ for epoch in range(config.warm_start_epoch, config.epochs):
         weight_decay=0.00004,
     )
 
+    logging.info("saving!")
+    Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
+    torch.save(ssmtia.state_dict(), str(Path(config.ckpt_path) / f"epoch-{epoch + 1}.pth"))
+
     logging.info("validating")
 
     ranking_loss = []
@@ -215,19 +229,23 @@ for epoch in range(config.warm_start_epoch, config.epochs):
     change_loss_scaled = []
     perfect_loss_scaled = []
 
+    # TODO validate in parallel
     for i, data in enumerate(Pexels_val_loader):
-        logging.info(f"validation step {i} / {len(Pexels_val_loader)}")
-        with torch.no_grad():
-            ranking_loss_batch, change_loss_batch, perfect_loss_batch = step(data, config.val_batch_size)
+        try:
+            logging.info(f"validation step {i} / {len(Pexels_val_loader)}")
+            with torch.no_grad():
+                ranking_loss_batch, change_loss_batch, perfect_loss_batch = step(data, config.val_batch_size)
 
-        ranking_loss.append(ranking_loss_batch.item())
-        change_loss.append(change_loss_batch.item())
-        perfect_loss.append(perfect_loss_batch.item())
+            ranking_loss.append(ranking_loss_batch.item())
+            change_loss.append(change_loss_batch.item())
+            perfect_loss.append(perfect_loss_batch.item())
 
-        ranking_loss_scaled.append(h(ranking_loss_batch).item())
-        change_loss_scaled.append(h(change_loss_batch).item())
-        perfect_loss_scaled.append(h(perfect_loss_batch).item())
-        logging.info(f"waiting for new batch")
+            ranking_loss_scaled.append(h(ranking_loss_batch).item())
+            change_loss_scaled.append(h(change_loss_batch).item())
+            perfect_loss_scaled.append(h(perfect_loss_batch).item())
+            logging.info("waiting for new batch")
+        except Exception as e:
+            logging.info(e)
 
     val_counts = len(ranking_loss)
     overall_loss = (sum(ranking_loss) + sum(change_loss) + sum(perfect_loss)) / val_counts
@@ -240,19 +258,18 @@ for epoch in range(config.warm_start_epoch, config.epochs):
     change_loss_scaled = sum(change_loss_scaled) / val_counts
     perfect_loss_scaled = sum(perfect_loss_scaled) / val_counts
 
-    writer.add_scalar("loss_ranking/val", ranking_loss.data[0], g_step)
-    writer.add_scalar("loss_change/val", change_loss.data[0], g_step)
-    writer.add_scalar("loss_perfect/val", perfect_loss.data[0], g_step)
-    writer.add_scalar("loss_overall/val", overall_loss.data[0], g_step)
+    try:
+        writer.add_scalar("loss_ranking/val", ranking_loss.data[0], g_step)
+        writer.add_scalar("loss_change/val", change_loss.data[0], g_step)
+        writer.add_scalar("loss_perfect/val", perfect_loss.data[0], g_step)
+        writer.add_scalar("loss_overall/val", overall_loss.data[0], g_step)
 
-    writer.add_scalar("loss_scaled_ranking/val", ranking_loss_scaled.data[0], g_step)
-    writer.add_scalar("loss_scaled_change/val", change_loss_scaled.data[0], g_step)
-    writer.add_scalar("loss_scaled_perfect/val", perfect_loss_scaled.data[0], g_step)
-    writer.add_scalar("loss_scaled_overall/val", overall_loss_scaled.data[0], g_step)
-
-    logging.info("saving!")
-    Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
-    torch.save(ssmtia.state_dict(), str(Path(config.ckpt_path) / f"epoch-{epoch + 1}.pth"))
+        writer.add_scalar("loss_scaled_ranking/val", ranking_loss_scaled.data[0], g_step)
+        writer.add_scalar("loss_scaled_change/val", change_loss_scaled.data[0], g_step)
+        writer.add_scalar("loss_scaled_perfect/val", perfect_loss_scaled.data[0], g_step)
+        writer.add_scalar("loss_scaled_overall/val", overall_loss_scaled.data[0], g_step)
+    except Exception as e:
+        logging.info(e)
 
     # Use early stopping to monitor training
     if overall_loss < lowest_val_loss:
