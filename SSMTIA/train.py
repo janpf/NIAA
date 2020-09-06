@@ -258,18 +258,15 @@ for epoch in range(config.warm_start_epoch, config.epochs):
     change_loss_scaled = sum(change_loss_scaled) / val_counts
     perfect_loss_scaled = sum(perfect_loss_scaled) / val_counts
 
-    try:
-        writer.add_scalar("loss_ranking/val", ranking_loss.data[0], g_step)
-        writer.add_scalar("loss_change/val", change_loss.data[0], g_step)
-        writer.add_scalar("loss_perfect/val", perfect_loss.data[0], g_step)
-        writer.add_scalar("loss_overall/val", overall_loss.data[0], g_step)
+    writer.add_scalar("loss_ranking/val", ranking_loss, g_step)
+    writer.add_scalar("loss_change/val", change_loss, g_step)
+    writer.add_scalar("loss_perfect/val", perfect_loss, g_step)
+    writer.add_scalar("loss_overall/val", overall_loss, g_step)
 
-        writer.add_scalar("loss_scaled_ranking/val", ranking_loss_scaled.data[0], g_step)
-        writer.add_scalar("loss_scaled_change/val", change_loss_scaled.data[0], g_step)
-        writer.add_scalar("loss_scaled_perfect/val", perfect_loss_scaled.data[0], g_step)
-        writer.add_scalar("loss_scaled_overall/val", overall_loss_scaled.data[0], g_step)
-    except Exception as e:
-        logging.info(e)
+    writer.add_scalar("loss_scaled_ranking/val", ranking_loss_scaled, g_step)
+    writer.add_scalar("loss_scaled_change/val", change_loss_scaled, g_step)
+    writer.add_scalar("loss_scaled_perfect/val", perfect_loss_scaled, g_step)
+    writer.add_scalar("loss_scaled_overall/val", overall_loss_scaled, g_step)
 
     # Use early stopping to monitor training
     if overall_loss < lowest_val_loss:
