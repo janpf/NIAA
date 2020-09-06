@@ -7,13 +7,13 @@ class PerfectLoss(torch.nn.Module):
 
     def __init__(self):
         super(PerfectLoss, self).__init__()
-        self.mse = torch.nn.MSELoss()
+        self.l1 = torch.nn.L1Loss()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, x: torch.Tensor):
         """if the image is unedited force a score of 1"""
         mini_batch_size = x.shape[0]
-        return self.mse(torch.squeeze(x).float(), torch.ones(mini_batch_size).to(self.device))  #  pull it to 1
+        return self.l1(torch.squeeze(x).float(), torch.ones(mini_batch_size).to(self.device))  #  pull it to 1
 
 
 class SoftMarginRankingLoss(torch.nn.Module):
@@ -23,7 +23,7 @@ class SoftMarginRankingLoss(torch.nn.Module):
         super(SoftMarginRankingLoss, self).__init__()
         self.sp = torch.nn.Softplus(beta=10)
 
-    def forward(self, x1: torch.Tensor, x2: torch.Tensor, margin: float):
+    def forward(self, x1: torch.Tensor, x2: torch.Tensor, margin: float) -> torch.Tensor:
         """(x1 better than x2 by at least the margin) -> 0"""
         assert x1.shape == x2.shape, "Shape of the two inputs must be the same."
         mini_batch_size = x1.shape[0]
@@ -36,7 +36,7 @@ class EfficientRankingLoss(torch.nn.Module):
         super(EfficientRankingLoss, self).__init__()
         self.smrloss = SoftMarginRankingLoss()
 
-    def forward(self, original, x, polarity: str, score: str, margin: float):
+    def forward(self, original, x, polarity: str, score: str, margin: float) -> torch.Tensor:
         loss = []
         for idx1, change1 in enumerate(x.keys()):
             logging.debug(f"score\toriginal\t{change1}")
