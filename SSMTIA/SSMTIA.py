@@ -15,11 +15,11 @@ class CheckpointModule(torch.nn.Module):
 
 
 class SSMTIA(torch.nn.Module):
-    def __init__(self, base_model_name: str, mapping):
+    def __init__(self, base_model_name: str, mapping, pretrained: bool = True):
         super(SSMTIA, self).__init__()
 
         if base_model_name == "mobilenet":
-            base_model = mobilenet_v2(pretrained=True)
+            base_model = mobilenet_v2(pretrained=pretrained)
         else:
             raise NotImplementedError()
 
