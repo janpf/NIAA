@@ -30,7 +30,7 @@ dataset = SSPexels(file_list_path=test_file, mapping=mapping)
 batch_loader = torch.utils.data.DataLoader(dataset, batch_size=30, drop_last=False, num_workers=8)
 
 out_file = open(out_file, "w")
-out_file.write("img; parameter; change; scores\n")
+out_file.write("img;parameter;change;scores\n")
 
 logging.info("testing")
 for i, data in enumerate(batch_loader):

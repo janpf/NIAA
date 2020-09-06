@@ -33,7 +33,7 @@ Pexels_test = torch.utils.data.DataLoader(SSPexels_test, batch_size=25, drop_las
 logging.info("datasets created")
 
 out_file = open(out_file, "w")
-out_file.write("img; parameter; change; scores\n")
+out_file.write("img;parameter;change;scores\n")
 
 
 logging.info("testing")
