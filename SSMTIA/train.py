@@ -152,8 +152,6 @@ if config.warm_start:
 else:
     g_step = 0
 
-lowest_val_loss = float("inf")
-val_not_improved = 0
 logging.info("start training")
 for epoch in range(config.warm_start_epoch, config.epochs):
     for i, data in enumerate(Pexels_train_loader):
@@ -218,68 +216,6 @@ for epoch in range(config.warm_start_epoch, config.epochs):
     logging.info("saving!")
     Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
     torch.save(ssmtia.state_dict(), str(Path(config.ckpt_path) / f"epoch-{epoch + 1}.pth"))
-
-    logging.info("validating")
-
-    ranking_loss = []
-    change_loss = []
-    perfect_loss = []
-
-    ranking_loss_scaled = []
-    change_loss_scaled = []
-    perfect_loss_scaled = []
-
-    # TODO validate in parallel
-    for i, data in enumerate(Pexels_val_loader):
-        try:
-            logging.info(f"validation step {i} / {len(Pexels_val_loader)}")
-            with torch.no_grad():
-                ranking_loss_batch, change_loss_batch, perfect_loss_batch = step(data, config.val_batch_size)
-
-            ranking_loss.append(ranking_loss_batch.item())
-            change_loss.append(change_loss_batch.item())
-            perfect_loss.append(perfect_loss_batch.item())
-
-            ranking_loss_scaled.append(h(ranking_loss_batch).item())
-            change_loss_scaled.append(h(change_loss_batch).item())
-            perfect_loss_scaled.append(h(perfect_loss_batch).item())
-            logging.info("waiting for new batch")
-        except Exception as e:
-            logging.info(e)
-
-    val_counts = len(ranking_loss)
-    overall_loss = (sum(ranking_loss) + sum(change_loss) + sum(perfect_loss)) / val_counts
-    ranking_loss = sum(ranking_loss) / val_counts
-    change_loss = sum(change_loss) / val_counts
-    perfect_loss = sum(perfect_loss) / val_counts
-
-    overall_loss_scaled = (sum(ranking_loss_scaled) + sum(change_loss_scaled) + sum(perfect_loss_scaled)) / val_counts
-    ranking_loss_scaled = sum(ranking_loss_scaled) / val_counts
-    change_loss_scaled = sum(change_loss_scaled) / val_counts
-    perfect_loss_scaled = sum(perfect_loss_scaled) / val_counts
-
-    writer.add_scalar("loss_ranking/val", ranking_loss, g_step)
-    writer.add_scalar("loss_change/val", change_loss, g_step)
-    writer.add_scalar("loss_perfect/val", perfect_loss, g_step)
-    writer.add_scalar("loss_overall/val", overall_loss, g_step)
-
-    writer.add_scalar("loss_scaled_ranking/val", ranking_loss_scaled, g_step)
-    writer.add_scalar("loss_scaled_change/val", change_loss_scaled, g_step)
-    writer.add_scalar("loss_scaled_perfect/val", perfect_loss_scaled, g_step)
-    writer.add_scalar("loss_scaled_overall/val", overall_loss_scaled, g_step)
-
-    # Use early stopping to monitor training
-    if overall_loss < lowest_val_loss:
-        lowest_val_loss = overall_loss
-
-        logging.info("New best model!")
-        # reset count
-        val_not_improved = 0
-    else:
-        val_not_improved += 1
-        if val_not_improved >= config.early_stopping_patience:
-            logging.info("early stopping")
-            break
 
 logging.info("Training complete!")
 writer.close()
