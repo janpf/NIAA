@@ -7,13 +7,13 @@ class PerfectLoss(torch.nn.Module):
 
     def __init__(self):
         super(PerfectLoss, self).__init__()
-        self.l1 = torch.nn.L1Loss()
+        self.mse = torch.nn.MSELoss()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, x: torch.Tensor):
         """if the image is unedited force a score of 1"""
         mini_batch_size = x.shape[0]
-        return self.l1(torch.squeeze(x).float(), torch.ones(mini_batch_size).to(self.device))  #  pull it to 1
+        return self.mse(torch.squeeze(x).float(), torch.ones(mini_batch_size).to(self.device))  #  pull it to 1
 
 
 class SoftMarginRankingLoss(torch.nn.Module):
