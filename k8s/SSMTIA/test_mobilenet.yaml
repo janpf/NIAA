@@ -5,6 +5,7 @@ metadata:
 spec:
   template:
     spec:
+      priorityClassName: research-med
       restartPolicy: "Never"
       containers:
         - name: test-mobilenet
