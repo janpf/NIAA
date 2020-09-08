@@ -15,10 +15,10 @@ spec:
               value: "/tmp"
           resources:
             limits:
-              cpu: "2"
+              cpu: "6"
               memory: "32Gi"
             requests:
-              cpu: "2"
+              cpu: "6"
               memory: "32Gi"
           volumeMounts:
             - mountPath: /workspace
