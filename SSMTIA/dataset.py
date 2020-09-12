@@ -136,7 +136,7 @@ class SSPexels(torch.utils.data.Dataset):
 
         for k in data.keys():
             data[k] = self.pad_square(data[k])
-            data[k] = transforms.ToTensor()(data[k]).half()
+            data[k] = transforms.ToTensor()(data[k])
 
         if self.return_file_name:
             data["file_name"] = self.file_list[idx]
@@ -169,6 +169,6 @@ class SSPexelsDummy(torch.utils.data.Dataset):
 
         data = dict()
         for item in items:
-            data[item] = torch.rand(3, 224, 224).half()
+            data[item] = torch.rand(3, 224, 224)
 
         return data

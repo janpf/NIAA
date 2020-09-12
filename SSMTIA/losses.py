@@ -13,7 +13,7 @@ class PerfectLoss(torch.nn.Module):
     def forward(self, x: torch.Tensor):
         """if the image is unedited force a score of 1"""
         mini_batch_size = x.shape[0]
-        return self.mse(torch.squeeze(x).float(), torch.ones(mini_batch_size).to(self.device))  #  pull it to 1
+        return self.mse(torch.squeeze(x), torch.ones(mini_batch_size).to(self.device))  #  pull it to 1
 
 
 class SoftMarginRankingLoss(torch.nn.Module):
@@ -27,7 +27,7 @@ class SoftMarginRankingLoss(torch.nn.Module):
         """(x1 better than x2 by at least the margin) -> 0"""
         assert x1.shape == x2.shape, "Shape of the two inputs must be the same."
         mini_batch_size = x1.shape[0]
-        result = self.sp((x2.float() - x1.float()) + margin)
+        result = self.sp((x2 - x1) + margin)
         return sum(result) / mini_batch_size
 
 
