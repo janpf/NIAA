@@ -8,7 +8,6 @@ from pathlib import Path
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
-from torchvision.transforms.transforms import ToPILImage
 
 sys.path[0] = "."
 
@@ -36,9 +35,9 @@ class SSPexels(Dataset):
 
     def __getitem__(self, idx):
         try:
-            print("broken:", idx, self.file_list[idx])
             return self._actualgetitem(idx)
         except:
+            logging.info(f"broken:\t{idx}\t{self.file_list[idx]}")
             return self[random.randint(0, len(self))]
 
     def _actualgetitem(self, idx):
@@ -62,7 +61,7 @@ class SSPexels(Dataset):
 logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
 
 file_list_file = "/workspace/dataset_processing/train_set.txt"
-out_tar = "/scratch/pexels/images.tar"
+out_tar = "/scratch/pexels/images-hm.tar"
 
 
 with open(file_list_file) as f:
@@ -82,7 +81,7 @@ out_tar = tarfile.open(out_tar, "w:gz", bufsize=1024 * 1000)
 already_done = set()
 
 toPIL = transforms.ToPILImage()
-for data in dataload:
+for i, data in enumerate(dataload):
     file_name = data["file_name"][0]
     file_name = Path(file_name).stem + ".jpg"
 
@@ -112,4 +111,8 @@ for data in dataload:
             buffer.seek(0)
             out_tar.addfile(tarinfo=info, fileobj=buffer)
 
-    logging.info("waiting for new file")
+    if i % 100 == 0:
+        logging.info(f"already done: {len(already_done)}")
+
+
+print(already_done)
