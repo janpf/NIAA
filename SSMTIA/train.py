@@ -2,6 +2,7 @@ import argparse
 import sys
 from pathlib import Path
 import logging
+from typing import Tuple, Type
 
 import numpy as np
 import torch
@@ -93,6 +94,7 @@ optimizer = torch.optim.RMSprop(
     momentum=0.9,
     weight_decay=0.00004,
 )
+scaler = torch.cuda.amp.GradScaler()
 
 # counting parameters
 param_num = 0
@@ -114,7 +116,7 @@ ploss = PerfectLoss()
 mseloss = torch.nn.MSELoss()
 
 
-def step(batch, batch_size: int) -> (torch.Tensor, torch.Tensor, torch.Tensor):
+def step(batch, batch_size: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     ranking_losses_step = []
     change_losses_step = []
     perfect_losses_step = []
@@ -156,20 +158,22 @@ for epoch in range(config.warm_start_epoch, config.epochs):
         logging.info(f"batch loaded: step {i}")
 
         optimizer.zero_grad()
+        # forward pass + loss calculation
         with torch.cuda.amp.autocast():
-            # forward pass + loss calculation
             ranking_loss_batch, change_loss_batch, perfect_loss_batch = step(data, config.train_batch_size)
+
+            # scale losses
+            ranking_loss_batch_balanced = h(ranking_loss_batch)
+            change_loss_batch_balanced = h(change_loss_batch)
+            perfect_loss_batch_balanced = h(perfect_loss_batch)
+            loss = ranking_loss_batch_balanced + change_loss_batch_balanced + perfect_loss_batch_balanced
 
         writer.add_scalar("loss_ranking/train", ranking_loss_batch.data, g_step)
         writer.add_scalar("loss_change/train", change_loss_batch.data, g_step)
         writer.add_scalar("loss_perfect/train", perfect_loss_batch.data, g_step)
         writer.add_scalar("loss_overall/train", sum([ranking_loss_batch, change_loss_batch, perfect_loss_batch]).data[0], g_step)
 
-        # scale losses
-        ranking_loss_batch = h(ranking_loss_batch)
-        change_loss_batch = h(change_loss_batch)
-        perfect_loss_batch = h(perfect_loss_batch)
-        loss = ranking_loss_batch + change_loss_batch + perfect_loss_batch
+
 
         writer.add_scalar("loss_scaled_ranking/train", ranking_loss_batch.data, g_step)
         writer.add_scalar("loss_scaled_change/train", change_loss_batch.data, g_step)
@@ -179,8 +183,9 @@ for epoch in range(config.warm_start_epoch, config.epochs):
         logging.info(f"Epoch: {epoch + 1}/{config.epochs} | Step: {i + 1}/{len(Pexels_train_loader)} | Training loss: {loss.data[0]}")
 
         # optimizing
-        loss.backward()
-        optimizer.step()
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
 
         writer.add_scalar("progress/epoch", epoch + 1, g_step)
         writer.add_scalar("progress/step", i + 1, g_step)
