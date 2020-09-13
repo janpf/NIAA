@@ -1,13 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: train-mobilenet
+  name: train-mobilenet-cp-warm
 spec:
   template:
     spec:
+      priorityClassName: research-med
       restartPolicy: "Never"
       containers:
-        - name: train-mobilenet
+        - name: train-mobilenet-cp-warm
           image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
@@ -16,12 +17,12 @@ spec:
           resources:
             limits:
               nvidia.com/gpu: "1"
-              cpu: "4"
-              memory: "64Gi"
+              cpu: "8"
+              memory: "128Gi"
             requests:
               nvidia.com/gpu: "1"
-              cpu: "4"
-              memory: "64Gi"
+              cpu: "8"
+              memory: "128Gi"
           volumeMounts:
             - mountPath: /workspace
               name: code
@@ -45,6 +46,11 @@ spec:
             - "0.2"
             - --base_model
             - mobilenet
+            - --warm_start
+            - --warm_start_epoch
+            - "4"
+            - --log_dir
+            - /scratch/train_logs/SSMTIA-CP-warm/pexels/
       volumes:
         - name: code
           cephfs:

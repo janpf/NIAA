@@ -71,6 +71,7 @@ class SSPexels(torch.utils.data.Dataset):
                 img = corrupt(np.array(data["original"]), severity=change, corruption_name=parameter)
                 data[technical_change] = Image.fromarray(img)
 
+        crop_original = transforms.Resize(256)(Image.open(str(Path(self.orig_dir) / self.file_list[idx])))
         for composition_change in self.mapping["composition_changes"]:
             parameter, change = composition_change.split(";")
             change = int(change)
@@ -102,13 +103,13 @@ class SSPexels(torch.utils.data.Dataset):
                 data[composition_change] = transforms.CenterCrop((h, w))(rotated)
 
             elif "crop" in parameter:
-                original = transforms.Resize(256)(Image.open(str(Path(self.orig_dir) / self.file_list[idx])))
+
                 crop_size = data["original"].size
 
-                center_left = round(original.size[0] / 2 - crop_size[0] / 2)
-                center_right = round(original.size[0] / 2 + crop_size[0] / 2)
-                center_top = round(original.size[1] / 2 - crop_size[1] / 2)
-                center_bottom = round(original.size[1] / 2 + crop_size[1] / 2)
+                center_left = round(crop_original.size[0] / 2 - crop_size[0] / 2)
+                center_right = round(crop_original.size[0] / 2 + crop_size[0] / 2)
+                center_top = round(crop_original.size[1] / 2 - crop_size[1] / 2)
+                center_bottom = round(crop_original.size[1] / 2 + crop_size[1] / 2)
 
                 v_move = 0  # centered
                 h_move = 0  # centered
@@ -131,7 +132,7 @@ class SSPexels(torch.utils.data.Dataset):
                 center_top -= offset_top
                 center_bottom -= offset_top
 
-                data[composition_change] = original.crop((center_left, center_top, center_right, center_bottom))
+                data[composition_change] = crop_original.crop((center_left, center_top, center_right, center_bottom))
 
         for k in data.keys():
             data[k] = self.pad_square(data[k])

@@ -14,6 +14,8 @@ test_file = "/workspace/dataset_processing/test_set.txt"
 model_path = "/scratch/pretrained_new.pth"
 out_file = "/workspace/analysis/not_uploaded/NIMA_test_scores.csv"
 
+logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
+
 model = NIMA(models.vgg16(pretrained=False))
 
 model.load_state_dict(torch.load(model_path))
@@ -28,7 +30,7 @@ dataset = SSPexels(file_list_path=test_file, mapping=mapping)
 batch_loader = torch.utils.data.DataLoader(dataset, batch_size=30, drop_last=False, num_workers=8)
 
 out_file = open(out_file, "w")
-out_file.write("img; parameter; change; scores\n")
+out_file.write("img;parameter;change;scores\n")
 
 logging.info("testing")
 for i, data in enumerate(batch_loader):

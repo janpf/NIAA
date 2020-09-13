@@ -1,3 +1,4 @@
+import hashlib
 from edit_image import parameter_range
 
 mapping = dict()
@@ -73,3 +74,8 @@ for _, v in mapping["composition"].items():
     for _, polarity in v.items():
         mapping["all_changes"].extend(polarity)
         mapping["composition_changes"].extend(polarity)
+
+
+def filename2path(filename: str) -> str:
+    threedirs = hashlib.sha256(filename.encode("utf-8")).hexdigest()[:3]
+    return "/".join(list(threedirs) + [filename])

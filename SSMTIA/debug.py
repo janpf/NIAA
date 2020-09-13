@@ -2,13 +2,14 @@ import argparse
 import sys
 from pathlib import Path
 import logging
+from typing import Tuple
 
 import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
 sys.path[0] = "/workspace"
-from SSMTIA.dataset import SSPexels
+from SSMTIA.dataset import SSPexelsDummy as SSPexels
 from SSMTIA.losses import PerfectLoss, EfficientRankingLoss, h
 from SSMTIA.SSMTIA import SSMTIA
 from SSMTIA.utils import mapping
@@ -24,14 +25,14 @@ parser.add_argument("--composition_margin", type=float)
 parser.add_argument("--base_model", type=str)
 parser.add_argument("--lr_decay_rate", type=float, default=0.95)
 parser.add_argument("--lr_decay_freq", type=int, default=10)
-parser.add_argument("--train_batch_size", type=int, default=25)
-parser.add_argument("--val_batch_size", type=int, default=25)
-parser.add_argument("--num_workers", type=int, default=32)
+parser.add_argument("--train_batch_size", type=int, default=10)
+parser.add_argument("--val_batch_size", type=int, default=10)
+parser.add_argument("--num_workers", type=int, default=10)
 parser.add_argument("--epochs", type=int, default=100)
 
 # misc
-parser.add_argument("--log_dir", type=str, default="/scratch/train_logs/SSMTIA-CP/pexels/")
-parser.add_argument("--ckpt_path", type=str, default="/scratch/ckpts/SSMTIA-CP/pexels/")
+parser.add_argument("--log_dir", type=str, default="/tmp/pexels")
+parser.add_argument("--ckpt_path", type=str, default="/tmp/pexels")
 parser.add_argument("--warm_start", action="store_true")
 parser.add_argument("--warm_start_epoch", type=int, default=0)
 parser.add_argument("--early_stopping_patience", type=int, default=5)
@@ -46,11 +47,9 @@ margin["styles"] = config.styles_margin
 margin["technical"] = config.technical_margin
 margin["composition"] = config.composition_margin
 
-logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
-# logging.getLogger("PIL.PngImagePlugin").setLevel(logging.INFO)
+logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logging.DEBUG, datefmt="%Y-%m-%d %H:%M:%S")
+logging.getLogger("PIL.PngImagePlugin").setLevel(logging.INFO)
 
-if not config.warm_start and Path(config.log_dir).exists():
-    raise "train script got restarted, although previous run exists"
 Path(config.log_dir).mkdir(parents=True, exist_ok=True)
 writer = SummaryWriter(log_dir=config.log_dir)
 
@@ -61,26 +60,9 @@ ssmtia = SSMTIA(config.base_model, mapping).to(device)
 logging.info("using half precision")
 ssmtia.half()
 
-# loading checkpoints, ... or not
-if config.warm_start:
-    logging.info("loading checkpoint")
-    # Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
-    ssmtia.load_state_dict(torch.load(str(Path(config.ckpt_path) / f"epoch-{config.warm_start_epoch}.pth")))
-    logging.info(f"Successfully loaded model epoch-{config.warm_start_epoch}.pth")
-else:
-    logging.info("starting cold")
-    if Path(config.ckpt_path).exists():
-        raise "model already trained, but cold training was used"
-
 logging.info("setting learnrates")
 conv_base_lr = config.conv_base_lr
 dense_lr = config.dense_lr
-
-if config.warm_start:
-    for epoch in range(config.warm_start_epoch):
-        # exponential learning rate decay:
-        conv_base_lr = conv_base_lr * config.lr_decay_rate ** ((epoch + 1) / config.lr_decay_freq)
-        dense_lr = dense_lr * config.lr_decay_rate ** ((epoch + 1) / config.lr_decay_freq)
 
 optimizer = torch.optim.RMSprop(
     [
@@ -116,7 +98,7 @@ ploss = PerfectLoss()
 mseloss = torch.nn.MSELoss()
 
 
-def step(batch, batch_size: int) -> (torch.Tensor, torch.Tensor, torch.Tensor):
+def step(batch, batch_size: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     ranking_losses_step = []
     change_losses_step = []
     perfect_losses_step = []
@@ -147,11 +129,10 @@ def step(batch, batch_size: int) -> (torch.Tensor, torch.Tensor, torch.Tensor):
     return sum(ranking_losses_step), sum(change_losses_step), sum(perfect_losses_step)
 
 
-if config.warm_start:
-    g_step = config.warm_start_epoch * len(Pexels_train_loader)
-else:
-    g_step = 0
+g_step = 0
 
+lowest_val_loss = float("inf")
+val_not_improved = 0
 logging.info("start training")
 for epoch in range(config.warm_start_epoch, config.epochs):
     for i, data in enumerate(Pexels_train_loader):
@@ -212,10 +193,6 @@ for epoch in range(config.warm_start_epoch, config.epochs):
         momentum=0.9,
         weight_decay=0.00004,
     )
-
-    logging.info("saving!")
-    Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
-    torch.save(ssmtia.state_dict(), str(Path(config.ckpt_path) / f"epoch-{epoch + 1}.pth"))
 
 logging.info("Training complete!")
 writer.close()

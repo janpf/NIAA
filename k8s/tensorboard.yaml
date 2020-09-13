@@ -36,6 +36,16 @@ spec:
             - --bind_all
             - --reload_multifile=true
             - --reload_multifile_inactive_secs=50000
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - osse
+                      - uinen
       volumes:
         - name: scratch
           cephfs:
