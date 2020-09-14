@@ -40,8 +40,12 @@ parser.add_argument("--early_stopping_patience", type=int, default=5)
 
 config = parser.parse_args()
 
-config.log_dir = config.log_dir + config.base_model
-config.ckpt_path = config.ckpt_path + config.base_model
+config.log_dir = str(Path(config.log_dir) / config.base_model)
+config.ckpt_path = str(Path(config.ckpt_path) / config.base_model)
+
+if config.fixed_features:
+    config.log_dir = str(Path(config.log_dir) / "fixed_features")
+    config.ckpt_path = str(Path(config.ckpt_path) / "fixed_features")
 
 margin = dict()
 margin["styles"] = config.styles_margin
