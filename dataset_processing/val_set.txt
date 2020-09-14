@@ -8415,6 +8415,7 @@ pexels-photo-2602542.jpeg
 pexels-photo-2602989.jpeg
 pexels-photo-2603176.jpeg
 pexels-photo-2603201.jpeg
+pexels-photo-260405.jpeg
 pexels-photo-260409.jpeg
 pexels-photo-260447.jpeg
 pexels-photo-2604670.jpeg
@@ -14783,7 +14784,6 @@ pexels-photo-999299.jpeg
 pexels-photo-999305.jpeg
 pexels-photo-999521.jpeg
 pexels-photo-999613.jpeg
-pexels-photo.jpg
 phone-dial-old-arrangement-47319.jpeg
 pismo-beach-california-pier-structure-161771.jpeg
 pizza-restaurant-dinner-lunch.jpg

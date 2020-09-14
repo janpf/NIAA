@@ -14676,6 +14676,7 @@ pexels-photo-975138.jpeg
 pexels-photo-975156.jpeg
 pexels-photo-975231.jpeg
 pexels-photo-97524.jpeg
+pexels-photo-975483.jpeg
 pexels-photo-976845.jpeg
 pexels-photo-976863.jpeg
 pexels-photo-976873.jpeg
@@ -14787,7 +14788,6 @@ pexels-photo-999282.jpeg
 pexels-photo-999291.jpeg
 pexels-photo-999295.jpeg
 pexels-photo-999297.jpeg
-pexels-photo.png
 photographer-ocean-woman-with-camera-center-591670.jpeg
 photography-car-travel-scenery.jpg
 piano-instrument-music-keys-159420.jpeg
