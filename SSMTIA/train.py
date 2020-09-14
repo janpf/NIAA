@@ -29,10 +29,11 @@ parser.add_argument("--train_batch_size", type=int, default=25)
 parser.add_argument("--val_batch_size", type=int, default=25)
 parser.add_argument("--num_workers", type=int, default=32)
 parser.add_argument("--epochs", type=int, default=100)
+parser.add_argument("--fix_features", action="store_true")
 
 # misc
-parser.add_argument("--log_dir", type=str, default="/scratch/train_logs/SSMTIA-CP/pexels/")
-parser.add_argument("--ckpt_path", type=str, default="/scratch/ckpts/SSMTIA-CP/pexels/")
+parser.add_argument("--log_dir", type=str, default="/scratch/train_logs/SSMTIA/pexels/")
+parser.add_argument("--ckpt_path", type=str, default="/scratch/ckpts/SSMTIA/pexels/")
 parser.add_argument("--warm_start", action="store_true")
 parser.add_argument("--warm_start_epoch", type=int, default=0)
 parser.add_argument("--early_stopping_patience", type=int, default=5)
@@ -58,7 +59,7 @@ writer = SummaryWriter(log_dir=config.log_dir)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 logging.info("loading model")
-ssmtia = SSMTIA(config.base_model, mapping).to(device)
+ssmtia = SSMTIA(config.base_model, mapping, fix_features=config.fix_features).to(device)
 
 # loading checkpoints, ... or not
 if config.warm_start:
@@ -172,8 +173,6 @@ for epoch in range(config.warm_start_epoch, config.epochs):
         writer.add_scalar("loss_change/train", change_loss_batch.data, g_step)
         writer.add_scalar("loss_perfect/train", perfect_loss_batch.data, g_step)
         writer.add_scalar("loss_overall/train", sum([ranking_loss_batch, change_loss_batch, perfect_loss_batch]).data[0], g_step)
-
-
 
         writer.add_scalar("loss_scaled_ranking/train", ranking_loss_batch.data, g_step)
         writer.add_scalar("loss_scaled_change/train", change_loss_batch.data, g_step)

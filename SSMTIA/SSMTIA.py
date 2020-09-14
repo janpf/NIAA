@@ -15,45 +15,62 @@ class CheckpointModule(torch.nn.Module):
 
 
 class SSMTIA(torch.nn.Module):
-    def __init__(self, base_model_name: str, mapping, pretrained: bool = True):
+    def __init__(self, base_model_name: str, mapping, pretrained: bool = True, fix_features: bool = False):
         super(SSMTIA, self).__init__()
 
         if base_model_name == "mobilenet":
             base_model = mobilenet_v2(pretrained=pretrained)
+            self.feature_count = 1280
+
+            features = base_model.features
+            if fix_features:
+                for param in features.parameters():
+                    param.requires_grad = False
+
+            self.features = CheckpointModule(module=features, num_segments=len(features))
+
         else:
             raise NotImplementedError()
 
         self.mapping = mapping
-        self.features = CheckpointModule(module=base_model.features, num_segments=len(base_model.features))
+        self.features = CheckpointModule(module=features, num_segments=len(features))
 
         # "self.classifiers"
         # fmt: off
         self.style_score = torch.nn.Sequential(
             torch.nn.Dropout(0.2),
-            torch.nn.Linear(in_features=1280, out_features=1),
+            torch.nn.Linear(in_features=self.feature_count, out_features=1),
             torch.nn.Sigmoid())
         self.technical_score = torch.nn.Sequential(
             torch.nn.Dropout(0.2),
-            torch.nn.Linear(in_features=1280, out_features=1),
+            torch.nn.Linear(in_features=self.feature_count, out_features=1),
             torch.nn.Sigmoid())
         self.composition_score = torch.nn.Sequential(
             torch.nn.Dropout(0.2),
-            torch.nn.Linear(in_features=1280, out_features=1),
+            torch.nn.Linear(in_features=self.feature_count, out_features=1),
             torch.nn.Sigmoid())
 
         self.style_change_strength = torch.nn.Sequential(
             torch.nn.Dropout(0.2),
-            torch.nn.Linear(in_features=1280, out_features=len(self.mapping["styles"])),
+            torch.nn.Linear(in_features=self.feature_count, out_features=len(self.mapping["styles"])),
             torch.nn.Tanh())
         self.technical_change_strength = torch.nn.Sequential(
             torch.nn.Dropout(0.2),
-            torch.nn.Linear(in_features=1280, out_features=len(self.mapping["technical"])),
+            torch.nn.Linear(in_features=self.feature_count, out_features=len(self.mapping["technical"])),
             torch.nn.Sigmoid())
         self.composition_change_strength = torch.nn.Sequential(
             torch.nn.Dropout(0.2),
-            torch.nn.Linear(in_features=1280, out_features=len(self.mapping["composition"])),
+            torch.nn.Linear(in_features=self.feature_count, out_features=len(self.mapping["composition"])),
             torch.nn.Tanh())
         # fmt: on
+
+        torch.nn.init.xavier_uniform(self.style_score[1].weight)
+        torch.nn.init.xavier_uniform(self.technical_score[1].weight)
+        torch.nn.init.xavier_uniform(self.composition_score[1].weight)
+
+        torch.nn.init.xavier_uniform(self.style_change_strength[1].weight)
+        torch.nn.init.xavier_uniform(self.technical_change_strength[1].weight)
+        torch.nn.init.xavier_uniform(self.composition_change_strength[1].weight)
 
     def forward(self, x: torch.Tensor):
         x = self.features(x)

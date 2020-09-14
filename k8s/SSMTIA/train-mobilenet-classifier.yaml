@@ -1,14 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: train-mobilenet-cp-warm
+  name: train-mobilenet-classifier
 spec:
   template:
     spec:
       priorityClassName: research-med
       restartPolicy: "Never"
       containers:
-        - name: train-mobilenet-cp-warm
+        - name: train-mobilenet-classifier
           image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
@@ -46,11 +46,7 @@ spec:
             - "0.2"
             - --base_model
             - mobilenet
-            - --warm_start
-            - --warm_start_epoch
-            - "4"
-            - --log_dir
-            - /scratch/train_logs/SSMTIA-CP-warm/pexels/
+            - --fix_features
       volumes:
         - name: code
           cephfs:
