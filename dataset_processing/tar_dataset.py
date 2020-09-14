@@ -58,7 +58,7 @@ logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logg
 
 file_list_file = "/workspace/dataset_processing/train_set.txt"
 out_tar = "/scratch/pexels/images.tar.gz"
-patch_tar = "/scratch/pexels/images-patch.tar"
+patch_tar = "/scratch/pexels/images-patch2.tar"
 
 with open(file_list_file) as f:
     file_list = [line.strip() for line in f.readlines()]
@@ -83,7 +83,7 @@ if False:
 
     out_tar.close()
 else:
-    with open("/workspace/analysis/not_uploaded/done") as f:
+    with open("/workspace/analysis/not_uploaded/done2") as f:
         already_done.update(eval([line.strip() for line in f.readlines()][0]))
 
 missing = set([Path(val).stem + ".jpg" for val in file_list]).difference(already_done)
