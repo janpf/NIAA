@@ -2,7 +2,7 @@ import argparse
 import sys
 from pathlib import Path
 import logging
-from typing import Tuple, Type
+from typing import Dict, List, Tuple, Type
 
 import numpy as np
 import torch
@@ -191,11 +191,22 @@ for epoch in range(config.warm_start_epoch, config.epochs):
 
         writer.add_scalar("progress/epoch", epoch + 1, g_step)
         writer.add_scalar("progress/step", i + 1, g_step)
-        writer.add_scalar("hparams/features_lr", conv_base_lr, g_step)
-        writer.add_scalar("hparams/classifier_lr", dense_lr, g_step)
-        writer.add_scalar("hparams/styles_margin", float(config.styles_margin), g_step)
-        writer.add_scalar("hparams/technical_margin", float(config.technical_margin), g_step)
-        writer.add_scalar("hparams/composition_margin", float(config.composition_margin), g_step)
+        writer.add_scalar("hparams/lr/features", conv_base_lr, g_step)
+        writer.add_scalar("hparams/lr/classifier", dense_lr, g_step)
+        writer.add_scalar("hparams/margin/styles", float(config.styles_margin), g_step)
+        writer.add_scalar("hparams/margin/technical", float(config.technical_margin), g_step)
+        writer.add_scalar("hparams/margin/composition", float(config.composition_margin), g_step)
+
+        if g_step % 100 == 0:
+            writer.add_histogram("score/styles/weight", ssmtia.styles_score.weight, g_step)
+            writer.add_histogram("score/styles/bias", ssmtia.styles_score.bias, g_step)
+
+            writer.add_histogram("score/technical/weight", ssmtia.technical_score.weight, g_step)
+            writer.add_histogram("score/technical/bias", ssmtia.technical_score.bias, g_step)
+
+            writer.add_histogram("score/composition/weight", ssmtia.composition_score.weight, g_step)
+            writer.add_histogram("score/composition/bias", ssmtia.composition_score.bias, g_step)
+
         g_step += 1
         logging.info("waiting for new batch")
 
