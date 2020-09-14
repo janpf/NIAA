@@ -29,6 +29,11 @@ spec:
               name: dshm
           command:
             - python3
+            #- -m
+            #- debugpy
+            #- --listen
+            #- 0.0.0.0:4444
+            #- --wait-for-client
             - /workspace/dataset_processing/tar_dataset.py
       volumes:
         - name: code
