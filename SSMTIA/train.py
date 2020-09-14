@@ -118,9 +118,13 @@ mseloss = torch.nn.MSELoss()
 
 
 def step(batch, batch_size: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    ranking_losses_step = []
-    change_losses_step = []
+    ranking_losses_step: Dict[str, List] = dict()
+    change_losses_step: Dict[str, List] = dict()
     perfect_losses_step = []
+
+    for distortion in ["styles", "technical", "composition"]:
+        ranking_losses_step[distortion] = []
+        change_losses_step[distortion] = []
 
     original = ssmtia(batch["original"].to(device))
     for distortion in ["styles", "technical", "composition"]:
@@ -130,7 +134,7 @@ def step(batch, batch_size: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tens
                 for change in mapping[distortion][parameter][polarity]:
                     results[change] = ssmtia(batch[change].to(device))
 
-                ranking_losses_step.append(erloss(original, x=results, polarity=polarity, score=f"{distortion}_score", margin=margin[distortion]))
+                ranking_losses_step[distortion].append(erloss(original, x=results, polarity=polarity, score=f"{distortion}_score", margin=margin[distortion]))
 
                 for change in mapping[distortion][parameter][polarity]:
                     if polarity == "pos":
@@ -140,12 +144,21 @@ def step(batch, batch_size: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tens
                     correct_matrix = torch.zeros(batch_size, len(mapping[distortion]))
                     correct_matrix[:, list(mapping[distortion].keys()).index(parameter)] = correct_value
 
-                    change_losses_step.append(mseloss(results[change][f"{distortion}_change_strength"], correct_matrix.to(device)))
+                    change_losses_step[distortion].append(mseloss(results[change][f"{distortion}_change_strength"], correct_matrix.to(device)))
 
     for distortion in ["styles", "technical", "composition"]:
         perfect_losses_step.append(ploss(original[f"{distortion}_score"]))
 
-    return sum(ranking_losses_step), sum(change_losses_step), sum(perfect_losses_step)
+    # balance losses
+    ranking_loss: torch.Tensor = 0
+    change_loss: torch.Tensor = 0
+    perfect_loss: torch.Tensor = h(sum(perfect_losses_step))
+
+    for distortion in ["styles", "technical", "composition"]:
+        ranking_loss += h(sum(ranking_losses_step[distortion]))
+        change_loss += h(sum(change_losses_step[distortion]))
+
+    return ranking_loss, change_loss, perfect_loss
 
 
 if config.warm_start:
@@ -162,22 +175,12 @@ for epoch in range(config.warm_start_epoch, config.epochs):
         # forward pass + loss calculation
         with torch.cuda.amp.autocast():
             ranking_loss_batch, change_loss_batch, perfect_loss_batch = step(data, config.train_batch_size)
+            loss: torch.Tensor = ranking_loss_batch + change_loss_batch + perfect_loss_batch
 
-            # scale losses
-            ranking_loss_batch_balanced = h(ranking_loss_batch)
-            change_loss_batch_balanced = h(change_loss_batch)
-            perfect_loss_batch_balanced = h(perfect_loss_batch)
-            loss = ranking_loss_batch_balanced + change_loss_batch_balanced + perfect_loss_batch_balanced
-
-        writer.add_scalar("loss_ranking/train", ranking_loss_batch.data, g_step)
-        writer.add_scalar("loss_change/train", change_loss_batch.data, g_step)
-        writer.add_scalar("loss_perfect/train", perfect_loss_batch.data, g_step)
-        writer.add_scalar("loss_overall/train", sum([ranking_loss_batch, change_loss_batch, perfect_loss_batch]).data[0], g_step)
-
-        writer.add_scalar("loss_scaled_ranking/train", ranking_loss_batch.data, g_step)
-        writer.add_scalar("loss_scaled_change/train", change_loss_batch.data, g_step)
-        writer.add_scalar("loss_scaled_perfect/train", perfect_loss_batch.data, g_step)
-        writer.add_scalar("loss_scaled_overall/train", loss.data, g_step)
+        writer.add_scalar("loss/train/balanced/ranking", ranking_loss_batch.data, g_step)
+        writer.add_scalar("loss/train/balanced/change", change_loss_batch.data, g_step)
+        writer.add_scalar("loss/train/balanced/perfect", perfect_loss_batch.data, g_step)
+        writer.add_scalar("loss/train/balanced/overall", loss.data, g_step)
 
         logging.info(f"Epoch: {epoch + 1}/{config.epochs} | Step: {i + 1}/{len(Pexels_train_loader)} | Training loss: {loss.data[0]}")
 

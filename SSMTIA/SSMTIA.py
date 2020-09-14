@@ -37,7 +37,7 @@ class SSMTIA(torch.nn.Module):
 
         # "self.classifiers"
         # fmt: off
-        self.style_score = torch.nn.Sequential(
+        self.styles_score = torch.nn.Sequential(
             torch.nn.Dropout(0.2),
             torch.nn.Linear(in_features=self.feature_count, out_features=1),
             torch.nn.Sigmoid())
@@ -64,7 +64,7 @@ class SSMTIA(torch.nn.Module):
             torch.nn.Tanh())
         # fmt: on
 
-        torch.nn.init.xavier_uniform(self.style_score[1].weight)
+        torch.nn.init.xavier_uniform(self.styles_score[1].weight)
         torch.nn.init.xavier_uniform(self.technical_score[1].weight)
         torch.nn.init.xavier_uniform(self.composition_score[1].weight)
 
@@ -77,7 +77,7 @@ class SSMTIA(torch.nn.Module):
         # Cannot use "squeeze" as batch-size can be 1 => must use reshape with x.shape[0]
         x = torch.nn.functional.adaptive_avg_pool2d(x, 1).reshape(x.shape[0], -1)
 
-        s_s = self.style_score(x)
+        s_s = self.styles_score(x)
         t_s = self.technical_score(x)
         c_s = self.composition_score(x)
 
