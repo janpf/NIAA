@@ -15,7 +15,7 @@ logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logg
 
 
 test_file = "/workspace/dataset_processing/test_set.txt"
-model_path = "/scratch/ckpts/SSMTIA-CP/pexels/mobilenet/epoch-8.pth"
+model_path = "/scratch/ckpts/SSMTIA-CP/pexels/mobilenet/epoch-10.pth"
 out_file = "/workspace/analysis/not_uploaded/SSMTIA_test_scores.csv"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

@@ -2,10 +2,11 @@ import argparse
 import sys
 from pathlib import Path
 import logging
-from typing import Dict, List, Tuple, Type
+from typing import Dict, List, Tuple
 
 import numpy as np
 import torch
+from torch import nn
 from torch.utils.tensorboard import SummaryWriter
 
 sys.path[0] = "/workspace"
@@ -118,7 +119,7 @@ logging.info("datasets created")
 # losses
 erloss = EfficientRankingLoss()
 ploss = PerfectLoss()
-mseloss = torch.nn.MSELoss()
+mseloss = nn.MSELoss()
 
 
 def step(batch, batch_size: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:

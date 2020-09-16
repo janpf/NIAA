@@ -72,7 +72,7 @@ class SSPexels(torch.utils.data.Dataset):
                 img = corrupt(np.array(data["original"]), severity=change, corruption_name=parameter)
                 data[technical_change] = Image.fromarray(img)
 
-        crop_original = transforms.Resize(256)(Image.open(str(Path(self.orig_dir) / self.file_list[idx])))
+        crop_original = transforms.Resize(256)(Image.open(str(Path(self.image_dir) / "original" / filename2path(self.file_list[idx]))).convert("RGB"))
         for composition_change in self.mapping["composition_changes"]:
             parameter, change = composition_change.split(";")
             change = int(change)
