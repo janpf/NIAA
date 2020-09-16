@@ -21,14 +21,5 @@
             "path": "../../../../../../scratch/stud/pfister/NIAA"
         }
     ],
-    "remoteAuthority": "ssh-remote+vingilot",
-    "settings": {
-        "python.autoComplete.extraPaths": [
-            "${workspaceFolder}"
-        ],
-        "python.pythonPath": "${workspaceFolder}/venv/bin/python",
-        "python.analysis.extraPaths": [
-            "${workspaceFolder}"
-        ],
-    }
+    "remoteAuthority": "ssh-remote+vingilot"
 }

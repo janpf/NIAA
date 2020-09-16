@@ -1,0 +1,9 @@
+{
+    "python.pythonPath": "venv/bin/python",
+    "python.autoComplete.extraPaths": [
+        "${workspaceFolder}"
+    ],
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}"
+    ]
+}
