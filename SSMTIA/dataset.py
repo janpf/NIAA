@@ -8,15 +8,16 @@ import torchvision.transforms as transforms
 from imagenet_c import corrupt
 from PIL import Image
 
+from SSMTIA import filename2path
+
 
 class SSPexels(torch.utils.data.Dataset):
-    def __init__(self, file_list_path: str, mapping, return_file_name: bool = False, orig_dir: str = "/scratch/pexels/images", edited_dir: str = "/scratch/pexels/edited_images"):
+    def __init__(self, file_list_path: str, mapping, return_file_name: bool = False, image_dir: str = "/images"):
         self.file_list_path = file_list_path
         self.mapping = mapping
 
         self.return_file_name = return_file_name
-        self.orig_dir = orig_dir
-        self.edited_dir = edited_dir
+        self.image_dir = image_dir
 
         with open(file_list_path) as f:
             file_list = f.readlines()
@@ -55,12 +56,12 @@ class SSPexels(torch.utils.data.Dataset):
 
     def _actualgetitem(self, idx):
         data = dict()
-        data["original"] = transforms.Resize(224)(Image.open(str(Path(self.orig_dir) / self.file_list[idx])).convert("RGB"))
+        data["original"] = transforms.Resize(224)(Image.open(str(Path(self.image_dir) / "original" / filename2path(self.file_list[idx]))).convert("RGB"))
 
         for style_change in self.mapping["style_changes"]:
             parameter, change = style_change.split(";")
             change = float(change) if "." in change else int(change)
-            data[style_change] = transforms.Resize(224)(Image.open(str(Path(self.edited_dir) / parameter / str(change) / self.file_list[idx])).convert("RGB"))
+            data[style_change] = transforms.Resize(224)(Image.open(str(Path(self.image_dir) / parameter / str(change) / filename2path(self.file_list[idx]))).convert("RGB"))
 
         for technical_change in self.mapping["technical_changes"]:
             parameter, change = technical_change.split(";")
