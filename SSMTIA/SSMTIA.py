@@ -57,45 +57,48 @@ class SSMTIA(nn.Module):
 
         # "self.classifiers"
         # fmt: off
-        self.styles_score = torch.nn.Sequential(
-            torch.nn.Dropout(0.2),
-            torch.nn.Linear(in_features=self.feature_count, out_features=1),
-            torch.nn.Sigmoid())
-        self.technical_score = torch.nn.Sequential(
-            torch.nn.Dropout(0.2),
-            torch.nn.Linear(in_features=self.feature_count, out_features=1),
-            torch.nn.Sigmoid())
-        self.composition_score = torch.nn.Sequential(
-            torch.nn.Dropout(0.2),
-            torch.nn.Linear(in_features=self.feature_count, out_features=1),
-            torch.nn.Sigmoid())
+        self.styles_score = nn.Sequential(
+            nn.Dropout(0.2),
+            nn.Linear(in_features=self.feature_count, out_features=1),
+            nn.Sigmoid())
+        self.technical_score = nn.Sequential(
+            nn.Dropout(0.2),
+            nn.Linear(in_features=self.feature_count, out_features=1),
+            nn.Sigmoid())
+        self.composition_score = nn.Sequential(
+            nn.Dropout(0.2),
+            nn.Linear(in_features=self.feature_count, out_features=1),
+            nn.Sigmoid())
 
-        self.style_change_strength = torch.nn.Sequential(
-            torch.nn.Dropout(0.2),
-            torch.nn.Linear(in_features=self.feature_count, out_features=len(self.mapping["styles"])),
-            torch.nn.Tanh())
-        self.technical_change_strength = torch.nn.Sequential(
-            torch.nn.Dropout(0.2),
-            torch.nn.Linear(in_features=self.feature_count, out_features=len(self.mapping["technical"])),
-            torch.nn.Sigmoid())
-        self.composition_change_strength = torch.nn.Sequential(
-            torch.nn.Dropout(0.2),
-            torch.nn.Linear(in_features=self.feature_count, out_features=len(self.mapping["composition"])),
-            torch.nn.Tanh())
+        self.style_change_strength = nn.Sequential(
+            nn.Dropout(0.2),
+            nn.Linear(in_features=self.feature_count, out_features=len(self.mapping["styles"])),
+            nn.Tanh())
+        self.technical_change_strength = nn.Sequential(
+            nn.Dropout(0.2),
+            nn.Linear(in_features=self.feature_count, out_features=len(self.mapping["technical"])),
+            nn.Sigmoid())
+        self.composition_change_strength = nn.Sequential(
+            nn.Dropout(0.2),
+            nn.Linear(in_features=self.feature_count, out_features=len(self.mapping["composition"])),
+            nn.Tanh())
         # fmt: on
 
-        torch.nn.init.xavier_uniform(self.styles_score[1].weight)
-        torch.nn.init.xavier_uniform(self.technical_score[1].weight)
-        torch.nn.init.xavier_uniform(self.composition_score[1].weight)
+        nn.init.xavier_uniform(self.styles_score[1].weight)
+        nn.init.xavier_uniform(self.technical_score[1].weight)
+        nn.init.xavier_uniform(self.composition_score[1].weight)
 
-        torch.nn.init.xavier_uniform(self.style_change_strength[1].weight)
-        torch.nn.init.xavier_uniform(self.technical_change_strength[1].weight)
-        torch.nn.init.xavier_uniform(self.composition_change_strength[1].weight)
+        nn.init.xavier_uniform(self.style_change_strength[1].weight)
+        nn.init.xavier_uniform(self.technical_change_strength[1].weight)
+        nn.init.xavier_uniform(self.composition_change_strength[1].weight)
 
     def forward(self, x: torch.Tensor):
+        if self.base_model_name == "resnext":
+            x = torch.flatten(x, 1)
+
         x = self.features(x)
         # Cannot use "squeeze" as batch-size can be 1 => must use reshape with x.shape[0]
-        x = torch.nn.functional.adaptive_avg_pool2d(x, 1).reshape(x.shape[0], -1)
+        x = nn.functional.adaptive_avg_pool2d(x, 1).reshape(x.shape[0], -1)
 
         s_s = self.styles_score(x)
         t_s = self.technical_score(x)
