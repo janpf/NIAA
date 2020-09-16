@@ -1,12 +1,14 @@
 import torch
+from torch import nn
 from torch.utils.checkpoint import checkpoint_sequential
 from torchvision.models.mobilenet import mobilenet_v2
+from torchvision.models.resnet import resnext101_32x8d
 
 
-class CheckpointModule(torch.nn.Module):
+class CheckpointModule(nn.Module):
     def __init__(self, module, num_segments=1):
         super(CheckpointModule, self).__init__()
-        assert num_segments == 1 or isinstance(module, torch.nn.Sequential)
+        assert num_segments == 1 or isinstance(module, nn.Sequential)
         self.module = module
         self.num_segments = num_segments
 
@@ -14,23 +16,41 @@ class CheckpointModule(torch.nn.Module):
         return checkpoint_sequential(self.module, self.num_segments, *inputs)
 
 
-class SSMTIA(torch.nn.Module):
+class SSMTIA(nn.Module):
     def __init__(self, base_model_name: str, mapping, pretrained: bool = True, fix_features: bool = False):
         super(SSMTIA, self).__init__()
+
+        self.base_model_name = base_model_name
 
         if base_model_name == "mobilenet":
             base_model = mobilenet_v2(pretrained=pretrained)
             self.feature_count = 1280
 
             features = base_model.features
-            if fix_features:
-                for param in features.parameters():
-                    param.requires_grad = False
 
-            self.features = CheckpointModule(module=features, num_segments=len(features))
+        elif base_model_name == "resnext":
+            base_model = resnext101_32x8d(pretrained=pretrained)
+            # fmt: off
+            features = nn.Sequential(
+                base_model.conv1,
+                base_model.bn1,
+                base_model.relu,
+                base_model.maxpool,
+                base_model.layer1,
+                base_model.layer2,
+                base_model.layer3,
+                base_model.layer4,
+                base_model.avgpool
+            )
+            # fmt: on
+            self.feature_count = 0  # TODO shape[0] or whatever
 
         else:
             raise NotImplementedError()
+
+        if fix_features:
+            for param in features.parameters():
+                param.requires_grad = False
 
         self.mapping = mapping
         self.features = CheckpointModule(module=features, num_segments=len(features))
