@@ -10,7 +10,7 @@ from torch import nn
 from torch.utils.tensorboard import SummaryWriter
 
 sys.path[0] = "/workspace"
-from SSMTIA.dataset import SSPexels
+from SSMTIA.dataset import SSPexelsNonTar as SSPexels
 from SSMTIA.losses import PerfectLoss, EfficientRankingLoss, h
 from SSMTIA.SSMTIA import SSMTIA
 from SSMTIA.utils import mapping
@@ -26,9 +26,9 @@ parser.add_argument("--composition_margin", type=float)
 parser.add_argument("--base_model", type=str)
 parser.add_argument("--lr_decay_rate", type=float, default=0.95)
 parser.add_argument("--lr_decay_freq", type=int, default=10)
-parser.add_argument("--train_batch_size", type=int, default=25)
-parser.add_argument("--val_batch_size", type=int, default=25)
-parser.add_argument("--num_workers", type=int, default=32)
+parser.add_argument("--train_batch_size", type=int, default=8)
+parser.add_argument("--val_batch_size", type=int, default=8)
+parser.add_argument("--num_workers", type=int, default=58)
 parser.add_argument("--epochs", type=int, default=100)
 parser.add_argument("--fix_features", action="store_true")
 
@@ -44,9 +44,9 @@ config = parser.parse_args()
 config.log_dir = str(Path(config.log_dir) / config.base_model)
 config.ckpt_path = str(Path(config.ckpt_path) / config.base_model)
 
-if config.fixed_features:
-    config.log_dir = str(Path(config.log_dir) / "fixed_features")
-    config.ckpt_path = str(Path(config.ckpt_path) / "fixed_features")
+if config.fix_features:
+    config.log_dir = str(Path(config.log_dir) / "fix_features")
+    config.ckpt_path = str(Path(config.ckpt_path) / "fix_features")
 
 margin = dict()
 margin["styles"] = config.styles_margin
@@ -90,7 +90,7 @@ if config.warm_start:
 optimizer = torch.optim.RMSprop(
     [
         {"params": ssmtia.features.parameters(), "lr": conv_base_lr},
-        {"params": ssmtia.style_score.parameters(), "lr": dense_lr},
+        {"params": ssmtia.styles_score.parameters(), "lr": dense_lr},
         {"params": ssmtia.technical_score.parameters(), "lr": dense_lr},
         {"params": ssmtia.composition_score.parameters(), "lr": dense_lr},
         {"params": ssmtia.style_change_strength.parameters(), "lr": dense_lr},
@@ -203,14 +203,14 @@ for epoch in range(config.warm_start_epoch, config.epochs):
         writer.add_scalar("hparams/margin/composition", float(config.composition_margin), g_step)
 
         if g_step % 100 == 0:
-            writer.add_histogram("score/styles/weight", ssmtia.styles_score.weight, g_step)
-            writer.add_histogram("score/styles/bias", ssmtia.styles_score.bias, g_step)
+            writer.add_histogram("score/styles/weight", ssmtia.styles_score[1].weight, g_step)
+            writer.add_histogram("score/styles/bias", ssmtia.styles_score[1].bias, g_step)
 
-            writer.add_histogram("score/technical/weight", ssmtia.technical_score.weight, g_step)
-            writer.add_histogram("score/technical/bias", ssmtia.technical_score.bias, g_step)
+            writer.add_histogram("score/technical/weight", ssmtia.technical_score[1].weight, g_step)
+            writer.add_histogram("score/technical/bias", ssmtia.technical_score[1].bias, g_step)
 
-            writer.add_histogram("score/composition/weight", ssmtia.composition_score.weight, g_step)
-            writer.add_histogram("score/composition/bias", ssmtia.composition_score.bias, g_step)
+            writer.add_histogram("score/composition/weight", ssmtia.composition_score[1].weight, g_step)
+            writer.add_histogram("score/composition/bias", ssmtia.composition_score[1].bias, g_step)
 
         g_step += 1
         logging.info("waiting for new batch")
@@ -222,7 +222,7 @@ for epoch in range(config.warm_start_epoch, config.epochs):
     optimizer = torch.optim.RMSprop(
         [
             {"params": ssmtia.features.parameters(), "lr": conv_base_lr},
-            {"params": ssmtia.style_score.parameters(), "lr": dense_lr},
+            {"params": ssmtia.styles_score.parameters(), "lr": dense_lr},
             {"params": ssmtia.technical_score.parameters(), "lr": dense_lr},
             {"params": ssmtia.composition_score.parameters(), "lr": dense_lr},
             {"params": ssmtia.style_change_strength.parameters(), "lr": dense_lr},
