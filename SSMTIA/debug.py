@@ -25,9 +25,9 @@ parser.add_argument("--composition_margin", type=float)
 parser.add_argument("--base_model", type=str)
 parser.add_argument("--lr_decay_rate", type=float, default=0.95)
 parser.add_argument("--lr_decay_freq", type=int, default=10)
-parser.add_argument("--train_batch_size", type=int, default=10)
-parser.add_argument("--val_batch_size", type=int, default=10)
-parser.add_argument("--num_workers", type=int, default=10)
+parser.add_argument("--train_batch_size", type=int, default=25)
+parser.add_argument("--val_batch_size", type=int, default=25)
+parser.add_argument("--num_workers", type=int, default=2)
 parser.add_argument("--epochs", type=int, default=100)
 
 # misc
@@ -57,8 +57,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 logging.info("loading model")
 ssmtia = SSMTIA(config.base_model, mapping).to(device)
-logging.info("using half precision")
-ssmtia.half()
 
 logging.info("setting learnrates")
 conv_base_lr = config.conv_base_lr
@@ -77,6 +75,7 @@ optimizer = torch.optim.RMSprop(
     momentum=0.9,
     weight_decay=0.00004,
 )
+scaler = torch.cuda.amp.GradScaler()
 
 # counting parameters
 param_num = 0
@@ -121,7 +120,7 @@ def step(batch, batch_size: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tens
                     correct_matrix = torch.zeros(batch_size, len(mapping[distortion]))
                     correct_matrix[:, list(mapping[distortion].keys()).index(parameter)] = correct_value
 
-                    change_losses_step.append(mseloss(results[change][f"{distortion}_change_strength"].float(), correct_matrix.to(device)))
+                    change_losses_step.append(mseloss(results[change][f"{distortion}_change_strength"], correct_matrix.to(device)))
 
     for distortion in ["styles", "technical", "composition"]:
         perfect_losses_step.append(ploss(original[f"{distortion}_score"]))
@@ -137,34 +136,31 @@ logging.info("start training")
 for epoch in range(config.warm_start_epoch, config.epochs):
     for i, data in enumerate(Pexels_train_loader):
         logging.info(f"batch loaded: step {i}")
-        optimizer.zero_grad()
 
-        # forward pass + loss calculation
-        ranking_loss_batch, change_loss_batch, perfect_loss_batch = step(data, config.train_batch_size)
+        optimizer.zero_grad()
+        with torch.cuda.amp.autocast():
+            ranking_loss_batch, change_loss_batch, perfect_loss_batch = step(data, config.train_batch_size)
+
+            # scale losses
+            ranking_loss_batch_balanced = h(ranking_loss_batch)
+            change_loss_batch_balanced = h(change_loss_batch)
+            perfect_loss_batch_balanced = h(perfect_loss_batch)
+            loss = ranking_loss_batch_balanced + change_loss_batch_balanced + perfect_loss_batch_balanced
+
+        # optimizing
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
 
         writer.add_scalar("loss_ranking/train", ranking_loss_batch.data, g_step)
         writer.add_scalar("loss_change/train", change_loss_batch.data, g_step)
         writer.add_scalar("loss_perfect/train", perfect_loss_batch.data, g_step)
         writer.add_scalar("loss_overall/train", sum([ranking_loss_batch, change_loss_batch, perfect_loss_batch]).data[0], g_step)
 
-        # scale losses
-        ranking_loss_batch = h(ranking_loss_batch)
-        change_loss_batch = h(change_loss_batch)
-        perfect_loss_batch = h(perfect_loss_batch)
-        loss = ranking_loss_batch + change_loss_batch + perfect_loss_batch
-
         writer.add_scalar("loss_scaled_ranking/train", ranking_loss_batch.data, g_step)
         writer.add_scalar("loss_scaled_change/train", change_loss_batch.data, g_step)
         writer.add_scalar("loss_scaled_perfect/train", perfect_loss_batch.data, g_step)
         writer.add_scalar("loss_scaled_overall/train", loss.data, g_step)
-
-        logging.info(f"Epoch: {epoch + 1}/{config.epochs} | Step: {i + 1}/{len(Pexels_train_loader)} | Training loss: {loss.data[0]}")
-
-        # optimizing
-        loss.backward()
-        ssmtia.float()  # https://stackoverflow.com/a/58622937/6388328
-        optimizer.step()
-        ssmtia.half()
 
         writer.add_scalar("progress/epoch", epoch + 1, g_step)
         writer.add_scalar("progress/step", i + 1, g_step)
@@ -173,6 +169,7 @@ for epoch in range(config.warm_start_epoch, config.epochs):
         writer.add_scalar("hparams/styles_margin", float(config.styles_margin), g_step)
         writer.add_scalar("hparams/technical_margin", float(config.technical_margin), g_step)
         writer.add_scalar("hparams/composition_margin", float(config.composition_margin), g_step)
+        logging.info(f"Epoch: {epoch + 1}/{config.epochs} | Step: {i + 1}/{len(Pexels_train_loader)} | Training loss: {loss.data[0]}")
         g_step += 1
         logging.info("waiting for new batch")
 

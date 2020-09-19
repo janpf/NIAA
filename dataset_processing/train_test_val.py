@@ -37,13 +37,38 @@ print(f"images existing (without survey): {len(all_imgs_rest)}")
 train_count = 100000
 val_count = test_count = 15000
 
-test_set = set(survey_imgs)
+if True:  # fix split
+    with open("/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/train_set.txt") as f:
+        train_set = set([line.strip() for line in f.readlines()])
 
-rest = list(all_imgs.difference(survey_imgs))
-random.shuffle(rest)
-train_set = set()
-val_set = set()
+    with open("/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/val_set.txt") as f:
+        val_set = set([line.strip() for line in f.readlines()])
 
+    with open("/home/stud/pfister/eclipse-workspace/NIAA/dataset_processing/test_set.txt") as f:
+        test_set = set([line.strip() for line in f.readlines()])
+
+    train_set = {val for val in train_set if val not in ignored}
+    val_set = {val for val in val_set if val not in ignored}
+    test_set = {val for val in test_set if val not in ignored}
+
+    rest = all_imgs - train_set
+    rest -= val_set
+    rest -= test_set
+
+    print("current:")
+    print(f"trainset:\t{len(train_set)}")
+    print(f"valset:\t\t{len(val_set)}")
+    print(f"testset:\t{len(test_set)}")
+
+else:
+    test_set = set(survey_imgs)
+
+    rest = list(all_imgs.difference(survey_imgs))
+    random.shuffle(rest)
+    train_set = set()
+    val_set = set()
+
+print("to be distributed:", len(rest))
 
 for img in rest:
     if len(train_set) < train_count:

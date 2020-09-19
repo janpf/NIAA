@@ -15,14 +15,24 @@ logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logg
 
 
 test_file = "/workspace/dataset_processing/test_set.txt"
-model_path = "/scratch/ckpts/SSMTIA-CP/pexels/mobilenet/epoch-10.pth"
-out_file = "/workspace/analysis/not_uploaded/SSMTIA_test_scores.csv"
+model_path = "/scratch/ckpts/SSMTIA-CP/pexels/mobilenet/epoch-4.pth"
+out_file = "/workspace/analysis/not_uploaded/SSMTIA_test_scores_unactivated.csv"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 logging.info("loading model")
 ssmtia = SSMTIA("mobilenet", mapping, pretrained=False).to(device)
 ssmtia.load_state_dict(torch.load(model_path))
+
+logging.info("removing last activations")
+ssmtia.style_score = ssmtia.style_score[:-1]
+ssmtia.technical_score = ssmtia.technical_score[:-1]
+ssmtia.composition_score = ssmtia.composition_score[:-1]
+
+ssmtia.style_change_strength = ssmtia.style_change_strength[:-1]
+ssmtia.technical_change_strength = ssmtia.technical_change_strength[:-1]
+ssmtia.composition_change_strength = ssmtia.composition_change_strength[:-1]
+
 logging.info("using half precision")
 ssmtia.half()
 

@@ -1,56 +1,36 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: train-mobilenet-cp-warm
+  name: tartest
 spec:
   template:
     spec:
       priorityClassName: research-med
       restartPolicy: "Never"
       containers:
-        - name: train-mobilenet-cp-warm
-          image: janpf/niaa:pytorch-latest
+        - name: tartest
+          image: janpf/niaa:flask-latest
           imagePullPolicy: "Always"
           env:
             - name: HOME
               value: "/tmp"
           resources:
             limits:
-              nvidia.com/gpu: "1"
-              cpu: "8"
-              memory: "128Gi"
+              cpu: "1"
+              memory: "2Gi"
             requests:
-              nvidia.com/gpu: "1"
-              cpu: "8"
-              memory: "128Gi"
+              cpu: "1"
+              memory: "2Gi"
           volumeMounts:
             - mountPath: /workspace
               name: code
             - mountPath: /scratch
               name: scratch
-            - mountPath: /dev/shm
-              name: dshm
+            - mountPath: /image
+              name: ratar
           command:
-            - python3
-            #- -m
-            #- debugpy
-            #- --listen
-            #- 0.0.0.0:4444
-            #- --wait-for-client
-            - /workspace/SSMTIA/train.py
-            - --styles_margin
-            - "0.1"
-            - --technical_margin
-            - "0.2"
-            - --composition_margin
-            - "0.2"
-            - --base_model
-            - mobilenet
-            - --warm_start
-            - --warm_start_epoch
-            - "4"
-            - --log_dir
-            - /scratch/train_logs/SSMTIA-CP-warm/pexels/
+            - sleep
+            - "100000"
       volumes:
         - name: code
           cephfs:
@@ -68,6 +48,12 @@ spec:
             path: "/scratch/stud/pfister/NIAA"
             secretRef:
               name: studpfister-secret
-        - name: dshm
-          emptyDir:
-            medium: Memory
+        - name: ratar
+          flexVolume:
+            driver: "janpf/ratarmount-driver"
+            readOnly: true
+            options:
+              archive: "pexels/images.tar.gz"
+              ceph_mount: "scratch"
+      nodeSelector:
+        kubernetes.io/hostname: vana

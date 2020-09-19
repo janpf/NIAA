@@ -2,9 +2,11 @@ import argparse
 import sys
 from pathlib import Path
 import logging
+from typing import Dict, List, Tuple
 
 import numpy as np
 import torch
+from torch import nn
 from torch.utils.tensorboard import SummaryWriter
 
 sys.path[0] = "/workspace"
@@ -28,18 +30,23 @@ parser.add_argument("--train_batch_size", type=int, default=25)
 parser.add_argument("--val_batch_size", type=int, default=25)
 parser.add_argument("--num_workers", type=int, default=32)
 parser.add_argument("--epochs", type=int, default=100)
+parser.add_argument("--fix_features", action="store_true")
 
 # misc
-parser.add_argument("--log_dir", type=str, default="/scratch/train_logs/SSMTIA-CP/pexels/")
-parser.add_argument("--ckpt_path", type=str, default="/scratch/ckpts/SSMTIA-CP/pexels/")
+parser.add_argument("--log_dir", type=str, default="/scratch/train_logs/SSMTIA/pexels/")
+parser.add_argument("--ckpt_path", type=str, default="/scratch/ckpts/SSMTIA/pexels/")
 parser.add_argument("--warm_start", action="store_true")
 parser.add_argument("--warm_start_epoch", type=int, default=0)
 parser.add_argument("--early_stopping_patience", type=int, default=5)
 
 config = parser.parse_args()
 
-config.log_dir = config.log_dir + config.base_model
-config.ckpt_path = config.ckpt_path + config.base_model
+config.log_dir = str(Path(config.log_dir) / config.base_model)
+config.ckpt_path = str(Path(config.ckpt_path) / config.base_model)
+
+if config.fixed_features:
+    config.log_dir = str(Path(config.log_dir) / "fixed_features")
+    config.ckpt_path = str(Path(config.ckpt_path) / "fixed_features")
 
 margin = dict()
 margin["styles"] = config.styles_margin
@@ -57,9 +64,7 @@ writer = SummaryWriter(log_dir=config.log_dir)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 logging.info("loading model")
-ssmtia = SSMTIA(config.base_model, mapping).to(device)
-logging.info("using half precision")
-ssmtia.half()
+ssmtia = SSMTIA(config.base_model, mapping, fix_features=config.fix_features).to(device)
 
 # loading checkpoints, ... or not
 if config.warm_start:
@@ -95,6 +100,7 @@ optimizer = torch.optim.RMSprop(
     momentum=0.9,
     weight_decay=0.00004,
 )
+scaler = torch.cuda.amp.GradScaler()
 
 # counting parameters
 param_num = 0
@@ -113,13 +119,17 @@ logging.info("datasets created")
 # losses
 erloss = EfficientRankingLoss()
 ploss = PerfectLoss()
-mseloss = torch.nn.MSELoss()
+mseloss = nn.MSELoss()
 
 
-def step(batch, batch_size: int) -> (torch.Tensor, torch.Tensor, torch.Tensor):
-    ranking_losses_step = []
-    change_losses_step = []
+def step(batch, batch_size: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ranking_losses_step: Dict[str, List] = dict()
+    change_losses_step: Dict[str, List] = dict()
     perfect_losses_step = []
+
+    for distortion in ["styles", "technical", "composition"]:
+        ranking_losses_step[distortion] = []
+        change_losses_step[distortion] = []
 
     original = ssmtia(batch["original"].to(device))
     for distortion in ["styles", "technical", "composition"]:
@@ -129,7 +139,7 @@ def step(batch, batch_size: int) -> (torch.Tensor, torch.Tensor, torch.Tensor):
                 for change in mapping[distortion][parameter][polarity]:
                     results[change] = ssmtia(batch[change].to(device))
 
-                ranking_losses_step.append(erloss(original, x=results, polarity=polarity, score=f"{distortion}_score", margin=margin[distortion]))
+                ranking_losses_step[distortion].append(erloss(original, x=results, polarity=polarity, score=f"{distortion}_score", margin=margin[distortion]))
 
                 for change in mapping[distortion][parameter][polarity]:
                     if polarity == "pos":
@@ -139,12 +149,21 @@ def step(batch, batch_size: int) -> (torch.Tensor, torch.Tensor, torch.Tensor):
                     correct_matrix = torch.zeros(batch_size, len(mapping[distortion]))
                     correct_matrix[:, list(mapping[distortion].keys()).index(parameter)] = correct_value
 
-                    change_losses_step.append(mseloss(results[change][f"{distortion}_change_strength"].float(), correct_matrix.to(device)))
+                    change_losses_step[distortion].append(mseloss(results[change][f"{distortion}_change_strength"], correct_matrix.to(device)))
 
     for distortion in ["styles", "technical", "composition"]:
         perfect_losses_step.append(ploss(original[f"{distortion}_score"]))
 
-    return sum(ranking_losses_step), sum(change_losses_step), sum(perfect_losses_step)
+    # balance losses
+    ranking_loss: torch.Tensor = 0
+    change_loss: torch.Tensor = 0
+    perfect_loss: torch.Tensor = h(sum(perfect_losses_step))
+
+    for distortion in ["styles", "technical", "composition"]:
+        ranking_loss += h(sum(ranking_losses_step[distortion]))
+        change_loss += h(sum(change_losses_step[distortion]))
+
+    return ranking_loss, change_loss, perfect_loss
 
 
 if config.warm_start:
@@ -156,42 +175,43 @@ logging.info("start training")
 for epoch in range(config.warm_start_epoch, config.epochs):
     for i, data in enumerate(Pexels_train_loader):
         logging.info(f"batch loaded: step {i}")
+
         optimizer.zero_grad()
-
         # forward pass + loss calculation
-        ranking_loss_batch, change_loss_batch, perfect_loss_batch = step(data, config.train_batch_size)
+        with torch.cuda.amp.autocast():
+            ranking_loss_batch, change_loss_batch, perfect_loss_batch = step(data, config.train_batch_size)
+            loss: torch.Tensor = ranking_loss_batch + change_loss_batch + perfect_loss_batch
 
-        writer.add_scalar("loss_ranking/train", ranking_loss_batch.data, g_step)
-        writer.add_scalar("loss_change/train", change_loss_batch.data, g_step)
-        writer.add_scalar("loss_perfect/train", perfect_loss_batch.data, g_step)
-        writer.add_scalar("loss_overall/train", sum([ranking_loss_batch, change_loss_batch, perfect_loss_batch]).data[0], g_step)
-
-        # scale losses
-        ranking_loss_batch = h(ranking_loss_batch)
-        change_loss_batch = h(change_loss_batch)
-        perfect_loss_batch = h(perfect_loss_batch)
-        loss = ranking_loss_batch + change_loss_batch + perfect_loss_batch
-
-        writer.add_scalar("loss_scaled_ranking/train", ranking_loss_batch.data, g_step)
-        writer.add_scalar("loss_scaled_change/train", change_loss_batch.data, g_step)
-        writer.add_scalar("loss_scaled_perfect/train", perfect_loss_batch.data, g_step)
-        writer.add_scalar("loss_scaled_overall/train", loss.data, g_step)
+        writer.add_scalar("loss/train/balanced/ranking", ranking_loss_batch.data, g_step)
+        writer.add_scalar("loss/train/balanced/change", change_loss_batch.data, g_step)
+        writer.add_scalar("loss/train/balanced/perfect", perfect_loss_batch.data, g_step)
+        writer.add_scalar("loss/train/balanced/overall", loss.data, g_step)
 
         logging.info(f"Epoch: {epoch + 1}/{config.epochs} | Step: {i + 1}/{len(Pexels_train_loader)} | Training loss: {loss.data[0]}")
 
         # optimizing
-        loss.backward()
-        ssmtia.float()  # https://stackoverflow.com/a/58622937/6388328
-        optimizer.step()
-        ssmtia.half()
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
 
         writer.add_scalar("progress/epoch", epoch + 1, g_step)
         writer.add_scalar("progress/step", i + 1, g_step)
-        writer.add_scalar("hparams/features_lr", conv_base_lr, g_step)
-        writer.add_scalar("hparams/classifier_lr", dense_lr, g_step)
-        writer.add_scalar("hparams/styles_margin", float(config.styles_margin), g_step)
-        writer.add_scalar("hparams/technical_margin", float(config.technical_margin), g_step)
-        writer.add_scalar("hparams/composition_margin", float(config.composition_margin), g_step)
+        writer.add_scalar("hparams/lr/features", conv_base_lr, g_step)
+        writer.add_scalar("hparams/lr/classifier", dense_lr, g_step)
+        writer.add_scalar("hparams/margin/styles", float(config.styles_margin), g_step)
+        writer.add_scalar("hparams/margin/technical", float(config.technical_margin), g_step)
+        writer.add_scalar("hparams/margin/composition", float(config.composition_margin), g_step)
+
+        if g_step % 100 == 0:
+            writer.add_histogram("score/styles/weight", ssmtia.styles_score.weight, g_step)
+            writer.add_histogram("score/styles/bias", ssmtia.styles_score.bias, g_step)
+
+            writer.add_histogram("score/technical/weight", ssmtia.technical_score.weight, g_step)
+            writer.add_histogram("score/technical/bias", ssmtia.technical_score.bias, g_step)
+
+            writer.add_histogram("score/composition/weight", ssmtia.composition_score.weight, g_step)
+            writer.add_histogram("score/composition/bias", ssmtia.composition_score.bias, g_step)
+
         g_step += 1
         logging.info("waiting for new batch")
 

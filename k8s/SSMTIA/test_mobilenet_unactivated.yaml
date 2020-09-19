@@ -1,14 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: train-mobilenet-cp
+  name: test-mobilenet-unactivated
 spec:
   template:
     spec:
       priorityClassName: research-med
       restartPolicy: "Never"
       containers:
-        - name: train-mobilenet-cp
+        - name: test-mobilenet-unactivated
           image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
@@ -17,11 +17,11 @@ spec:
           resources:
             limits:
               nvidia.com/gpu: "1"
-              cpu: "8"
+              cpu: "16"
               memory: "128Gi"
             requests:
               nvidia.com/gpu: "1"
-              cpu: "8"
+              cpu: "16"
               memory: "128Gi"
           volumeMounts:
             - mountPath: /workspace
@@ -32,20 +32,12 @@ spec:
               name: dshm
           command:
             - python3
-            #- -m
-            #- debugpy
-            #- --listen
-            #- 0.0.0.0:4444
-            #- --wait-for-client
-            - /workspace/SSMTIA/train.py
-            - --styles_margin
-            - "0.1"
-            - --technical_margin
-            - "0.2"
-            - --composition_margin
-            - "0.2"
-            - --base_model
-            - mobilenet
+            # - -m
+            # - debugpy
+            # - --listen
+            # - 0.0.0.0:4444
+            # - --wait-for-client
+            - /workspace/SSMTIA/get_unactivated.py
       volumes:
         - name: code
           cephfs:

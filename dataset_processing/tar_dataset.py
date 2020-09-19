@@ -8,7 +8,6 @@ from pathlib import Path
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
-from torchvision.transforms.transforms import ToPILImage
 
 sys.path[0] = "."
 
@@ -16,8 +15,7 @@ from SSMTIA.utils import filename2path, mapping
 
 
 class SSPexels(Dataset):
-    def __init__(self, file_list_path: str, mapping, return_file_name: bool = False, orig_dir: str = "/scratch/pexels/images", edited_dir: str = "/scratch/pexels/edited_images"):
-        self.file_list_path = file_list_path
+    def __init__(self, file_list: str, mapping, return_file_name: bool = False, orig_dir: str = "/scratch/pexels/images", edited_dir: str = "/scratch/pexels/edited_images"):
         self.mapping = mapping
 
         self.return_file_name = return_file_name
@@ -26,19 +24,16 @@ class SSPexels(Dataset):
 
         self.img_size = 256
 
-        with open(file_list_path) as f:  # TODO all
-            file_list = f.readlines()
-
-        self.file_list = [line.strip() for line in file_list]
+        self.file_list = file_list
 
     def __len__(self) -> int:
         return len(self.file_list)
 
     def __getitem__(self, idx):
         try:
-            print("broken:", idx, self.file_list[idx])
             return self._actualgetitem(idx)
         except:
+            logging.info(f"broken:\t{idx}\t{self.file_list[idx]}")
             return self[random.randint(0, len(self))]
 
     def _actualgetitem(self, idx):
@@ -62,8 +57,8 @@ class SSPexels(Dataset):
 logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
 
 file_list_file = "/workspace/dataset_processing/train_set.txt"
-out_tar = "/scratch/pexels/images.tar"
-
+out_tar = "/scratch/pexels/images.tar.gz"
+patch_tar = "/scratch/pexels/images-patch2.tar"
 
 with open(file_list_file) as f:
     file_list = [line.strip() for line in f.readlines()]
@@ -74,18 +69,39 @@ with open("/workspace/dataset_processing/val_set.txt") as f:
 with open("/workspace/dataset_processing/test_set.txt") as f:
     file_list.extend([line.strip() for line in f.readlines()])
 
-dataset = SSPexels(file_list_path=file_list_file, mapping=mapping, return_file_name=True)
-dataload = DataLoader(dataset, batch_size=1, shuffle=False, drop_last=False, num_workers=50)
-
-out_tar = tarfile.open(out_tar, "w:gz", bufsize=1024 * 1000)
+logging.info(f"files: {len(file_list)}")
+logging.info(f"files unique: {len(set(file_list))}")
 
 already_done = set()
+if False:
+    out_tar = tarfile.open(out_tar, "r", bufsize=1024 * 1000)
 
+    for i, f in enumerate(out_tar):
+        if i % 1000000 == 0:
+            logging.info(f"done: {i}")
+        already_done.add(Path(f.name).stem + ".jpg")
+
+    out_tar.close()
+else:
+    with open("/workspace/analysis/not_uploaded/done2") as f:
+        already_done.update(eval([line.strip() for line in f.readlines()][0]))
+
+missing = set([Path(val).stem + ".jpg" for val in file_list]).difference(already_done)
+logging.info(f"missing: {len(missing)}")
+
+file_list = [val for val in file_list if Path(val).stem + ".jpg" in missing]
+logging.info(f"creating now: {len(file_list)}")
+
+dataset = SSPexels(file_list=file_list, mapping=mapping, return_file_name=True)
+dataload = DataLoader(dataset, batch_size=1, shuffle=False, drop_last=False, num_workers=50)
+
+patch_tar = tarfile.open(patch_tar, "w", bufsize=1024 * 1000)
+
+logging.info("appending new files")
 toPIL = transforms.ToPILImage()
-for data in dataload:
+for i, data in enumerate(dataload):
     file_name = data["file_name"][0]
     file_name = Path(file_name).stem + ".jpg"
-
     if file_name in already_done:
         continue
     else:
@@ -110,6 +126,10 @@ for data in dataload:
             info = tarfile.TarInfo(name=path_in_tar)
             info.size = buffer.tell()
             buffer.seek(0)
-            out_tar.addfile(tarinfo=info, fileobj=buffer)
+            patch_tar.addfile(tarinfo=info, fileobj=buffer)
 
-    logging.info("waiting for new file")
+    if i % 100 == 0:
+        logging.info(f"already done: {len(already_done)}")
+
+
+print(already_done)

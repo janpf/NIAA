@@ -56,14 +56,14 @@ for distortion in ["styles", "technical", "composition"]:
 
 mapping["all_changes"] = ["original"]
 
-mapping["style_changes"] = []
+mapping["styles_changes"] = []
 mapping["technical_changes"] = []
 mapping["composition_changes"] = []
 
 for _, v in mapping["styles"].items():
     for _, polarity in v.items():
         mapping["all_changes"].extend(polarity)
-        mapping["style_changes"].extend(polarity)
+        mapping["styles_changes"].extend(polarity)
 
 for _, v in mapping["technical"].items():
     for _, polarity in v.items():
