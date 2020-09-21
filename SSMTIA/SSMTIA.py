@@ -93,12 +93,14 @@ class SSMTIA(nn.Module):
         nn.init.xavier_uniform(self.composition_change_strength[1].weight)
 
     def forward(self, x: torch.Tensor):
+        x = self.features(x)
+
         if self.base_model_name == "resnext":
             x = torch.flatten(x, 1)
 
-        x = self.features(x)
-        # Cannot use "squeeze" as batch-size can be 1 => must use reshape with x.shape[0]
-        x = nn.functional.adaptive_avg_pool2d(x, 1).reshape(x.shape[0], -1)
+        if self.base_model_name == "mobilenet":
+            # Cannot use "squeeze" as batch-size can be 1 => must use reshape with x.shape[0]
+            x = nn.functional.adaptive_avg_pool2d(x, 1).reshape(x.shape[0], -1)
 
         s_s = self.styles_score(x)
         t_s = self.technical_score(x)
