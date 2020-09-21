@@ -28,7 +28,7 @@ parser.add_argument("--lr_decay_rate", type=float, default=0.95)
 parser.add_argument("--lr_decay_freq", type=int, default=10)
 parser.add_argument("--train_batch_size", type=int, default=8)
 parser.add_argument("--val_batch_size", type=int, default=8)
-parser.add_argument("--num_workers", type=int, default=58)
+parser.add_argument("--num_workers", type=int, default=48)
 parser.add_argument("--epochs", type=int, default=100)
 parser.add_argument("--fix_features", action="store_true")
 

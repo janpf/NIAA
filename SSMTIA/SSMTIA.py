@@ -43,7 +43,7 @@ class SSMTIA(nn.Module):
                 base_model.avgpool
             )
             # fmt: on
-            self.feature_count = 0  # TODO shape[0] or whatever
+            self.feature_count = 2048
 
         else:
             raise NotImplementedError()
