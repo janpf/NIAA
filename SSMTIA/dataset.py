@@ -279,7 +279,7 @@ class SSPexelsNonTar(torch.utils.data.Dataset):
 
 
 class SSPexelsDummy(torch.utils.data.Dataset):
-    def __init__(self, file_list_path: str, mapping):
+    def __init__(self, file_list_path: str, mapping, return_file_name: bool = False):
         self.file_list_path = file_list_path
         self.mapping = mapping
 
