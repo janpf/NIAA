@@ -5,6 +5,10 @@
             "path": ".."
         },
         {
+            "name": "relatedNets",
+            "path": "../../relatedNets"
+        },
+        {
             "name": "Masterarbeit",
             "path": "../../Masterarbeit"
         },
