@@ -1,14 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: train-mobilenet-classifier
+  name: train-mobilenet-classifier-completely
 spec:
   template:
     spec:
       priorityClassName: research-med
       restartPolicy: "Never"
       containers:
-        - name: train-mobilenet-classifier
+        - name: train-mobilenet-classifier-completely
           image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
@@ -44,9 +44,12 @@ spec:
             - "0.2"
             - --composition_margin
             - "0.2"
+            - --dense_lr
+            - "0.00001"
             - --base_model
             - mobilenet
-            - --fix_features
+            - --train_from
+            - /scratch/ckpts/SSMTIA/pexels/mobilenet/fix_features/epoch-3.pth
       volumes:
         - name: code
           cephfs:

@@ -24,6 +24,7 @@ parser.add_argument("--styles_margin", type=float)
 parser.add_argument("--technical_margin", type=float)
 parser.add_argument("--composition_margin", type=float)
 parser.add_argument("--base_model", type=str)
+parser.add_argument("--train_from", type=str)
 parser.add_argument("--lr_decay_rate", type=float, default=0.95)
 parser.add_argument("--lr_decay_freq", type=int, default=10)
 parser.add_argument("--train_batch_size", type=int, default=8)
@@ -47,7 +48,9 @@ config.ckpt_path = str(Path(config.ckpt_path) / config.base_model)
 if config.fix_features:
     config.log_dir = str(Path(config.log_dir) / "fix_features")
     config.ckpt_path = str(Path(config.ckpt_path) / "fix_features")
-
+else:
+    config.log_dir = str(Path(config.log_dir) / "completely")
+    config.ckpt_path = str(Path(config.ckpt_path) / "completely")
 margin = dict()
 margin["styles"] = config.styles_margin
 margin["technical"] = config.technical_margin
@@ -67,11 +70,16 @@ logging.info("loading model")
 ssmtia = SSMTIA(config.base_model, mapping, fix_features=config.fix_features).to(device)
 
 # loading checkpoints, ... or not
-if config.warm_start:
+if config.warm_start:  # FIXME off by one error?
     logging.info("loading checkpoint")
     # Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
     ssmtia.load_state_dict(torch.load(str(Path(config.ckpt_path) / f"epoch-{config.warm_start_epoch}.pth")))
     logging.info(f"Successfully loaded model epoch-{config.warm_start_epoch}.pth")
+
+elif config.train_from.strip():
+    logging.info("loading from")
+    ssmtia.load_state_dict(torch.load(config.train_from))
+
 else:
     logging.info("starting cold")
     if Path(config.ckpt_path).exists():
