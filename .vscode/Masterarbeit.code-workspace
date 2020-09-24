@@ -25,5 +25,8 @@
             "path": "../../../../../../scratch/stud/pfister/NIAA"
         }
     ],
-    "remoteAuthority": "ssh-remote+vingilot"
+    "remoteAuthority": "ssh-remote+vingilot",
+    "settings": {
+        "python.pythonPath": "venv/bin/python"
+    }
 }
