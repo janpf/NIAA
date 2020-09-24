@@ -1,38 +1,49 @@
 FROM tensorflow/tensorflow:latest
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        build-essential \
-        cmake \
-        git \
-        wget \
-        libatlas-base-dev \
-        libboost-all-dev \
-        libgflags-dev \
-        libgoogle-glog-dev \
-        libhdf5-serial-dev \
-        libleveldb-dev \
-        liblmdb-dev \
-        libopencv-dev \
-        libprotobuf-dev \
-        libsnappy-dev \
-        protobuf-compiler \
-        python-dev \
-        python-numpy \
-        python-pip \
-        python-setuptools \
-        python-scipy && \
-    rm -rf /var/lib/apt/lists/*
-
+ENV DEBIAN_FRONTEND=noninteractive
 ENV CAFFE_ROOT=/opt/caffe
-WORKDIR $CAFFE_ROOT
-
 ENV CLONE_TAG=1.0
 
-RUN git clone -b ${CLONE_TAG} --depth 1 https://github.com/BVLC/caffe.git . && \
-    pip install --upgrade pip && \
-    cd python && for req in $(cat requirements.txt) pydot; do pip install $req; done && cd .. && \
-    git clone https://github.com/NVIDIA/nccl.git && cd nccl && make -j install && cd .. && rm -rf nccl && \
-    mkdir build && cd build && \
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    debhelper \
+    devscripts \
+    fakeroot \
+    git \
+    wget \
+    libatlas-base-dev \
+    libboost-all-dev \
+    libgflags-dev \
+    libgoogle-glog-dev \
+    libhdf5-serial-dev \
+    libleveldb-dev \
+    liblmdb-dev \
+    libopencv-dev \
+    libprotobuf-dev \
+    libsnappy-dev \
+    protobuf-compiler \
+    python-dev \
+    python-numpy \
+    python-pip \
+    python-setuptools \
+    python-scipy &&
+RUN rm -rf /var/lib/apt/lists/*
+RUN pip install --upgrade pip
+
+
+WORKDIR $CAFFE_ROOT
+
+RUN git clone -b ${CLONE_TAG} --depth 1 https://github.com/BVLC/caffe.git .
+RUN cd python && for req in $(cat requirements.txt) pydot; do pip install $req; done
+
+RUN git clone --depth 1 https://github.com/NVIDIA/nccl.git
+RUN cd nccl && make -j install
+RUN rm -rf nccl
+
+RUN mkdir build
+RUN cd build && \
     cmake -DUSE_CUDNN=1 -DUSE_NCCL=1 .. && \
     make -j"$(nproc)"
 
