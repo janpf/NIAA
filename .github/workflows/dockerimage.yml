@@ -37,3 +37,19 @@ jobs:
 
       - name: docker push
         run: docker push janpf/niaa:flask-latest
+
+  build_related_works:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: docker login
+        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+      - name: checkout project
+        uses: actions/checkout@v2
+
+      - name: build flask image
+        run: docker build . --file related_works.dockerfile --tag janpf/niaa:related-works-latest
+
+      - name: docker push
+        run: docker push janpf/niaa:related-works-latest
