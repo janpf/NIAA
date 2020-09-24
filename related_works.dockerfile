@@ -28,7 +28,7 @@ RUN apt-get install -y --no-install-recommends \
     python-numpy \
     python-pip \
     python-setuptools \
-    python-scipy &&
+    python-scipy
 RUN rm -rf /var/lib/apt/lists/*
 RUN pip install --upgrade pip
 
