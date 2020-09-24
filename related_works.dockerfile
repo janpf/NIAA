@@ -1,5 +1,100 @@
-FROM ufoym/deepo:latest
+# taken from here https://raw.githubusercontent.com/ufoym/deepo/master/docker/Dockerfile.all-py36-cu102
 
-RUN pip install tensorpack
+# ==================================================================
+# module list
+# ------------------------------------------------------------------
+# python        3.6    (apt)
+# tensorflow    latest (pip)
+# caffe         latest (git)
+# ==================================================================
 
-WORKDIR /workspace
+FROM nvidia/cuda:10.2-cudnn7-devel-ubuntu18.04
+ENV LANG C.UTF-8
+RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
+    PIP_INSTALL="python -m pip --no-cache-dir install --upgrade" && \
+    GIT_CLONE="git clone --depth 10" && \
+
+    rm -rf /var/lib/apt/lists/* \
+           /etc/apt/sources.list.d/cuda.list \
+           /etc/apt/sources.list.d/nvidia-ml.list && \
+
+    apt-get update
+
+# ==================================================================
+# tools
+# ------------------------------------------------------------------
+
+RUN DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
+        build-essential \
+        apt-utils \
+        ca-certificates \
+        wget \
+        git \
+        vim \
+        libssl-dev \
+        curl \
+        unzip \
+        unrar \
+        && \
+
+    $GIT_CLONE https://github.com/Kitware/CMake ~/cmake && \
+    cd ~/cmake && \
+    ./bootstrap && \
+    make -j"$(nproc)" install
+
+# ==================================================================
+# python
+# ------------------------------------------------------------------
+
+RUN DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
+        software-properties-common \
+        && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
+        python3.6 \
+        python3.6-dev \
+        python3-distutils-extra \
+        && \
+    wget -O ~/get-pip.py \
+        https://bootstrap.pypa.io/get-pip.py && \
+    python3.6 ~/get-pip.py && \
+    ln -s /usr/bin/python3.6 /usr/local/bin/python3 && \
+    ln -s /usr/bin/python3.6 /usr/local/bin/python && \
+    $PIP_INSTALL \
+        setuptools \
+        && \
+    $PIP_INSTALL \
+        numpy \
+        scipy \
+        pandas \
+        cloudpickle \
+        scikit-image>=0.14.2 \
+        scikit-learn \
+        matplotlib \
+        Cython \
+        tqdm
+
+# ==================================================================
+# tensorflow
+# ------------------------------------------------------------------
+
+RUN $PIP_INSTALL \
+        tensorflow-gpu
+
+# ==================================================================
+# caffe
+# ------------------------------------------------------------------
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
+        caffe-cuda
+
+# ==================================================================
+# config & cleanup
+# ------------------------------------------------------------------
+
+RUN ldconfig && \
+    apt-get clean && \
+    apt-get autoremove && \
+    rm -rf /var/lib/apt/lists/* /tmp/* ~/*
