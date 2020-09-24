@@ -1,4 +1,4 @@
-FROM bvlc/caffe:gpu
+FROM tensorflow/tensorflow:latest
 
 COPY ./requirements-pytorch.txt /workspace/
 WORKDIR /workspace
