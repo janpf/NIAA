@@ -20,6 +20,10 @@
                 {
                     "localRoot": "/home/stud/pfister/eclipse-workspace/NIAA", // You may also manually specify the directory containing your source code.
                     "remoteRoot": "/workspace"
+                },
+                {
+                    "localRoot": "/home/stud/pfister/eclipse-workspace/relatedNets", // You may also manually specify the directory containing your source code.
+                    "remoteRoot": "/relatedNets"
                 }
             ],
             "port": 4444, // Set to the remote port.

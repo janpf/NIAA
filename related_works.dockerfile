@@ -1,4 +1,4 @@
-FROM ufoym/deepo:latest
+FROM bvlc/caffe:gpu
 
 COPY ./requirements-pytorch.txt /workspace/
 WORKDIR /workspace
