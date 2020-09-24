@@ -113,4 +113,5 @@ for m in models_to_validate:
 
     loss = sum(losses).data
     df = df.append({"path": m, "loss": loss}, ignore_index=True)
+    df = df.sort_values(by=["path"])
     df.to_csv(out_file, index=False)
