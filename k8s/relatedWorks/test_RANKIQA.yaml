@@ -8,7 +8,7 @@ spec:
       restartPolicy: "Never"
       containers:
         - name: test-rankiqa
-          image: janpf/niaa:related-works-latest
+          image: janpf/niaa:caffe-latest
           imagePullPolicy: "Always"
           env:
             - name: HOME
