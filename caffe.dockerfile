@@ -1,6 +1,5 @@
-FROM bvlc/caffe:gpu
+FROM mapler/caffe-py3:gpu
 
-# caffe image is horribly outdated
 RUN apt-get update && apt-get dist-upgrade -y
 RUN pip install --upgrade pip
 
