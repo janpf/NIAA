@@ -8,7 +8,7 @@ spec:
       restartPolicy: "Never"
       containers:
         - name: test-rankiqa
-          image: janpf/niaa:pytorch-latest
+          image: janpf/niaa:related-works-latest
           imagePullPolicy: "Always"
           env:
             - name: HOME
@@ -26,7 +26,7 @@ spec:
             - mountPath: /workspace
               name: code
             - mountPath: /relatedNets
-              name: relatedWorks
+              name: relatedworks
             - mountPath: /scratch
               name: scratch
             - mountPath: /dev/shm
@@ -56,7 +56,7 @@ spec:
             path: "/scratch/stud/pfister/NIAA"
             secretRef:
               name: studpfister-secret
-        - name: relatedWorks
+        - name: relatedworks
           cephfs:
             monitors:
               - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
