@@ -32,6 +32,9 @@ SSPexels_test = SSPexels(file_list_path=test_file, mapping=mapping, return_file_
 Pexels_test = torch.utils.data.DataLoader(SSPexels_test, batch_size=25, drop_last=False, num_workers=16)
 logging.info("datasets created")
 
+exit()
+# FIXME model.eval
+
 out_file = open(out_file, "w")
 out_file.write("img;parameter;change;scores\n")
 

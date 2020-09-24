@@ -111,6 +111,6 @@ for m in models_to_validate:
         with torch.no_grad():
             losses.append(sum(step(data, batch_size)))
 
-    loss = sum(losses)
+    loss = sum(losses).data
     df = df.append({"path": m, "loss": loss}, ignore_index=True)
     df.to_csv(out_file, index=False)

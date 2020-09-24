@@ -48,8 +48,8 @@ jobs:
       - name: checkout project
         uses: actions/checkout@v2
 
-      - name: build flask image
-        run: docker build . --file related_works.dockerfile --tag janpf/niaa:related-works-latest
+      - name: build image
+        run: docker build . --file ./related_works.dockerfile --tag janpf/niaa:related-works-latest
 
       - name: docker push
         run: docker push janpf/niaa:related-works-latest
