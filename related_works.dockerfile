@@ -1,2 +1,2 @@
 FROM ufoym/deepo:latest
-RUN pip install tensorpack
+RUN pip install -r requirements-pytorch.txt
