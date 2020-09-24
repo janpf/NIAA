@@ -1,14 +1,13 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: train-pexels-cold-0-51
+  name: test-rankiqa
 spec:
   template:
     spec:
-      priorityClassName: research-low
       restartPolicy: "Never"
       containers:
-        - name: train-pexels-cold-0-51
+        - name: test-rankiqa
           image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
@@ -18,14 +17,16 @@ spec:
             limits:
               nvidia.com/gpu: "1"
               cpu: "4"
-              memory: "24Gi"
+              memory: "64Gi"
             requests:
               nvidia.com/gpu: "1"
               cpu: "4"
-              memory: "24Gi"
+              memory: "64Gi"
           volumeMounts:
             - mountPath: /workspace
               name: code
+            - mountPath: /relatedNets
+              name: relatedWorks
             - mountPath: /scratch
               name: scratch
             - mountPath: /dev/shm
@@ -37,11 +38,7 @@ spec:
             # - --listen
             # - 0.0.0.0:4444
             # - --wait-for-client
-            - /workspace/model/train_pexels.py
-            - --margin
-            - "0.0274"
-            - --dir_name
-            - cold/m0.51
+            - /relatedNets/RankIQA/src/eval/test.py
       volumes:
         - name: code
           cephfs:
@@ -57,6 +54,14 @@ spec:
               - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
             user: studpfister
             path: "/scratch/stud/pfister/NIAA"
+            secretRef:
+              name: studpfister-secret
+        - name: relatedWorks
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studpfister
+            path: "/home/stud/pfister/eclipse-workspace/relatedNets"
             secretRef:
               name: studpfister-secret
         - name: dshm
