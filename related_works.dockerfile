@@ -1,10 +1,11 @@
-# taken from here https://raw.githubusercontent.com/ufoym/deepo/master/docker/Dockerfile.all-py36-cu102
+# created with https://github.com/ufoym/deepo
 
 # ==================================================================
 # module list
 # ------------------------------------------------------------------
 # python        3.6    (apt)
 # tensorflow    latest (pip)
+# opencv        4.4.0  (git)
 # caffe         latest (git)
 # ==================================================================
 
@@ -18,13 +19,13 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
            /etc/apt/sources.list.d/cuda.list \
            /etc/apt/sources.list.d/nvidia-ml.list && \
 
-    apt-get update
+    apt-get update && \
 
 # ==================================================================
 # tools
 # ------------------------------------------------------------------
 
-RUN DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
+    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
         build-essential \
         apt-utils \
         ca-certificates \
@@ -40,13 +41,13 @@ RUN DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
     $GIT_CLONE https://github.com/Kitware/CMake ~/cmake && \
     cd ~/cmake && \
     ./bootstrap && \
-    make -j"$(nproc)" install
+    make -j"$(nproc)" install && \
 
 # ==================================================================
 # python
 # ------------------------------------------------------------------
 
-RUN DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
+    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
         software-properties-common \
         && \
     add-apt-repository ppa:deadsnakes/ppa && \
@@ -73,28 +74,69 @@ RUN DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
         scikit-learn \
         matplotlib \
         Cython \
-        tqdm
+        tqdm \
+        && \
+
+# ==================================================================
+# boost
+# ------------------------------------------------------------------
+
+    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
+        libboost-all-dev \
+        && \
 
 # ==================================================================
 # tensorflow
 # ------------------------------------------------------------------
 
-RUN $PIP_INSTALL \
-        tensorflow-gpu
+    $PIP_INSTALL \
+        tensorflow-gpu \
+        && \
+
+# ==================================================================
+# opencv
+# ------------------------------------------------------------------
+
+    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
+        libatlas-base-dev \
+        libgflags-dev \
+        libgoogle-glog-dev \
+        libhdf5-serial-dev \
+        libleveldb-dev \
+        liblmdb-dev \
+        libprotobuf-dev \
+        libsnappy-dev \
+        protobuf-compiler \
+        && \
+
+    $GIT_CLONE --branch 4.4.0 https://github.com/opencv/opencv ~/opencv && \
+    mkdir -p ~/opencv/build && cd ~/opencv/build && \
+    cmake -D CMAKE_BUILD_TYPE=RELEASE \
+          -D CMAKE_INSTALL_PREFIX=/usr/local \
+          -D WITH_IPP=OFF \
+          -D WITH_CUDA=OFF \
+          -D WITH_OPENCL=OFF \
+          -D BUILD_TESTS=OFF \
+          -D BUILD_PERF_TESTS=OFF \
+          -D BUILD_DOCS=OFF \
+          -D BUILD_EXAMPLES=OFF \
+          .. && \
+    make -j"$(nproc)" install && \
+    ln -s /usr/local/include/opencv4/opencv2 /usr/local/include/opencv2 && \
 
 # ==================================================================
 # caffe
 # ------------------------------------------------------------------
 
-RUN apt-get update && \
+    apt-get update && \
     DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
-        caffe-cuda
-
+        caffe-cuda \
+        && \
 # ==================================================================
 # config & cleanup
 # ------------------------------------------------------------------
 
-RUN ldconfig && \
+    ldconfig && \
     apt-get clean && \
     apt-get autoremove && \
     rm -rf /var/lib/apt/lists/* /tmp/* ~/*
