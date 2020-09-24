@@ -1,6 +1,7 @@
 FROM mapler/caffe-py3:gpu
 
 RUN apt-get update && apt-get dist-upgrade -y
+RUN apt-get install -y libgtk2.0-dev libmagickwand-dev libgl1-mesa-glx
 RUN pip3 install --upgrade pip
 
 WORKDIR /workspace
