@@ -8,7 +8,7 @@ from scipy import stats
 
 sys.path.insert(0, ".")
 
-from SSMTIA.utils import mapping
+from SSMTIA.utils import mapping, parameter_range
 
 
 def histogram_distortion(distortion: str, score: str):
@@ -22,9 +22,11 @@ def histogram_distortion(distortion: str, score: str):
     plt.clf()
 
 
-def violin_distortion(distortion: str, score: str):  # FIXME defaults for shadows, hightlights...
+def violin_distortion(distortion: str, score: str):
     plt.clf()
     plot_frame = df[(df["parameter"] == distortion) | (df["parameter"] == "original")]
+    if distortion in parameter_range:
+        plot_frame.loc[plot_frame["parameter"] == "original", "change"] = parameter_range[distortion]["default"]
     sns.violinplot(data=plot_frame, x="change", y=score, color="steelblue")  # TODO colors for scores
     plt.savefig(f"analysis/SSMTIA/mobilenet/viol_{distortion}_{score}.png")
     plt.clf()
