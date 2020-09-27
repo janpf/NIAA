@@ -8,7 +8,7 @@ from scipy import stats
 
 sys.path.insert(0, ".")
 
-from SSMTIA.utils import mapping
+from SSMTIA.utils import mapping, parameter_range
 
 
 def histogram_distortion(distortion: str):
@@ -22,12 +22,25 @@ def histogram_distortion(distortion: str):
     plt.clf()
 
 
-def violin_distortion(distortion: str):  # FIXME defaults for shadows, hightlights...
+def violin_distortion(distortion: str):
     plt.clf()
     plot_frame = df[(df["parameter"] == distortion) | (df["parameter"] == "original")]
+    if distortion in parameter_range:
+        plot_frame.loc[plot_frame["parameter"] == "original", "change"] = parameter_range[distortion]["default"]
     sns.violinplot(data=plot_frame, x="change", y="score", color="steelblue")
     plt.savefig(f"analysis/NIMA/viol_{distortion}.png")
     plt.clf()
+
+
+def violin_changes_original(distortion: str):
+    original_frame = df[df["parameter"] == "original"]
+    results = []
+    df_index = list(original_frame.columns).index(f"{distortion}_change_strength")
+    for index, row in original_frame.iterrows():
+        for i, k in enumerate(mapping[distortion].keys()):
+            results.append({"distortion": distortion, "change_predict": k, "change_strength": row[df_index][i]})
+    results = (pd.DataFrame([val], columns=val.keys()) for val in results)
+    sns.violinplot(data=pd.concat(results, ignore_index=True), x="change_predict", y="change_strength", color="steelblue")
 
 
 df = pd.read_csv("analysis/not_uploaded/NIMA_test_dist.csv", sep=";")
