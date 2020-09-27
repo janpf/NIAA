@@ -38,7 +38,6 @@ parser.add_argument("--log_dir", type=str, default="/scratch/train_logs/SSMTIA/p
 parser.add_argument("--ckpt_path", type=str, default="/scratch/ckpts/SSMTIA/pexels/")
 parser.add_argument("--warm_start", action="store_true")
 parser.add_argument("--warm_start_epoch", type=int, default=0)
-parser.add_argument("--early_stopping_patience", type=int, default=5)
 
 config = parser.parse_args()
 
@@ -70,7 +69,7 @@ logging.info("loading model")
 ssmtia = SSMTIA(config.base_model, mapping, fix_features=config.fix_features).to(device)
 
 # loading checkpoints, ... or not
-if config.warm_start:  # FIXME off by one error?
+if config.warm_start:
     logging.info("loading checkpoint")
     # Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
     ssmtia.load_state_dict(torch.load(str(Path(config.ckpt_path) / f"epoch-{config.warm_start_epoch}.pth")))
