@@ -1,0 +1,71 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: train-resnext-classifier
+spec:
+  template:
+    spec:
+      priorityClassName: research-med
+      restartPolicy: "Never"
+      containers:
+        - name: train-resnext-classifier
+          image: janpf/niaa:pytorch-latest
+          imagePullPolicy: "Always"
+          env:
+            - name: HOME
+              value: "/tmp"
+          resources:
+            limits:
+              nvidia.com/gpu: "1"
+              cpu: "16"
+              memory: "128Gi"
+            requests:
+              nvidia.com/gpu: "1"
+              cpu: "16"
+              memory: "128Gi"
+          volumeMounts:
+            - mountPath: /workspace
+              name: code
+            - mountPath: /scratch
+              name: scratch
+            - mountPath: /dev/shm
+              name: dshm
+          command:
+            - python3
+            #- -m
+            #- debugpy
+            #- --listen
+            #- 0.0.0.0:4444
+            #- --wait-for-client
+            - /workspace/SSMTIA/train.py
+            - --styles_margin
+            - "0.1"
+            - --technical_margin
+            - "0.2"
+            - --composition_margin
+            - "0.2"
+            - --base_model
+            - resnext
+            - --fix_features
+            - --warm_start
+            - --warm_start_epoch=3
+      volumes:
+        - name: code
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studpfister
+            path: "/home/stud/pfister/eclipse-workspace/NIAA"
+            secretRef:
+              name: studpfister-secret
+        - name: scratch
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studpfister
+            path: "/scratch/stud/pfister/NIAA"
+            secretRef:
+              name: studpfister-secret
+        - name: dshm
+          emptyDir:
+            medium: Memory
