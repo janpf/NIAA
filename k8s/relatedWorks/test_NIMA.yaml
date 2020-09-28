@@ -36,7 +36,7 @@ spec:
             # - --listen
             # - 0.0.0.0:4444
             # - --wait-for-client
-            - /workspace/NIMA/test_NIMA.py
+            - /workspace/relatedWorks/test_NIMA.py
       volumes:
         - name: code
           cephfs:
