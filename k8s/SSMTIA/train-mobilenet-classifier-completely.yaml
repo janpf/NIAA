@@ -44,12 +44,20 @@ spec:
             - "0.2"
             - --composition_margin
             - "0.2"
-            - --dense_lr
-            - "0.00001"
             - --base_model
             - mobilenet
             - --train_from
             - /scratch/ckpts/SSMTIA/pexels/mobilenet/fix_features/epoch-3.pth
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - osse
+                      - uinen
       volumes:
         - name: code
           cephfs:
