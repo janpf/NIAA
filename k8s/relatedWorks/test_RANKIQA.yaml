@@ -8,7 +8,7 @@ spec:
       restartPolicy: "Never"
       containers:
         - name: test-rankiqa
-          image: janpf/niaa:caffe-latest
+          image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
             - name: HOME
@@ -38,7 +38,17 @@ spec:
             # - --listen
             # - 0.0.0.0:4444
             # - --wait-for-client
-            - /relatedNets/RankIQA/src/eval/test.py
+            - /workspace/relatedWorks/test_RANKIQA.py
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - osse
+                      - uinen
       volumes:
         - name: code
           cephfs:
