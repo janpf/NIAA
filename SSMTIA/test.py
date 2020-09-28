@@ -1,12 +1,11 @@
-import sys
 import logging
-
+import sys
+from pathlib import Path
 
 import torch
 
-
 sys.path[0] = "/workspace"
-from SSMTIA.dataset import SSPexels
+from SSMTIA.dataset import SSPexelsNonTar as SSPexels
 from SSMTIA.SSMTIA import SSMTIA
 from SSMTIA.utils import mapping
 
@@ -15,16 +14,18 @@ logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logg
 
 
 test_file = "/workspace/dataset_processing/test_set.txt"
-model_path = "/scratch/ckpts/SSMTIA-CP/pexels/mobilenet/epoch-10.pth"
-out_file = "/workspace/analysis/not_uploaded/SSMTIA_test_scores.csv"
+model_path = "/scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-7.pth"
+
+base_model = Path(model_path).parts[-3]
+
+out_file = f"/workspace/analysis/not_uploaded/SSMTIA_{base_model}_test_scores.csv"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 logging.info("loading model")
-ssmtia = SSMTIA("mobilenet", mapping, pretrained=False).to(device)
+ssmtia = SSMTIA(base_model, mapping, pretrained=False).to(device)
 ssmtia.load_state_dict(torch.load(model_path))
-logging.info("using half precision")
-ssmtia.half()
+ssmtia.eval()
 
 logging.info("creating datasets")
 # datasets
@@ -32,8 +33,6 @@ SSPexels_test = SSPexels(file_list_path=test_file, mapping=mapping, return_file_
 Pexels_test = torch.utils.data.DataLoader(SSPexels_test, batch_size=25, drop_last=False, num_workers=16)
 logging.info("datasets created")
 
-exit()
-# FIXME model.eval
 
 out_file = open(out_file, "w")
 out_file.write("img;parameter;change;scores\n")

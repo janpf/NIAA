@@ -1,14 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: test-mobilenet
+  name: test
 spec:
   template:
     spec:
       priorityClassName: research-med
       restartPolicy: "Never"
       containers:
-        - name: test-mobilenet
+        - name: test
           image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
