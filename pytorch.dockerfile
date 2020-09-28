@@ -1,7 +1,7 @@
 FROM pytorch/pytorch:latest
 
 RUN apt-get update
-RUN apt-get install -y libgtk2.0-dev libmagickwand-dev libgl1-mesa-glx
+RUN apt-get install -y libgtk2.0-dev libmagickwand-dev libgl1-mesa-glx protobuf-compiler
 
 COPY ./requirements-pytorch.txt /workspace/
 WORKDIR /workspace
