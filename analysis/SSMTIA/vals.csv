@@ -1,4 +1,5 @@
 path,loss
+/scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-1.pth,30288.9258
 /scratch/ckpts/SSMTIA/pexels/mobilenet/completely_small/epoch-1.pth,30404.2754
 /scratch/ckpts/SSMTIA/pexels/mobilenet/completely_small/epoch-10.pth,29760.0625
 /scratch/ckpts/SSMTIA/pexels/mobilenet/completely_small/epoch-11.pth,29805.2793
@@ -17,7 +18,7 @@ path,loss
 /scratch/ckpts/SSMTIA/pexels/mobilenet/fix_features/epoch-11.pth,30338.7988
 /scratch/ckpts/SSMTIA/pexels/mobilenet/fix_features/epoch-2.pth,30194.5371
 /scratch/ckpts/SSMTIA/pexels/mobilenet/fix_features/epoch-3.pth,30180.9102
-/scratch/ckpts/SSMTIA/pexels/mobilenet/fix_features/epoch-4.pth,30199.4570
+/scratch/ckpts/SSMTIA/pexels/mobilenet/fix_features/epoch-4.pth,30199.457
 /scratch/ckpts/SSMTIA/pexels/mobilenet/fix_features/epoch-5.pth,30221.1406
 /scratch/ckpts/SSMTIA/pexels/mobilenet/fix_features/epoch-6.pth,30211.2383
 /scratch/ckpts/SSMTIA/pexels/mobilenet/fix_features/epoch-7.pth,30258.2109
@@ -26,3 +27,4 @@ path,loss
 /scratch/ckpts/SSMTIA/pexels/resnext/fix_features/epoch-1.pth,30003.2988
 /scratch/ckpts/SSMTIA/pexels/resnext/fix_features/epoch-2.pth,30039.9629
 /scratch/ckpts/SSMTIA/pexels/resnext/fix_features/epoch-3.pth,30034.3477
+/scratch/ckpts/SSMTIA/pexels/resnext/fix_features/epoch-4.pth,30061.0195
