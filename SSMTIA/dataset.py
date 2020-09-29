@@ -311,7 +311,7 @@ class SSPexelsDummy(torch.utils.data.Dataset):
 
 
 class Unsplash(torch.utils.data.Dataset):
-    def __init__(self, directory: str):
+    def __init__(self, directory: str = "/home/stud/pfister/scratch/NIAA/unsplash"):
         self.directory = directory
 
         self.photos = pd.read_csv(f"{directory}/photos.tsv000", sep="\t")
@@ -323,5 +323,22 @@ class Unsplash(torch.utils.data.Dataset):
         data = dict()
         data["photo_id"] = self.photos.iloc(idx)["photos_id"]
         data["img"] = Image.open(self.directory + "/" + data["photo_id"])
+
+        return data
+
+
+class TID2013(torch.utils.data.Dataset):
+    def __init__(self, directory: str = "/home/stud/pfister/scratch/NIAA/tid2013"):
+        self.directory = directory
+
+        self.photos = [img for img in Path(directory).iterdir() if ".bmp" in str(img).lower()]
+
+    def __len__(self) -> int:
+        return len(self.photos)
+
+    def __getitem__(self, idx):
+        data = dict()
+        data["photo"] = self.photos[idx]
+        data["img"] = Image.open(self.photos[idx])
 
         return data
