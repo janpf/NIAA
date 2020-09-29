@@ -19,9 +19,10 @@ from edit_image import parameter_range
 
 
 class SSPexels(torch.utils.data.Dataset):
-    def __init__(self, file_list_path: str, mapping, orig_dir: str = "/scratch/pexels/images", edited_dir: str = "/scratch/pexels/edited_images"):
+    def __init__(self, file_list_path: str, mapping, normalize: bool = True, orig_dir: str = "/scratch/pexels/images", edited_dir: str = "/scratch/pexels/edited_images"):
         self.file_list_path = file_list_path
         self.mapping = mapping
+        self.normalize = normalize
 
         self.orig_dir = orig_dir
         self.edited_dir = edited_dir
@@ -44,13 +45,6 @@ class SSPexels(torch.utils.data.Dataset):
 
     def __len__(self) -> int:
         return len(self.file_list)
-
-    #    def __getitem__(self, idx):
-    #        try:
-    #            logging.debug(self.file_list[idx])
-    #            return self._actualgetitem(idx)
-    #        except:
-    #            return self[random.randint(0, len(self))]
 
     def __getitem__(self, idx):
         return self._actualgetitem(idx)
@@ -137,7 +131,12 @@ class SSPexels(torch.utils.data.Dataset):
 
         for k in data.keys():
             data[k] = transforms.CenterCrop(224)(data[k])
-            data[k] = transforms.ToTensor()(data[k])
-
+            if self.normalize:
+                data[k] = transforms.ToTensor()(data[k])
+            else:
+                data[k] = np.array(data[k])
+                data[k] = np.moveaxis(data[k], -1, 0)
+                data[k] = torch.from_numpy(data[k])
+                data[k] = data[k].float()
         data["file_name"] = self.file_list[idx]
         return data

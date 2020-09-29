@@ -23,7 +23,7 @@ model = model.to(device)
 model.eval()
 
 logging.info("creating dataloader")
-dataset = SSPexels(file_list_path=test_file, mapping=mapping)
+dataset = SSPexels(file_list_path=test_file, mapping=mapping, normalize=False)
 batch_loader = torch.utils.data.DataLoader(dataset, batch_size=30, drop_last=False, num_workers=8)
 
 out_file = open(out_file, "w")
@@ -38,10 +38,10 @@ for i, data in enumerate(batch_loader):
 
         img = data[key].to(device)
         with torch.no_grad():
-            out = model(img)
+            out = model(img)["fc8"]
         for p, s in zip(data["file_name"], out):
             if key == "original":
                 key = "original;0"
-            out_file.write(f"{p};{key};{s}\n")
+            out_file.write(f"{p};{key};{s.tolist()[0]}\n")
 
 out_file.close()
