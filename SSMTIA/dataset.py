@@ -3,6 +3,7 @@ from pathlib import Path
 import random
 
 import numpy as np
+import pandas as pd
 import torch
 import torchvision.transforms as transforms
 from imagenet_c import corrupt
@@ -305,5 +306,39 @@ class SSPexelsDummy(torch.utils.data.Dataset):
         data = dict()
         for item in items:
             data[item] = torch.rand(3, 224, 224)
+
+        return data
+
+
+class Unsplash(torch.utils.data.Dataset):
+    def __init__(self, directory: str = "/home/stud/pfister/scratch/NIAA/unsplash"):
+        self.directory = directory
+
+        self.photos = pd.read_csv(f"{directory}/photos.tsv000", sep="\t")
+
+    def __len__(self) -> int:
+        return len(self.photos)
+
+    def __getitem__(self, idx):
+        data = dict()
+        data["photo_id"] = self.photos.iloc(idx)["photos_id"]
+        data["img"] = Image.open(self.directory + "/" + data["photo_id"])
+
+        return data
+
+
+class TID2013(torch.utils.data.Dataset):
+    def __init__(self, directory: str = "/home/stud/pfister/scratch/NIAA/tid2013"):
+        self.directory = directory
+
+        self.photos = [img for img in Path(directory).iterdir() if ".bmp" in str(img).lower()]
+
+    def __len__(self) -> int:
+        return len(self.photos)
+
+    def __getitem__(self, idx):
+        data = dict()
+        data["photo"] = self.photos[idx]
+        data["img"] = Image.open(self.photos[idx])
 
         return data
