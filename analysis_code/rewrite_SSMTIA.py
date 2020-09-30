@@ -1,5 +1,6 @@
-import pandas as pd
 import sys
+
+import pandas as pd
 
 sys.path.insert(0, ".")
 from SSMTIA.utils import mapping
@@ -24,10 +25,12 @@ for chunk in pd.read_csv(file, sep=";", chunksize=10000):
     for dist_i, distortion in enumerate(["styles", "technical", "composition"]):
         df_index = list(chunk.columns).index(f"{distortion}_change_strength")
         for param_i, parameter in enumerate(mapping[distortion]):
-            chunk[f"{parameter}_degree"] = chunk[f"{distortion}_change_strength"].apply(lambda row: row[param_i])
+            chunk[parameter] = chunk[f"{distortion}_change_strength"].apply(lambda row: row[param_i])
         chunk = chunk.drop(columns=[f"{distortion}_change_strength"])
 
     chunks.append(chunk)
 df = pd.concat(chunks)
-print(df.columns)
-df.to_csv("analysis/not_uploaded/SSMTIA_mobilenet_test_scores_parsed.csv")
+del chunks
+df = df.melt(id_vars=["img", "parameter", "change", "styles_score", "technical_score", "composition_score"], var_name="pred_change", value_name="pred_change_degree")
+
+df.to_csv("analysis/not_uploaded/SSMTIA_mobilenet_test_scores_parsed.csv", index=False)
