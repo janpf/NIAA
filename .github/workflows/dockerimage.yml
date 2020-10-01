@@ -37,6 +37,7 @@ jobs:
 
       - name: docker push
         run: docker push janpf/niaa:flask-latest
+
   build_tensorflow:
     runs-on: ubuntu-latest
 
