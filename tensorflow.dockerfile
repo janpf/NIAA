@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:1.2.1-gpu-py3
+FROM tensorflow/tensorflow:latest-gpu
 
 COPY ./requirements-tensorflow.txt /workspace/
 WORKDIR /workspace

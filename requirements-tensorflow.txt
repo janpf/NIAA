@@ -4,4 +4,5 @@ opencv-python
 pandas
 Pillow
 tensorboard
-tensorpack==0.6
+torch
+torchvision
