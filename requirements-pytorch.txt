@@ -2,7 +2,7 @@ captum
 debugpy
 imagenet-c
 numpy
-#opencv-python-headless
+opencv-python-headless
 pandas
 Pillow
 redis
