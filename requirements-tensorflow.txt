@@ -3,7 +3,5 @@ numpy
 opencv-python-headless
 pandas
 Pillow
-scikit-image
-scikit-learn
 tensorboard
 tensorpack==0.6
