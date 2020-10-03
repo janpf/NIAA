@@ -1,5 +1,6 @@
 debugpy
 imagenet-c
+jinja2
 numpy
 opencv-python-headless
 pandas
