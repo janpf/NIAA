@@ -1,19 +1,11 @@
-captum
 debugpy
 imagenet-c
+jinja2
 numpy
 opencv-python-headless
 pandas
 Pillow
-redis
 scikit-image
 tensorboard
 torch
 torchvision
-
-# temporary:
-#imageai
-#tensorflow<2
-#keras<2.4.0
-#opencv-python
-#requests

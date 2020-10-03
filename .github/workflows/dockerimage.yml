@@ -37,3 +37,19 @@ jobs:
 
       - name: docker push
         run: docker push janpf/niaa:flask-latest
+
+  build_tensorflow:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: docker login
+        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+      - name: checkout project
+        uses: actions/checkout@v2
+
+      - name: build tensorflow image
+        run: docker build . --file tensorflow.dockerfile --tag janpf/niaa:tensorflow-latest
+
+      - name: docker push
+        run: docker push janpf/niaa:tensorflow-latest
