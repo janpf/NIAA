@@ -1,6 +1,7 @@
 debugpy
+imagenet-c
 numpy
-opencv-python
+opencv-python-headless
 pandas
 Pillow
 tensorboard
