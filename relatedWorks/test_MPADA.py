@@ -28,9 +28,7 @@ logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logg
 
 sess = tf1.InteractiveSession()
 
-with tf.device("/gpu:0"):
-    imported = tf1.saved_model.load(sess, [tf.saved_model.tag_constants.SERVING], "./resaved/test")
-    # FIXME dropout
+imported = tf1.saved_model.load(sess, [tf1.saved_model.tag_constants.SERVING], "/relatedNets/MPADA/resaved/test")
 
 logging.info("successfully loaded model")
 
@@ -38,8 +36,8 @@ x = tf1.get_default_graph().get_tensor_by_name("input_2:0")  # dunno why "_2", b
 y = tf1.get_default_graph().get_tensor_by_name("softmax-logits:0")
 
 logging.info("creating dataloader")
-dataset = SSPexels(file_list_path=test_file, mapping=mapping, normalize=False)
-batch_loader = torch.utils.data.DataLoader(dataset, batch_size=1, drop_last=False, num_workers=1)
+dataset = SSPexels(file_list_path=test_file, mapping=mapping, normalize=False, moveAxis=False)
+batch_loader = torch.utils.data.DataLoader(dataset, batch_size=30, drop_last=False, num_workers=8)
 
 out_file = open(out_file, "w")
 out_file.write("img;parameter;change;scores\n")
@@ -53,12 +51,10 @@ for i, data in enumerate(batch_loader):
             continue
 
         img: np.ndarray = data[key].numpy()
-        out = list(sess.run(y, feed_dict={x: img})[0])
-
+        out = sess.run(y, feed_dict={x: img})
         for p, s in zip(data["file_name"], out):
             if key == "original":
                 key = "original;0"
-            out_file.write(f"{p};{key};{s.tolist()[0]}\n")
-            out_file.flush()
+            out_file.write(f"{p};{key};{list(s)}\n")
 
 out_file.close()
