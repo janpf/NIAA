@@ -4,6 +4,7 @@ numpy
 opencv-python-headless
 pandas
 Pillow
+scikit-image
 tensorboard
 torch
 torchvision
