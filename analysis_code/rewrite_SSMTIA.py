@@ -33,4 +33,4 @@ df = pd.concat(chunks)
 # del chunks
 # df = df.melt(id_vars=["img", "parameter", "change", "styles_score", "technical_score", "composition_score"], var_name="pred_change", value_name="pred_change_degree")
 
-df.to_csv("analysis/not_uploaded/SSMTIA_mobilenet_test_scores_parsed.csv", index=False)
+df.to_csv("analysis/not_uploaded/parsed/SSMTIA_mobilenet_test_scores.csv", index=False)
