@@ -37,7 +37,7 @@ y = tf1.get_default_graph().get_tensor_by_name("softmax-logits:0")
 
 logging.info("creating dataloader")
 dataset = SSPexels(file_list_path=test_file, mapping=mapping, normalize=False, moveAxis=False)
-batch_loader = torch.utils.data.DataLoader(dataset, batch_size=30, drop_last=False, num_workers=8)
+batch_loader = torch.utils.data.DataLoader(dataset, batch_size=15, drop_last=False, num_workers=8)
 
 out_file = open(out_file, "w")
 out_file.write("img;parameter;change;scores\n")
