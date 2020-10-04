@@ -1,0 +1,57 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ssmtia-test-rank
+spec:
+  template:
+    spec:
+      restartPolicy: "Never"
+      containers:
+        - name: ssmtia-test-rank
+          image: janpf/niaa:flask-latest
+          imagePullPolicy: "Always"
+          env:
+            - name: HOME
+              value: "/tmp"
+          resources:
+            limits:
+              cpu: "2"
+              memory: "8Gi"
+            requests:
+              cpu: "2"
+              memory: "8Gi"
+          volumeMounts:
+            - mountPath: /workspace
+              name: code
+            - mountPath: /scratch
+              name: scratch
+          command:
+            - python
+            - /workspace/analysis_code/SSMTIA_rank.py
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - osse
+                      - uinen
+      volumes:
+        - name: code
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studpfister
+            path: "/home/stud/pfister/eclipse-workspace/NIAA"
+            secretRef:
+              name: studpfister-secret
+        - name: scratch
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studpfister
+            path: "/scratch/stud/pfister/NIAA/pexels"
+            secretRef:
+              name: studpfister-secret

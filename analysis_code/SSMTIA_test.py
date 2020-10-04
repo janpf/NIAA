@@ -18,7 +18,7 @@ def histogram_distortion(distortion: str, score: str):
         parameter, change = change.split(";")
         sns.distplot(df[(df["parameter"] == parameter) & (df["change"] == float(change))][score], label=f"{parameter}: {change}")
     plt.legend()
-    plt.savefig(f"analysis/SSMTIA/mobilenet/hist_{distortion}_{score}.png")
+    plt.savefig(f"/workspace/analysis/SSMTIA/mobilenet/hist_{distortion}_{score}.png")
     plt.clf()
 
 
@@ -28,7 +28,7 @@ def violin_distortion(distortion: str, score: str):
     if distortion in parameter_range:
         plot_frame.loc[plot_frame["parameter"] == "original", "change"] = parameter_range[distortion]["default"]
     sns.violinplot(data=plot_frame, x="change", y=score, color="steelblue")  # TODO colors for scores
-    plt.savefig(f"analysis/SSMTIA/mobilenet/viol_{distortion}_{score}.png")
+    plt.savefig(f"/workspace/analysis/SSMTIA/mobilenet/viol_{distortion}_{score}.png")
     plt.clf()
 
 

@@ -11,6 +11,7 @@ out_file = open("/workspace/analysis/SSMTIA/spearman.txt", "w")
 df = pd.read_csv("/workspace/analysis/not_uploaded/parsed/SSMTIA_mobilenet_test_scores.csv")
 
 df["score"] = (df["styles_score"] + df["technical_score"] + df["composition_score"]) / 3
+df = df[["img", "parameter", "change", "score"]]
 
 
 def calculate_spearman(distortion: str, polarity: str, img_names=df["img"].unique()):
@@ -54,6 +55,7 @@ for distortion in list(mapping["styles"].keys()) + list(mapping["technical"].key
         out_file.write(f"{distortion},pos,{calculate_spearman(distortion=distortion, polarity='pos')}\n")
     except:
         out_file.write(f"{distortion},pos, didnt work")
+    out_file.flush()
     try:
         out_file.write(f"{distortion},neg,{calculate_spearman(distortion=distortion, polarity='neg')}\n")
     except:

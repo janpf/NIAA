@@ -6,11 +6,9 @@ import math
 sys.path.insert(0, ".")
 from SSMTIA.utils import mapping, parameter_range
 
-out_file = open("/workspace/analysis/NIMA/spearman.txt", "w")
+out_file = open("/workspace/analysis/RANKIQA/spearman.txt", "w")
 
-df = pd.read_csv("/workspace/analysis/not_uploaded/NIMA_test_dist.csv", sep=";")
-df["dist"] = df["dist"].apply(eval)
-df["score"] = df["dist"].apply(lambda row: sum([row[i] * (i + 1) for i in range(len(row))]))
+df = pd.read_csv("/workspace/analysis/not_uploaded/RANKIQA_test_scores.csv", sep=";")
 
 
 def calculate_spearman(distortion: str, polarity: str, img_names=df["img"].unique()):
