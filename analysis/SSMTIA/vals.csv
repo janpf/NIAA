@@ -1,9 +1,14 @@
 path,loss
 /scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-1.pth,30288.9258
-/scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-2.pth,"tensor([30263.6719], device='cuda:0')"
-/scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-3.pth,"tensor([30116.2305], device='cuda:0')"
-/scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-4.pth,"tensor([29987.9805], device='cuda:0')"
-/scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-5.pth,"tensor([29990.9668], device='cuda:0')"
+/scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-10.pth,29923.9512
+/scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-2.pth,30263.6719
+/scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-3.pth,30116.2305
+/scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-4.pth,29987.9805
+/scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-5.pth,29990.9668
+/scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-6.pth,29848.2070
+/scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-7.pth,29979.2305
+/scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-8.pth,30116.2832
+/scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-9.pth,29635.4141
 /scratch/ckpts/SSMTIA/pexels/mobilenet/completely_small/epoch-1.pth,30404.2754
 /scratch/ckpts/SSMTIA/pexels/mobilenet/completely_small/epoch-10.pth,29760.0625
 /scratch/ckpts/SSMTIA/pexels/mobilenet/completely_small/epoch-11.pth,29805.2793
@@ -22,16 +27,17 @@ path,loss
 /scratch/ckpts/SSMTIA/pexels/mobilenet/fix_features/epoch-11.pth,30338.7988
 /scratch/ckpts/SSMTIA/pexels/mobilenet/fix_features/epoch-2.pth,30194.5371
 /scratch/ckpts/SSMTIA/pexels/mobilenet/fix_features/epoch-3.pth,30180.9102
-/scratch/ckpts/SSMTIA/pexels/mobilenet/fix_features/epoch-4.pth,30199.457000000002
+/scratch/ckpts/SSMTIA/pexels/mobilenet/fix_features/epoch-4.pth,30199.4570
 /scratch/ckpts/SSMTIA/pexels/mobilenet/fix_features/epoch-5.pth,30221.1406
 /scratch/ckpts/SSMTIA/pexels/mobilenet/fix_features/epoch-6.pth,30211.2383
 /scratch/ckpts/SSMTIA/pexels/mobilenet/fix_features/epoch-7.pth,30258.2109
 /scratch/ckpts/SSMTIA/pexels/mobilenet/fix_features/epoch-8.pth,30195.2402
 /scratch/ckpts/SSMTIA/pexels/mobilenet/fix_features/epoch-9.pth,30223.7168
+/scratch/ckpts/SSMTIA/pexels/resnext/completely/epoch-1.pth,30154.2344
 /scratch/ckpts/SSMTIA/pexels/resnext/fix_features/epoch-1.pth,30003.2988
 /scratch/ckpts/SSMTIA/pexels/resnext/fix_features/epoch-2.pth,30039.9629
 /scratch/ckpts/SSMTIA/pexels/resnext/fix_features/epoch-3.pth,30034.3477
 /scratch/ckpts/SSMTIA/pexels/resnext/fix_features/epoch-4.pth,30061.0195
-/scratch/ckpts/SSMTIA/pexels/resnext/fix_features/epoch-5.pth,"tensor([30209.3555], device='cuda:0')"
-/scratch/ckpts/SSMTIA/pexels/resnext/fix_features/epoch-6.pth,"tensor([30202.3379], device='cuda:0')"
-/scratch/ckpts/SSMTIA/pexels/resnext/fix_features/epoch-7.pth,"tensor([29997.0684], device='cuda:0')"
+/scratch/ckpts/SSMTIA/pexels/resnext/fix_features/epoch-5.pth,30209.3555
+/scratch/ckpts/SSMTIA/pexels/resnext/fix_features/epoch-6.pth,30202.3379
+/scratch/ckpts/SSMTIA/pexels/resnext/fix_features/epoch-7.pth,29997.0684

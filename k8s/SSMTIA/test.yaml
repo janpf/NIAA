@@ -1,14 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: test
+  name: test-ssmtia
 spec:
   template:
     spec:
       priorityClassName: research-med
       restartPolicy: "Never"
       containers:
-        - name: test
+        - name: test-ssmtia
           image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
@@ -38,6 +38,16 @@ spec:
             # - 0.0.0.0:4444
             # - --wait-for-client
             - /workspace/SSMTIA/test.py
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - osse
+                      - uinen
       volumes:
         - name: code
           cephfs:

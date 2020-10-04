@@ -14,7 +14,7 @@ logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logg
 
 
 test_file = "/workspace/dataset_processing/test_set.txt"
-model_path = "/scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-7.pth"
+model_path = "/scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-9.pth"
 
 base_model = Path(model_path).parts[-3]
 
