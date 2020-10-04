@@ -51,12 +51,12 @@ for distortion in list(mapping["styles"].keys()) + list(mapping["technical"].key
     try:
         out_file.write(f"{distortion},pos,{calculate_spearman(distortion=distortion, polarity='pos')}\n")
     except:
-        out_file.write(f"{distortion},pos, didnt work")
+        out_file.write(f"{distortion},pos, didnt work\n")
     out_file.flush()
     try:
         out_file.write(f"{distortion},neg,{calculate_spearman(distortion=distortion, polarity='neg')}\n")
     except:
-        out_file.write(f"{distortion},neg, didnt work")
+        out_file.write(f"{distortion},neg, didnt work\n")
     out_file.flush()
 
 out_file.close()
