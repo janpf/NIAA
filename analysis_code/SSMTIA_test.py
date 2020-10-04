@@ -34,7 +34,7 @@ def violin_distortion(distortion: str, score: str):
 
 chunks = []
 
-for chunk in pd.read_csv("analysis/not_uploaded/SSMTIA_test_scores.csv", sep=";", chunksize=100000):
+for chunk in pd.read_csv("/workspace/analysis/not_uploaded/parsed/SSMTIA_test_scores.csv", sep=";", chunksize=100000):
     chunk["scores"] = chunk["scores"].apply(eval)
 
     chunk["styles_score"] = chunk["scores"].apply(lambda row: row["styles_score"][0]).astype("float16")
@@ -50,22 +50,25 @@ for chunk in pd.read_csv("analysis/not_uploaded/SSMTIA_test_scores.csv", sep=";"
 df = pd.concat(chunks)
 del chunks
 
+avg_scores = df[["parameter", "change", "score", "styles_score", "technical_score", "composition_score"]].groupby(["parameter", "change"]).mean().reset_index()
+avg_scores.to_csv("/workspace/analysis/SSMTIA/avg_scores.csv", index=False)
+
 sns.distplot(df["styles_score"], label="overall")
 sns.distplot(df[df["parameter"] == "original"]["styles_score"], label="original")
 plt.legend()
-plt.savefig("analysis/SSMTIA/mobilenet/original_styles.png")
+plt.savefig("/workspace/analysis/SSMTIA/mobilenet/original_styles.png")
 plt.clf()
 
 sns.distplot(df["technical_score"], label="overall")
 sns.distplot(df[df["parameter"] == "original"]["technical_score"], label="original")
 plt.legend()
-plt.savefig("analysis/SSMTIA/mobilenet/original_technical.png")
+plt.savefig("/workspace/analysis/SSMTIA/mobilenet/original_technical.png")
 plt.clf()
 
 sns.distplot(df["composition_score"], label="overall")
 sns.distplot(df[df["parameter"] == "original"]["composition_score"], label="original")
 plt.legend()
-plt.savefig("analysis/SSMTIA/mobilenet/original_composition.png")
+plt.savefig("/workspace/analysis/SSMTIA/mobilenet/original_composition.png")
 plt.clf()
 
 for dist_type in ["styles", "technical", "composition"]:
