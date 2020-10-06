@@ -1,6 +1,8 @@
 path,loss
 /scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-1.pth,30288.9258
 /scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-10.pth,29923.9512
+/scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-11.pth,29464.6426
+/scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-12.pth,29583.5703
 /scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-2.pth,30263.6719
 /scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-3.pth,30116.2305
 /scratch/ckpts/SSMTIA/pexels/mobilenet/completely/epoch-4.pth,29987.9805
