@@ -8,16 +8,18 @@ import torch
 import torchvision.transforms as transforms
 from imagenet_c import corrupt
 from PIL import Image
+from torchvision.transforms.functional import normalize
 
 from SSIA.utils import filename2path
 
 
 class SSPexelsNonTar(torch.utils.data.Dataset):
-    def __init__(self, file_list_path: str, mapping, return_file_name: bool = False, orig_dir: str = "/scratch/pexels/images", edited_dir: str = "/scratch/pexels/edited_images"):
+    def __init__(self, file_list_path: str, mapping, return_file_name: bool = False, normalize: bool = True, orig_dir: str = "/scratch/pexels/images", edited_dir: str = "/scratch/pexels/edited_images"):
         self.file_list_path = file_list_path
         self.mapping = mapping
 
         self.return_file_name = return_file_name
+        self.normalize = normalize
         self.orig_dir = orig_dir
         self.edited_dir = edited_dir
 
@@ -140,7 +142,8 @@ class SSPexelsNonTar(torch.utils.data.Dataset):
         for k in data.keys():
             data[k] = self.pad_square(data[k])
             data[k] = transforms.ToTensor()(data[k])
-            data[k] = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])(data[k])
+            if self.normalize:
+                data[k] = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])(data[k])
 
         if self.return_file_name:
             data["file_name"] = self.file_list[idx]
