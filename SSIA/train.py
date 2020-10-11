@@ -33,6 +33,7 @@ parser.add_argument("--val_batch_size", type=int, default=8)
 parser.add_argument("--num_workers", type=int, default=60)
 parser.add_argument("--epochs", type=int, default=100)
 parser.add_argument("--fix_features", action="store_true")
+parser.add_argument("--softplus", action="store_true")
 
 # misc
 parser.add_argument("--log_dir", type=str, default="/scratch/train_logs/SSIA/pexels/")
@@ -42,15 +43,19 @@ parser.add_argument("--warm_start_epoch", type=int, default=0)
 
 config = parser.parse_args()
 
-config.log_dir = str(Path(config.log_dir) / config.base_model)
-config.ckpt_path = str(Path(config.ckpt_path) / config.base_model)
+config.log_dir = str(Path(config.log_dir) / config.base_model / str(config.conv_base_lr))
+config.ckpt_path = str(Path(config.ckpt_path) / config.base_model / str(config.conv_base_lr))
 
 if config.fix_features:
     config.log_dir = str(Path(config.log_dir) / "fix_features")
     config.ckpt_path = str(Path(config.ckpt_path) / "fix_features")
 else:
-    config.log_dir = str(Path(config.log_dir) / "completely")
-    config.ckpt_path = str(Path(config.ckpt_path) / "completely")
+    if config.softplus:
+        config.log_dir = str(Path(config.log_dir) / "softplus" / "completely")
+        config.ckpt_path = str(Path(config.ckpt_path) / "softplus" / "completely")
+    else:
+        config.log_dir = str(Path(config.log_dir) / "completely")
+        config.ckpt_path = str(Path(config.ckpt_path) / "completely")
 margin = dict()
 margin["styles"] = config.styles_margin
 margin["technical"] = config.technical_margin
@@ -86,16 +91,14 @@ else:
         raise "model already trained, but cold training was used"
 
 logging.info("setting learnrates")
-conv_base_lr = config.conv_base_lr
-dense_lr = config.dense_lr
 
 # fmt:off
 optimizer = optim.RMSprop(
     [
-        {"params": ssia.features.parameters(), "lr": conv_base_lr},
-        {"params": ssia.styles_score.parameters(), "lr": dense_lr},
-        {"params": ssia.technical_score.parameters(), "lr": dense_lr},
-        {"params": ssia.composition_score.parameters(), "lr": dense_lr}],
+        {"params": ssia.features.parameters(), "lr": config.conv_base_lr},
+        {"params": ssia.styles_score.parameters(), "lr": config.dense_lr},
+        {"params": ssia.technical_score.parameters(), "lr": config.dense_lr},
+        {"params": ssia.composition_score.parameters(), "lr": config.dense_lr}],
         momentum=0.9,
         weight_decay=0.00004,
 )
@@ -134,7 +137,7 @@ def step(batch) -> torch.Tensor:
 
     original: Dict[str, torch.Tensor] = ssia(batch["original"].to(device))
     for distortion in ["styles", "technical", "composition"]:
-        erloss = EfficientRankingLoss(margin=margin[distortion])
+        erloss = EfficientRankingLoss(margin=margin[distortion], softplus=config.softplus)
         for parameter in mapping[distortion]:
             for polarity in mapping[distortion][parameter]:
                 results = dict()
@@ -173,8 +176,8 @@ for epoch in range(config.warm_start_epoch, config.epochs):
 
         writer.add_scalar("progress/epoch", epoch + 1, g_step)
         writer.add_scalar("progress/step", i + 1, g_step)
-        writer.add_scalar("hparams/lr/features", conv_base_lr, g_step)
-        writer.add_scalar("hparams/lr/classifier", dense_lr, g_step)
+        writer.add_scalar("hparams/lr/features", optimizer.param_groups[0]["lr"], g_step)
+        writer.add_scalar("hparams/lr/classifier", optimizer.param_groups[1]["lr"], g_step)
         writer.add_scalar("hparams/margin/styles", float(config.styles_margin), g_step)
         writer.add_scalar("hparams/margin/technical", float(config.technical_margin), g_step)
         writer.add_scalar("hparams/margin/composition", float(config.composition_margin), g_step)
