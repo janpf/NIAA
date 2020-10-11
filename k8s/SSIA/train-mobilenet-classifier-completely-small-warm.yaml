@@ -1,14 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: train-mobilenet-classifier-completely
+  name: train-mobilenet-classifier-completely-small-warm
 spec:
   template:
     spec:
       priorityClassName: research-med
       restartPolicy: "Never"
       containers:
-        - name: train-mobilenet-classifier-completely
+        - name: train-mobilenet-classifier-completely-small-warm
           image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
@@ -44,8 +44,14 @@ spec:
             - "0.2"
             - --composition_margin
             - "0.2"
+            - --conv_base_lr
+            - "0.0001"
+            - --dense_lr
+            - "0.0001"
             - --base_model
             - mobilenet
+            - --warm_start
+            - --warm_start_epoch=1
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

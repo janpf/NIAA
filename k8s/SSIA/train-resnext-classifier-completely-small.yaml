@@ -1,14 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: train-resnext-classifier-completely
+  name: train-resnext-classifier-completely-small
 spec:
   template:
     spec:
       priorityClassName: research-med
       restartPolicy: "Never"
       containers:
-        - name: train-resnext-classifier-completely
+        - name: train-resnext-classifier-completely-small
           image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
@@ -18,11 +18,11 @@ spec:
             limits:
               nvidia.com/gpu: "1"
               cpu: "16"
-              memory: "136Gi"
+              memory: "180Gi"
             requests:
               nvidia.com/gpu: "1"
               cpu: "16"
-              memory: "136Gi"
+              memory: "180Gi"
           volumeMounts:
             - mountPath: /workspace
               name: code
@@ -44,6 +44,10 @@ spec:
             - "0.2"
             - --composition_margin
             - "0.2"
+            - --conv_base_lr
+            - "0.0001"
+            - --dense_lr
+            - "0.0001"
             - --base_model
             - resnext
       affinity:
