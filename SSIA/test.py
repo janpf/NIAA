@@ -33,7 +33,7 @@ ssia.eval()
 logging.info("creating datasets")
 # datasets
 SSPexels_test = SSPexels(file_list_path=test_file, mapping=mapping, return_file_name=True)
-Pexels_test = torch.utils.data.DataLoader(SSPexels_test, batch_size=25, drop_last=False, num_workers=16)
+Pexels_test = torch.utils.data.DataLoader(SSPexels_test, batch_size=5, drop_last=False, num_workers=48)
 logging.info("datasets created")
 
 
