@@ -12,7 +12,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 sys.path[0] = "/workspace"
 from SSIA.dataset import SSPexelsNonTar as SSPexels
-from SSIA.losses import EfficientRankingLoss, h
+from SSIA.losses import EfficientRankingLoss
 from SSIA.SSIA import SSIA
 from SSIA.utils import mapping
 
@@ -21,13 +21,12 @@ parser = argparse.ArgumentParser()
 # training parameters
 parser.add_argument("--conv_base_lr", type=float, default=0.0001)
 parser.add_argument("--dense_lr", type=float, default=0.0001)
-parser.add_argument("--styles_margin", type=float)
-parser.add_argument("--technical_margin", type=float)
-parser.add_argument("--composition_margin", type=float)
+parser.add_argument("--styles_margin", type=float, default=0.2)
+parser.add_argument("--technical_margin", type=float, default=0.2)
+parser.add_argument("--composition_margin", type=float, default=0.2)
 parser.add_argument("--base_model", type=str)
 parser.add_argument("--train_from", type=str)
-parser.add_argument("--lr_decay_rate", type=float, default=0.95)
-parser.add_argument("--lr_decay_freq", type=int, default=10)
+parser.add_argument("--lr_decay_rate", type=float, default=0.9)
 parser.add_argument("--train_batch_size", type=int, default=8)
 parser.add_argument("--val_batch_size", type=int, default=8)
 parser.add_argument("--num_workers", type=int, default=60)
@@ -43,19 +42,18 @@ parser.add_argument("--warm_start_epoch", type=int, default=0)
 
 config = parser.parse_args()
 
-config.log_dir = str(Path(config.log_dir) / config.base_model / str(config.conv_base_lr))
-config.ckpt_path = str(Path(config.ckpt_path) / config.base_model / str(config.conv_base_lr))
+settings = [config.base_model, str(config.conv_base_lr)]
 
 if config.fix_features:
-    config.log_dir = str(Path(config.log_dir) / "fix_features")
-    config.ckpt_path = str(Path(config.ckpt_path) / "fix_features")
-else:
-    if config.softplus:
-        config.log_dir = str(Path(config.log_dir) / "softplus" / "completely")
-        config.ckpt_path = str(Path(config.ckpt_path) / "softplus" / "completely")
-    else:
-        config.log_dir = str(Path(config.log_dir) / "completely")
-        config.ckpt_path = str(Path(config.ckpt_path) / "completely")
+    settings.append("fix_features")
+
+if config.softplus:
+    settings.append("softplus")
+
+for s in settings:
+    config.log_dir = str(Path(config.log_dir) / s)
+    config.ckpt_path = str(Path(config.ckpt_path) / s)
+
 margin = dict()
 margin["styles"] = config.styles_margin
 margin["technical"] = config.technical_margin
@@ -102,7 +100,7 @@ optimizer = optim.RMSprop(
         momentum=0.9,
         weight_decay=0.00004,
 )
-lr_scheduler = optim.lr_scheduler.ExponentialLR(optimizer, 0.95)
+lr_scheduler = optim.lr_scheduler.MultiplicativeLR(optimizer, lambda epoch: config.lr_decay_rate)
 # fmt:on
 scaler = cuda.amp.GradScaler()
 
@@ -115,10 +113,7 @@ logging.info(f"trainable params: {(param_num / 1e6):.2f} million")
 logging.info("creating datasets")
 # datasets
 SSPexels_train = SSPexels(file_list_path="/workspace/dataset_processing/train_set.txt", mapping=mapping)
-SSPexels_val = SSPexels(file_list_path="/workspace/dataset_processing/val_set.txt", mapping=mapping)
-
 Pexels_train_loader = DataLoader(SSPexels_train, batch_size=config.train_batch_size, shuffle=True, drop_last=True, num_workers=config.num_workers)
-Pexels_val_loader = DataLoader(SSPexels_val, batch_size=config.val_batch_size, shuffle=False, drop_last=True, num_workers=config.num_workers)
 logging.info("datasets created")
 
 if config.warm_start:
@@ -146,11 +141,7 @@ def step(batch) -> torch.Tensor:
 
                 ranking_losses_step[distortion].append(erloss(original, x=results, polarity=polarity, score=f"{distortion}_score"))
 
-    # balance losses
-    ranking_loss: torch.Tensor = 0
-
-    for distortion in ["styles", "technical", "composition"]:
-        ranking_loss += h(sum(ranking_losses_step[distortion]))
+    ranking_loss: torch.Tensor = sum([sum(ranking_losses_step[distortion]) for distortion in ["styles", "technical", "composition"]])
 
     return ranking_loss
 
@@ -195,7 +186,7 @@ for epoch in range(config.warm_start_epoch, config.epochs):
         g_step += 1
         logging.info("waiting for new batch")
 
-    # exponential learning rate decay:
+    # learning rate decay:
     lr_scheduler.step()
 
     logging.info("saving!")
