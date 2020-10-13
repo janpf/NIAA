@@ -1,14 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: train-mobilenet-classifier-completely
+  name: train-mobilenet-classifier
 spec:
   template:
     spec:
       priorityClassName: research-med
       restartPolicy: "Never"
       containers:
-        - name: train-mobilenet-classifier-completely
+        - name: train-mobilenet-classifier
           image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
@@ -38,12 +38,6 @@ spec:
             #- 0.0.0.0:4444
             #- --wait-for-client
             - /workspace/SSIA/train.py
-            - --styles_margin
-            - "0.1"
-            - --technical_margin
-            - "0.2"
-            - --composition_margin
-            - "0.2"
             - --base_model
             - mobilenet
       affinity:
