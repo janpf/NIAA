@@ -100,7 +100,7 @@ optimizer = optim.RMSprop(
         momentum=0.9,
         weight_decay=0.00004,
 )
-lr_scheduler = optim.lr_scheduler.MultiplicativeLR(optimizer, lambda epoch: config.lr_decay_rate)
+lr_scheduler = optim.lr_scheduler.MultiplicativeLR(optimizer, lambda epoch: config.lr_decay_rate ** (epoch+1))
 # fmt:on
 scaler = cuda.amp.GradScaler()
 

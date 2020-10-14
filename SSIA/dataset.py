@@ -1,3 +1,4 @@
+import logging
 import math
 import random
 from pathlib import Path
@@ -187,8 +188,9 @@ class FolderDataset(torch.utils.data.Dataset):
     def __init__(self, image_dir: str, normalize: bool):
         self.image_dir = image_dir
         self.normalize = normalize
-        accepted_extensions = [".jpg", ".bmp"]
+        accepted_extensions = ["jpg", "bmp"]
         self.files = [str(val) for val in Path(image_dir).glob("**/*") if val.name.split(".")[-1].lower() in accepted_extensions]
+        logging.info(f"found {len(self.files)} files")
 
         def pad_square(im: Image.Image, min_size: int = 224, fill_color=(0, 0, 0)) -> Image.Image:
             im = transforms.Resize(224)(im)
@@ -203,7 +205,13 @@ class FolderDataset(torch.utils.data.Dataset):
     def __len__(self) -> int:
         return len(self.files)
 
-    def __getitem__(self, idx: int):
+    def __getitem__(self, idx):
+        try:
+            return self._actualgetitem(idx)
+        except:
+            return self[random.randint(0, len(self))]
+
+    def _actualgetitem(self, idx: int):
         path = self.files[idx]
         img = Image.open(path).convert("RGB")
         img = transforms.Resize(224)(img)
@@ -223,3 +231,6 @@ class AVA(FolderDataset):
 class TID2013(FolderDataset):
     def __init__(self, image_dir: str = "/scratch/tid2013", normalize: bool = True):
         super().__init__(image_dir=image_dir, normalize=normalize)
+
+    def __getitem__(self, idx):
+        return self._actualgetitem(idx)
