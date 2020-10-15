@@ -18,8 +18,7 @@ from IA.utils import mapping
 parser = argparse.ArgumentParser()
 
 # training parameters
-parser.add_argument("--conv_base_lr", type=float, default=0.0001)
-parser.add_argument("--dense_lr", type=float, default=0.0001)
+parser.add_argument("--lr", type=float, default=0.0001)
 parser.add_argument("--styles_margin", type=float, default=0.2)
 parser.add_argument("--technical_margin", type=float, default=0.2)
 parser.add_argument("--composition_margin", type=float, default=0.2)
@@ -59,7 +58,7 @@ writer = SummaryWriter(log_dir=config.log_dir)
 device = torch.device("cuda" if cuda.is_available() else "cpu")
 
 logging.info("loading model")
-ia = IA(scores=config.scores, change_regress=config.change_regress, change_class=config.change_class, mapping=mapping, fix_features=config.fix_features).to(device)
+ia = IA(scores=config.scores, change_regress=config.change_regress, change_class=config.change_class, mapping=mapping, margin=margin, fix_features=config.fix_features).to(device)
 
 # loading checkpoints, ... or not
 warm_epoch = 0
@@ -81,10 +80,7 @@ logging.info("setting learnrates")
 # fmt:off
 optimizer = optim.RMSprop(
     [
-        {"params": ia.features.parameters(), "lr": config.conv_base_lr},
-        {"params": ia.styles_score.parameters(), "lr": config.dense_lr},
-        {"params": ia.technical_score.parameters(), "lr": config.dense_lr},
-        {"params": ia.composition_score.parameters(), "lr": config.dense_lr}],
+        {"params": ia.parameters(), "lr": config.lr}],
         momentum=0.9,
         weight_decay=0.00004,
 )

@@ -1,9 +1,11 @@
+import logging
 from typing import Dict, List, Tuple
 
 import torch
 import torchvision
 from torch import nn
 from torch.utils.checkpoint import checkpoint_sequential
+
 from IA.losses import EfficientRankingLoss, h
 
 
@@ -19,7 +21,7 @@ class CheckpointModule(nn.Module):
 
 
 class IA(nn.Module):
-    def __init__(self, scores: str, change_regress: bool, change_class: bool, mapping, pretrained: bool = False, fix_features: bool = False):
+    def __init__(self, scores: str, change_regress: bool, change_class: bool, mapping, margin, pretrained: bool = False, fix_features: bool = False):
         super(IA, self).__init__()
         self.scores = scores
         self.change_regress = change_regress
@@ -35,6 +37,7 @@ class IA(nn.Module):
                 param.requires_grad = False
 
         self.mapping = mapping
+        self.margin = margin
         self.features = CheckpointModule(module=base_model.features, num_segments=len(base_model.features))
 
         # a single score giving the aesthetics
@@ -142,37 +145,75 @@ class IA(nn.Module):
         for distortion in ["styles", "technical", "composition"]:
             ranking_losses_step[distortion] = []
             change_regress_losses_step[distortion] = []
+            change_class_losses_step[distortion] = []
 
         original: Dict[str, torch.Tensor] = self(batch["original"].to(self.device))
+        crop_orig: Dict[str, torch.Tensor] = self(batch["crop_original"].to(self.device))
+        rotate_orig: Dict[str, torch.Tensor] = self(batch["rotate_original"].to(self.device))
+
         for distortion in ["styles", "technical", "composition"]:
-            erloss = EfficientRankingLoss(margin=margin[distortion])
+            erloss = EfficientRankingLoss(margin=self.margin[distortion])
             for parameter in self.mapping[distortion]:
                 for polarity in self.mapping[distortion][parameter]:
                     results = dict()
                     for change in self.mapping[distortion][parameter][polarity]:
                         results[change] = self(batch[change].to(self.device))
-
+                    logging.debug(polarity)
                     if self.scores == "one":
-                        ranking_losses_step[distortion].append(erloss(original, x=results, polarity=polarity, score="score"))
+                        if "crop" in parameter:
+                            logging.debug(f"{distortion}\t{parameter}\t{polarity}\tranking\tcrop")
+                            ranking_losses_step[distortion].append(erloss(crop_orig, x=results, polarity=polarity, score="score"))
+                        elif "rotate" in parameter:
+                            logging.debug(f"{distortion}\t{parameter}\t{polarity}\tranking\trotate")
+                            ranking_losses_step[distortion].append(erloss(rotate_orig, x=results, polarity=polarity, score="score"))
+                        else:
+                            logging.debug(f"{distortion}\t{parameter}\t{polarity}\tranking\torig")
+                            ranking_losses_step[distortion].append(erloss(original, x=results, polarity=polarity, score="score"))
                     elif self.scores == "three":
-                        ranking_losses_step[distortion].append(erloss(original, x=results, polarity=polarity, score=f"{distortion}_score"))
+                        if "crop" in parameter:
+                            logging.debug(f"{distortion}\t{parameter}\t{polarity}\tranking\tcrop\t{distortion}_score")
+                            ranking_losses_step[distortion].append(erloss(crop_orig, x=results, polarity=polarity, score=f"{distortion}_score"))
+                        elif "rotate" in parameter:
+                            logging.debug(f"{distortion}\t{parameter}\t{polarity}\tranking\trotate\t{distortion}_score")
+                            ranking_losses_step[distortion].append(erloss(rotate_orig, x=results, polarity=polarity, score=f"{distortion}_score"))
+                        else:
+                            logging.debug(f"{distortion}\t{parameter}\t{polarity}\tranking\torig\t{distortion}_score")
+                            ranking_losses_step[distortion].append(erloss(original, x=results, polarity=polarity, score=f"{distortion}_score"))
 
                     if self.change_regress:
-                        exit("check")
+                        if polarity == "pos":  # originals get regressed only once
+                            if "crop" in parameter:
+                                logging.debug(f"{distortion}\t{parameter}\t{polarity}\tregress\tcrop\t{distortion}_score")
+                                to_be_regressed_param_column = crop_orig[f"{distortion}_change_strength"][list(self.mapping[distortion].keys()).index(parameter)]
+                            elif "rotate" in parameter:
+                                logging.debug(f"{distortion}\t{parameter}\t{polarity}\tregress\trotate\t{distortion}_score")
+                                to_be_regressed_param_column = rotate_orig[f"{distortion}_change_strength"][list(self.mapping[distortion].keys()).index(parameter)]
+                            else:
+                                logging.debug(f"{distortion}\t{parameter}\t{polarity}\tregress\torig\t{distortion}_score")
+                                to_be_regressed_param_column = original[f"{distortion}_change_strength"][list(self.mapping[distortion].keys()).index(parameter)]
+                            correct_list = [0] * len(to_be_regressed_param_column)
+                            correct_list = torch.Tensor(correct_list)
+
+                            change_regress_losses_step[distortion].append(mseloss(to_be_regressed_param_column, correct_list.to(self.device)))
+
                         for change in self.mapping[distortion][parameter][polarity]:
                             if polarity == "pos":
                                 correct_value = self.mapping["change_steps"][distortion][parameter][polarity] * (self.mapping[distortion][parameter][polarity].index(change) + 1)
                             if polarity == "neg":
                                 correct_value = -self.mapping["change_steps"][distortion][parameter][polarity] * (list(reversed(self.mapping[distortion][parameter][polarity])).index(change) + 1)
-                            to_be_regressed_param_column = results[change][f"{distortion}_change_strength"][list(self.mapping[distortion].keys()).index(parameter)]
-                            correct_list = torch.Tensor([correct_value] * len(to_be_regressed_param_column))
 
+                            to_be_regressed_param_column = results[change][f"{distortion}_change_strength"][list(self.mapping[distortion].keys()).index(parameter)]
+                            correct_list = [correct_value] * len(to_be_regressed_param_column)
+                            correct_list = torch.Tensor(correct_list)
+                            logging.debug(f"{distortion}\t{parameter}\t{list(self.mapping[distortion].keys()).index(parameter)}\t{polarity}\t{change}\t{correct_value}\tregress\t{distortion}_change_strength")
                             change_regress_losses_step[distortion].append(mseloss(to_be_regressed_param_column, correct_list.to(self.device)))
 
                     if self.change_class:
-                        exit("check")
                         for change in self.mapping[distortion][parameter][polarity]:
-                            change_class_losses_step[distortion].append(celoss(results[change][f"{distortion}_change_class"], torch.Tensor([list(self.mapping[distortion].keys()).index(parameter)])))
+                            correct_list = [list(self.mapping[distortion].keys()).index(parameter)] * len(results[change][f"{distortion}_change_class"])
+                            correct_list = torch.Tensor(correct_list).long()
+                            logging.debug(f"{distortion}\t{parameter}\t{list(self.mapping[distortion].keys()).index(parameter)}\t{polarity}\t{change}\tclass\t{distortion}_change_class")
+                            change_class_losses_step[distortion].append(celoss(results[change][f"{distortion}_change_class"], correct_list.to(self.device)))
 
         # balance losses
         ranking_loss: torch.Tensor = 0
@@ -184,19 +225,15 @@ class IA(nn.Module):
             change_regress_loss += sum(change_regress_losses_step[distortion])
             change_class_loss += sum(change_class_losses_step[distortion])
 
-        ranking_loss = h(ranking_loss)
-        change_regress_loss = h(change_regress_loss)
-        change_class_loss = h(change_class_loss)
-
         resulting_losses = dict()
 
         if self.scores is not None:
-            resulting_losses["ranking_loss"] = ranking_loss
+            resulting_losses["ranking_loss"] = h(ranking_loss)
 
         if self.change_regress:
-            resulting_losses["change_regress_loss"] = change_regress_loss
+            resulting_losses["change_regress_loss"] = h(change_regress_loss)
 
         if self.change_class:
-            resulting_losses["change_class_loss"] = change_class_loss
+            resulting_losses["change_class_loss"] = h(change_class_loss)
 
         return resulting_losses
