@@ -73,23 +73,20 @@ class IA(nn.Module):
             # fmt: off
             self.styles_change_strength = nn.Sequential(
                 nn.Dropout(0.2),
-                nn.Linear(in_features=self.feature_count, out_features=len(self.mapping["styles"])),
-                nn.Tanh())
+                nn.Linear(in_features=self.feature_count, out_features=len(self.mapping["styles"])))
             self.technical_change_strength = nn.Sequential(
                 nn.Dropout(0.2),
-                nn.Linear(in_features=self.feature_count, out_features=len(self.mapping["technical"])),
-                nn.Sigmoid())
+                nn.Linear(in_features=self.feature_count, out_features=len(self.mapping["technical"])))
             self.composition_change_strength = nn.Sequential(
                 nn.Dropout(0.2),
-                nn.Linear(in_features=self.feature_count, out_features=len(self.mapping["composition"])),
-                nn.Tanh())
+                nn.Linear(in_features=self.feature_count, out_features=len(self.mapping["composition"])))
             # fmt: on
             nn.init.xavier_uniform(self.styles_change_strength[1].weight)
             nn.init.xavier_uniform(self.technical_change_strength[1].weight)
             nn.init.xavier_uniform(self.composition_change_strength[1].weight)
 
         # predicting the class of a distortion
-        if self.change_softmax:
+        if self.change_class:
             # fmt: off
             self.styles_change_class = nn.Sequential(
                 nn.Dropout(0.2),
@@ -126,7 +123,7 @@ class IA(nn.Module):
             result_dict["technical_change_strength"] = self.technical_change_strength(x)
             result_dict["composition_change_strength"] = self.composition_change_strength(x)
 
-        if self.change_softmax:
+        if self.change_class:
             result_dict["styles_change_class"] = self.styles_change_class(x)
             result_dict["technical_change_class"] = self.technical_change_class(x)
             result_dict["composition_change_class"] = self.composition_change_class(x)
