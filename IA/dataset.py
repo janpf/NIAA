@@ -13,7 +13,7 @@ import torchvision.transforms as transforms
 from imagenet_c import corrupt
 from PIL import Image
 
-from SSIA.utils import filename2path
+from IA.utils import filename2path, rotatedRectWithMaxArea
 
 
 class SSPexelsNonTar(torch.utils.data.Dataset):
@@ -79,7 +79,7 @@ class SSPexelsNonTar(torch.utils.data.Dataset):
                 img = corrupt(np.array(data["original"]), severity=change, corruption_name=parameter)
                 data[technical_change] = Image.fromarray(img)
 
-        crop_original = transforms.Resize(256)(Image.open(str(Path(self.orig_dir) / self.file_list[idx])))
+        crop_original = transforms.Resize(336)(Image.open(str(Path(self.orig_dir) / self.file_list[idx])))
         for composition_change in self.mapping["composition_changes"]:
             parameter, change = composition_change.split(";")
             change = int(change)
@@ -95,20 +95,16 @@ class SSPexelsNonTar(torch.utils.data.Dataset):
                 data[composition_change] = transforms.CenterCrop(img_size)(img)
 
             elif "rotate" == parameter:
-                rotated = data["original"].rotate(change, Image.BICUBIC, True)
+                max_change = 10
+                change = -10
 
-                aspect_ratio = float(data["original"].size[0]) / data["original"].size[1]
-                rotated_aspect_ratio = float(rotated.size[0]) / rotated.size[1]
-                angle = math.fabs(change) * math.pi / 180
+                rotated = crop_original.rotate(change, Image.BICUBIC, True)
 
-                if aspect_ratio < 1:
-                    total_height = float(data["original"].size[0]) / rotated_aspect_ratio
-                else:
-                    total_height = float(data["original"].size[1])
+                w, h = rotatedRectWithMaxArea(crop_original.size[0], crop_original.size[1], max_change)
 
-                h = total_height / (aspect_ratio * math.sin(angle) + math.cos(angle))
-                w = h * aspect_ratio
-                data[composition_change] = transforms.CenterCrop((h, w))(rotated)
+                img = transforms.CenterCrop((h, w))(rotated)
+                img = transforms.Resize(224)(img)
+                data[composition_change] = transforms.CenterCrop(224)(img)
 
             elif "crop" in parameter:
 
@@ -150,6 +146,42 @@ class SSPexelsNonTar(torch.utils.data.Dataset):
 
         if self.return_file_name:
             data["file_name"] = self.file_list[idx]
+        return data
+
+
+class SSPexelsSmallTest(torch.utils.data.Dataset):
+    def __init__(self, file_list_path: str, mapping, orig_dir: str = "/scratch/pexels/images_small", edited_dir: str = "/scratch/pexels/edited_images_small"):
+        self.file_list_path = file_list_path
+        self.mapping = mapping
+
+        self.orig_dir = orig_dir
+        self.edited_dir = edited_dir
+
+        with open(file_list_path) as f:
+            file_list = f.readlines()
+
+        file_list = [line.strip() for line in file_list]
+        self.file_list = [filename2path(p) for p in file_list]
+
+    def __len__(self) -> int:
+        return len(self.file_list)
+
+    def __getitem__(self, idx):
+        data = dict()
+        data["missing"] = []
+        try:
+            transforms.Resize(224)(Image.open(str(Path(self.orig_dir) / self.file_list[idx])).convert("RGB"))
+        except:
+            data["missing"].append(str(Path(self.orig_dir) / self.file_list[idx]))
+
+        for style_change in self.mapping["styles_changes"]:
+            parameter, change = style_change.split(";")
+            change = float(change) if "." in change else int(change)
+            try:
+                transforms.Resize(224)(Image.open(str(Path(self.edited_dir) / parameter / str(change) / self.file_list[idx])).convert("RGB"))
+            except:
+                data["missing"].append(str(Path(self.edited_dir) / parameter / str(change) / self.file_list[idx]))
+
         return data
 
 
