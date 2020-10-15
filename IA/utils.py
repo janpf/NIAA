@@ -1,5 +1,6 @@
 import hashlib
 from edit_image import parameter_range
+import math
 
 parameter_range["shadows"]["range"] = [-100, -60, -20, 20, 40, 50, 60, 80, 100]
 parameter_range["highlights"]["range"] = [-100, -80, -60, -50, -40, -20, 20, 60, 100]
@@ -31,8 +32,8 @@ mapping["technical"]["impulse_noise"]["pos"] = [f"impulse_noise;{i}" for i in ra
 
 mapping["composition"] = dict()
 mapping["composition"]["rotate"] = dict()
-mapping["composition"]["rotate"]["neg"] = [f"rotate;{i}" for i in range(-15, 0, 3)]
-mapping["composition"]["rotate"]["pos"] = [f"rotate;{i}" for i in range(0, 16, 3) if i != 0]
+mapping["composition"]["rotate"]["neg"] = [f"rotate;{i}" for i in range(-10, 0, 2)]
+mapping["composition"]["rotate"]["pos"] = [f"rotate;{i}" for i in range(0, 11, 2) if i != 0]
 mapping["composition"]["hcrop"] = dict()
 mapping["composition"]["hcrop"]["neg"] = [f"hcrop;{i}" for i in range(-5, 0)]
 mapping["composition"]["hcrop"]["pos"] = [f"hcrop;{i}" for i in range(0, 6) if i != 0]
@@ -83,3 +84,33 @@ for _, v in mapping["composition"].items():
 def filename2path(filename: str) -> str:
     threedirs = hashlib.sha256(filename.encode("utf-8")).hexdigest()[:3]
     return "/".join(list(threedirs) + [filename])
+
+
+def rotatedRectWithMaxArea(w: int, h: int, angle: float):
+    """
+    Given a rectangle of size wxh that has been rotated by 'angle',
+    computes the width and height of the largest possible
+    axis-aligned rectangle (maximal area) within the rotated rectangle.
+    https://stackoverflow.com/a/16778797/6388328
+    """
+    angle = math.radians(angle)
+    if w <= 0 or h <= 0:
+        return 0, 0
+
+    width_is_longer = w >= h
+    side_long, side_short = (w, h) if width_is_longer else (h, w)
+
+    # since the solutions for angle, -angle and 180-angle are all the same,
+    # if suffices to look at the first quadrant and the absolute values of sin,cos:
+    sin_a, cos_a = abs(math.sin(angle)), abs(math.cos(angle))
+    if side_short <= 2.0 * sin_a * cos_a * side_long or abs(sin_a - cos_a) < 1e-10:
+        # half constrained case: two crop corners touch the longer side,
+        #   the other two corners are on the mid-line parallel to the longer line
+        x = 0.5 * side_short
+        wr, hr = (x / sin_a, x / cos_a) if width_is_longer else (x / cos_a, x / sin_a)
+    else:
+        # fully constrained case: crop touches all 4 sides
+        cos_2a = cos_a * cos_a - sin_a * sin_a
+        wr, hr = (w * cos_a - h * sin_a) / cos_2a, (h * cos_a - w * sin_a) / cos_2a
+
+    return wr, hr
