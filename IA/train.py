@@ -23,9 +23,8 @@ parser.add_argument("--styles_margin", type=float, default=0.2)
 parser.add_argument("--technical_margin", type=float, default=0.2)
 parser.add_argument("--composition_margin", type=float, default=0.2)
 parser.add_argument("--lr_decay_rate", type=float, default=0.9)
-parser.add_argument("--train_batch_size", type=int, default=8)
-parser.add_argument("--val_batch_size", type=int, default=8)
-parser.add_argument("--num_workers", type=int, default=60)
+parser.add_argument("--train_batch_size", type=int, default=5)
+parser.add_argument("--num_workers", type=int, default=40)
 
 parser.add_argument("--scores", type=str, default=None)  # "one", "three", None; None is a valid input
 parser.add_argument("--change_regress", action="store_true")
@@ -37,7 +36,7 @@ parser.add_argument("--ckpt_path", type=str, default="/scratch/ckpts/IA/pexels/"
 
 config = parser.parse_args()
 
-settings = [config.scores]
+settings = [f"scores-{config.scores}"]
 
 if config.change_regress:
     settings.append("change_regress")
@@ -63,7 +62,7 @@ writer = SummaryWriter(log_dir=config.log_dir)
 device = torch.device("cuda" if cuda.is_available() else "cpu")
 
 logging.info("loading model")
-ia = IA(scores=config.scores, change_regress=config.change_regress, change_class=config.change_class, mapping=mapping, margin=margin, fix_features=config.fix_features).to(device)
+ia = IA(scores=config.scores, change_regress=config.change_regress, change_class=config.change_class, mapping=mapping, margin=margin).to(device)
 
 # loading checkpoints, ... or not
 warm_epoch = 0
@@ -100,7 +99,6 @@ for param in ia.parameters():
 logging.info(f"trainable params: {(param_num / 1e6):.2f} million")
 
 logging.info("creating datasets")
-# datasets
 SSPexels_train = SSPexels(file_list_path="/workspace/dataset_processing/train_set.txt", mapping=mapping)
 Pexels_train_loader = DataLoader(SSPexels_train, batch_size=config.train_batch_size, shuffle=True, drop_last=True, num_workers=config.num_workers)
 logging.info("datasets created")
