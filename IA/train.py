@@ -62,7 +62,7 @@ writer = SummaryWriter(log_dir=config.log_dir)
 device = torch.device("cuda" if cuda.is_available() else "cpu")
 
 logging.info("loading model")
-ia = IA(scores=config.scores, change_regress=config.change_regress, change_class=config.change_class, mapping=mapping, margin=margin).to(device)
+ia = IA(scores=config.scores, change_regress=config.change_regress, change_class=config.change_class, mapping=mapping, margin=margin, pretrained=True).to(device)
 
 # loading checkpoints, ... or not
 warm_epoch = 0
