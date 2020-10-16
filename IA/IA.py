@@ -184,13 +184,13 @@ class IA(nn.Module):
                         if polarity == "pos":  # originals get regressed only once
                             if "crop" in parameter:
                                 logging.debug(f"{distortion}\t{parameter}\t{polarity}\tregress\tcrop\t{distortion}_score")
-                                to_be_regressed_param_column = crop_orig[f"{distortion}_change_strength"][list(self.mapping[distortion].keys()).index(parameter)]
+                                to_be_regressed_param_column = crop_orig[f"{distortion}_change_strength"][:, list(self.mapping[distortion].keys()).index(parameter)]
                             elif "rotate" in parameter:
                                 logging.debug(f"{distortion}\t{parameter}\t{polarity}\tregress\trotate\t{distortion}_score")
-                                to_be_regressed_param_column = rotate_orig[f"{distortion}_change_strength"][list(self.mapping[distortion].keys()).index(parameter)]
+                                to_be_regressed_param_column = rotate_orig[f"{distortion}_change_strength"][:, list(self.mapping[distortion].keys()).index(parameter)]
                             else:
                                 logging.debug(f"{distortion}\t{parameter}\t{polarity}\tregress\torig\t{distortion}_score")
-                                to_be_regressed_param_column = original[f"{distortion}_change_strength"][list(self.mapping[distortion].keys()).index(parameter)]
+                                to_be_regressed_param_column = original[f"{distortion}_change_strength"][:, list(self.mapping[distortion].keys()).index(parameter)]
                             correct_list = [0] * len(to_be_regressed_param_column)
                             correct_list = torch.Tensor(correct_list)
 
