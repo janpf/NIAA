@@ -26,6 +26,11 @@ parser.add_argument("--lr_decay_rate", type=float, default=0.9)
 parser.add_argument("--train_batch_size", type=int, default=8)
 parser.add_argument("--val_batch_size", type=int, default=8)
 parser.add_argument("--num_workers", type=int, default=60)
+
+parser.add_argument("--scores", type=str, default=None)  # "one", "three", None; None is a valid input
+parser.add_argument("--change_regress", action="store_true")
+parser.add_argument("--change_class", action="store_true")
+
 # misc
 parser.add_argument("--log_dir", type=str, default="/scratch/train_logs/IA/pexels/")
 parser.add_argument("--ckpt_path", type=str, default="/scratch/ckpts/IA/pexels/")
@@ -120,10 +125,10 @@ for epoch in range(warm_epoch + 1, 100):
 
         for k, loss in losses.items():
             writer.add_scalar(f"loss/train/balanced/{k}", loss.item(), g_step)
-
         loss = sum([v for _, v in losses.items()])
+        writer.add_scalar(f"loss/train/balanced/overall", loss.item(), g_step)
 
-        logging.info(f"Epoch: {epoch} | Step: {i + 1}/{len(Pexels_train_loader)} | Training loss: {loss.item()}")
+        logging.info(f"Epoch: {epoch} | Step: {i}/{len(Pexels_train_loader)} | Training loss: {loss.item()}")
 
         # optimizing
         scaler.scale(loss).backward()
@@ -131,23 +136,11 @@ for epoch in range(warm_epoch + 1, 100):
         scaler.update()
 
         writer.add_scalar("progress/epoch", epoch, g_step)
-        writer.add_scalar("progress/step", i + 1, g_step)
-        writer.add_scalar("hparams/lr/features", optimizer.param_groups[0]["lr"], g_step)
-        writer.add_scalar("hparams/lr/classifier", optimizer.param_groups[1]["lr"], g_step)
+        writer.add_scalar("progress/step", i, g_step)
+        writer.add_scalar("hparams/lr", optimizer.param_groups[0]["lr"], g_step)
         writer.add_scalar("hparams/margin/styles", float(config.styles_margin), g_step)
         writer.add_scalar("hparams/margin/technical", float(config.technical_margin), g_step)
         writer.add_scalar("hparams/margin/composition", float(config.composition_margin), g_step)
-
-        if g_step % 100 == 0:
-            exit("fixme")
-            writer.add_histogram("score/styles/weight", ia.styles_score[1].weight, g_step)
-            writer.add_histogram("score/styles/bias", ia.styles_score[1].bias, g_step)
-
-            writer.add_histogram("score/technical/weight", ia.technical_score[1].weight, g_step)
-            writer.add_histogram("score/technical/bias", ia.technical_score[1].bias, g_step)
-
-            writer.add_histogram("score/composition/weight", ia.composition_score[1].weight, g_step)
-            writer.add_histogram("score/composition/bias", ia.composition_score[1].bias, g_step)
 
         g_step += 1
         logging.info("waiting for new batch")
