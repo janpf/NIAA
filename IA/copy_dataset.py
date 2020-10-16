@@ -21,6 +21,10 @@ edited_dir_new = Path("/scratch/pexels/edited_images_small")
 file_list = list(orig_dir.iterdir())
 random.shuffle(file_list)
 
+selected = ["pexels-photo-3381646", "pexels-photo-2914334", "pexels-photo-2389091.jpeg", "pexels-photo-358549.jpeg", "pexels-photo-3381646.jpeg", "pexels-photo-3540578.jpeg", "pexels-photo-1717728.jpeg", "pexels-photo-1755287.jpeg"]
+
+file_list = [f for f in file_list if f.name in selected]
+
 for p in file_list:
     new_img_p = orig_dir_new / filename2path(p.name)
     logging.info(f"moving from {p} to {new_img_p}")
