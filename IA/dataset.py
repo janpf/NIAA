@@ -213,7 +213,7 @@ class SSPexelsSmall(torch.utils.data.Dataset):
                 img = corrupt(np.array(data["original"]), severity=change, corruption_name=parameter)
                 data[technical_change] = Image.fromarray(img)
 
-        crop_original = transforms.Resize(336)(Image.open(str(Path(self.orig_dir) / self.file_list[idx])))
+        crop_original = transforms.Resize(336)(Image.open(str(Path(self.orig_dir) / self.file_list[idx])).convert("RGB"))
         for composition_change in self.mapping["composition_changes"]:
             parameter, change = composition_change.split(";")
             change = int(change)
@@ -230,7 +230,6 @@ class SSPexelsSmall(torch.utils.data.Dataset):
 
             elif "rotate" == parameter:
                 max_change = 10
-                change = -10
 
                 rotated = crop_original.rotate(change, Image.BICUBIC, True)
 
@@ -238,10 +237,16 @@ class SSPexelsSmall(torch.utils.data.Dataset):
 
                 img = transforms.CenterCrop((h, w))(rotated)
                 img = transforms.Resize(224)(img)
-                data[composition_change] = transforms.CenterCrop(224)(img)
+                data[composition_change] = transforms.CenterCrop((data["original"].size[1], data["original"].size[0]))(img)
+
+                if not "rotate_original" in data.keys():
+                    rotated = crop_original.rotate(0, Image.BICUBIC, True)
+                    w, h = rotatedRectWithMaxArea(crop_original.size[0], crop_original.size[1], max_change)
+                    img = transforms.CenterCrop((h, w))(rotated)
+                    img = transforms.Resize(224)(img)
+                    data["rotate_original"] = transforms.CenterCrop((data["original"].size[1], data["original"].size[0]))(img)
 
             elif "crop" in parameter:
-
                 crop_size = data["original"].size
 
                 center_left = round(crop_original.size[0] / 2 - crop_size[0] / 2)
@@ -271,6 +276,16 @@ class SSPexelsSmall(torch.utils.data.Dataset):
                 center_bottom -= offset_top
 
                 data[composition_change] = crop_original.crop((center_left, center_top, center_right, center_bottom))
+
+                if not "crop_original" in data.keys():
+                    crop_size = data["original"].size
+
+                    center_left = round(crop_original.size[0] / 2 - crop_size[0] / 2)
+                    center_right = round(crop_original.size[0] / 2 + crop_size[0] / 2)
+                    center_top = round(crop_original.size[1] / 2 - crop_size[1] / 2)
+                    center_bottom = round(crop_original.size[1] / 2 + crop_size[1] / 2)
+
+                    data["crop_original"] = crop_original.crop((center_left, center_top, center_right, center_bottom))
 
         for k in data.keys():
             data[k] = self.pad_square(data[k])
