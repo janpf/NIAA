@@ -202,7 +202,7 @@ class IA(nn.Module):
                             if polarity == "neg":
                                 correct_value = -self.mapping["change_steps"][distortion][parameter][polarity] * (list(reversed(self.mapping[distortion][parameter][polarity])).index(change) + 1)
 
-                            to_be_regressed_param_column = results[change][f"{distortion}_change_strength"][list(self.mapping[distortion].keys()).index(parameter)]
+                            to_be_regressed_param_column = results[change][f"{distortion}_change_strength"][:, list(self.mapping[distortion].keys()).index(parameter)]
                             correct_list = [correct_value] * len(to_be_regressed_param_column)
                             correct_list = torch.Tensor(correct_list)
                             logging.debug(f"{distortion}\t{parameter}\t{list(self.mapping[distortion].keys()).index(parameter)}\t{polarity}\t{change}\t{correct_value}\tregress\t{distortion}_change_strength")
