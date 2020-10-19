@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: command-and-control
+spec:
+  selector:
+    matchLabels:
+      app: command-and-control
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: command-and-control
+    spec:
+      restartPolicy: "Always"
+      containers:
+        - name: command-and-control
+          image: redis:latest
+          args: ["--save"]
+          imagePullPolicy: "Always"
+          ports:
+            - containerPort: 6379
+          resources:
+            limits:
+              cpu: "1"
+              memory: "4Gi"
+            requests:
+              cpu: ".1"
+              memory: ".1Gi"
