@@ -29,7 +29,7 @@ def step(batch) -> torch.Tensor:
 
     original: Dict[str, torch.Tensor] = ssia(batch["original"].to(device))
     for distortion in ["styles", "technical", "composition"]:
-        erloss = EfficientRankingLoss(margin=margin[distortion])
+        erloss = EfficientRankingLoss(margin=margin[distortion], softplus=config.softplus)
         for parameter in mapping[distortion]:
             for polarity in mapping[distortion][parameter]:
                 results = dict()
@@ -38,11 +38,7 @@ def step(batch) -> torch.Tensor:
 
                 ranking_losses_step[distortion].append(erloss(original, x=results, polarity=polarity, score=f"{distortion}_score"))
 
-    # balance losses
-    ranking_loss: torch.Tensor = 0
-
-    for distortion in ["styles", "technical", "composition"]:
-        ranking_loss += h(sum(ranking_losses_step[distortion]))
+    ranking_loss: torch.Tensor = sum([sum(ranking_losses_step[distortion]) for distortion in ["styles", "technical", "composition"]])
 
     return ranking_loss
 
@@ -73,9 +69,11 @@ SSPexels_test = SSPexels(file_list_path=test_file, mapping=mapping, return_file_
 Pexels_test = torch.utils.data.DataLoader(SSPexels_test, batch_size=batch_size, drop_last=False, num_workers=48)
 logging.info("datasets created")
 
-
 for m in models_to_validate:
-    base_model = Path(m).parts[-4]
+    if "mobilenet" in m:
+        base_model = "mobilenet"
+    else:
+        base_model = "resnext"
     logging.info(f"validating {m} as {base_model}")
 
     logging.info("loading model")

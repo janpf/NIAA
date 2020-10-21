@@ -22,17 +22,17 @@ spec:
               value: "/tmp"
           resources:
             limits:
-              cpu: "2"
-              memory: "4Gi"
+              cpu: "1"
+              memory: "2Gi"
             requests:
-              cpu: "2"
-              memory: "4Gi"
+              cpu: "1"
+              memory: "1Gi"
           volumeMounts:
             - mountPath: /scratch
               name: scratch
           command:
             - tensorboard
-            - --logdir=/scratch/train_logs
+            - --logdir=/scratch/train_logs/IA
             - --bind_all
             - --reload_multifile=true
             - --reload_multifile_inactive_secs=50000

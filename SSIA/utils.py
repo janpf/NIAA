@@ -1,6 +1,10 @@
 import hashlib
 from edit_image import parameter_range
 
+parameter_range["shadows"]["range"] = [-100, -60, -20, 20, 40, 50, 60, 80, 100]
+parameter_range["highlights"]["range"] = [-100, -80, -60, -50, -40, -20, 20, 60, 100]
+parameter_range["temperature"]["range"] = [2000, 3000, 5000, 6000, 6500, 7000, 8000, 10000, 14000, 18000]
+
 mapping = dict()
 mapping["styles"] = dict()
 

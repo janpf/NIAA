@@ -1,14 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: train-mobilenet-classifier-completely-small-warm
+  name: dataloader
 spec:
   template:
     spec:
       priorityClassName: research-med
       restartPolicy: "Never"
       containers:
-        - name: train-mobilenet-classifier-completely-small-warm
+        - name: dataloader
           image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
@@ -16,13 +16,11 @@ spec:
               value: "/tmp"
           resources:
             limits:
-              nvidia.com/gpu: "1"
-              cpu: "16"
-              memory: "180Gi"
+              cpu: "4"
+              memory: "20Gi"
             requests:
-              nvidia.com/gpu: "1"
-              cpu: "16"
-              memory: "180Gi"
+              cpu: "4"
+              memory: "20Gi"
           volumeMounts:
             - mountPath: /workspace
               name: code
@@ -37,21 +35,7 @@ spec:
             #- --listen
             #- 0.0.0.0:4444
             #- --wait-for-client
-            - /workspace/SSIA/train.py
-            - --styles_margin
-            - "0.1"
-            - --technical_margin
-            - "0.2"
-            - --composition_margin
-            - "0.2"
-            - --conv_base_lr
-            - "0.0001"
-            - --dense_lr
-            - "0.0001"
-            - --base_model
-            - mobilenet
-            - --warm_start
-            - --warm_start_epoch=1
+            - /workspace/IA/load_dataset.py
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

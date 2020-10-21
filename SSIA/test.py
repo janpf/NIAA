@@ -14,7 +14,7 @@ logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logg
 
 
 test_file = "/workspace/dataset_processing/test_set.txt"
-model_path = "/scratch/ckpts/SSIA/pexels/mobilenet/0.0001/completely/epoch-2.pth"
+model_path = "/scratch/ckpts/SSIA-BAL/pexels/mobilenet/0.0001/completely/epoch-7.pth"
 
 if "mobilenet" in model_path:
     base_model = "mobilenet"
@@ -33,7 +33,7 @@ ssia.eval()
 logging.info("creating datasets")
 # datasets
 SSPexels_test = SSPexels(file_list_path=test_file, mapping=mapping, return_file_name=True)
-Pexels_test = torch.utils.data.DataLoader(SSPexels_test, batch_size=25, drop_last=False, num_workers=16)
+Pexels_test = torch.utils.data.DataLoader(SSPexels_test, batch_size=5, drop_last=False, num_workers=48)
 logging.info("datasets created")
 
 
@@ -58,6 +58,7 @@ for i, data in enumerate(Pexels_test):
         for k in out.keys():
             for i in range(len(data["file_name"])):
                 result_dicts[i][k] = out[k].tolist()[i]
+
         for p, s in zip(data["file_name"], result_dicts):
             if key == "original":
                 key = "original;0"
