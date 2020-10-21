@@ -7,6 +7,7 @@ import pandas as pd
 import redis
 import torch
 from torch import nn
+from torch import cuda
 
 sys.path[0] = "/workspace"
 from IA.dataset import SSPexelsSmall as SSPexels
@@ -85,11 +86,12 @@ for m in models_to_validate:
     losses_list = []
     for i, data in enumerate(Pexels_test):
         logging.info(f"{i}/{len(Pexels_test)}")
-        with torch.no_grad():
-            losses = ia.calc_loss(data)
+        with cuda.amp.autocast():
+            with torch.no_grad():
+                losses = ia.calc_loss(data)
         loss = sum([v for _, v in losses.items()])
         losses_list.append(loss)
     loss = sum(losses_list).item()
 
     with open(out_file, "a") as f:
-        f.write(f"{m},{loss}")
+        f.write(f"{m},{loss}\n")

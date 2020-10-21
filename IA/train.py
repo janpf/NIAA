@@ -105,7 +105,7 @@ logging.info("datasets created")
 
 if warm_epoch > 0:
     g_step = warm_epoch * len(Pexels_train_loader)
-    for epoch in range(warm_epoch):
+    for _ in range(warm_epoch):
         lr_scheduler.step()
 else:
     g_step = 0
