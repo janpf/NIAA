@@ -91,7 +91,7 @@ for m in models_to_validate:
                 losses = ia.calc_loss(data)
         loss = sum([v for _, v in losses.items()])
         losses_list.append(loss)
-    loss = sum(losses_list).item()
+    loss = (sum(losses_list) / len(losses_list)).item()
 
     with open(out_file, "a") as f:
         f.write(f"{m},{loss}\n")
