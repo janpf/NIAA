@@ -39,7 +39,7 @@ spec:
             # - --wait-for-client
             - /workspace/IA/test.py
             - --model_path
-            - /scratch/ckpts/IA/pexels/scores-one/change_regress/epoch-5.pth
+            - /scratch/ckpts/IA/pexels/scores-one/change_regress/epoch-9.pth
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
