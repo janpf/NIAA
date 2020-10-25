@@ -243,3 +243,11 @@ class TID2013(FolderDataset):
 
     def __getitem__(self, idx):
         return self._actualgetitem(idx)
+
+
+class Unsplash(FolderDataset):
+    def __init__(self, image_dir: str = "/scratch/unsplash/images", normalize: bool = True):
+        super().__init__(image_dir=image_dir, normalize=normalize)
+
+    def __getitem__(self, idx):
+        return self._actualgetitem(idx)
