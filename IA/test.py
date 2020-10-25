@@ -78,6 +78,8 @@ for i, data in enumerate(Pexels_test):
         for k in out.keys():
             for i in range(len(data["file_name"])):
                 result_dicts[i][k] = out[k].tolist()[i]
+                if len(result_dicts[i][k]) == 1:
+                    result_dicts[i][k] = result_dicts[i][k][0]
 
         for p, s in zip(data["file_name"], result_dicts):
             if key == "original":
