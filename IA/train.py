@@ -69,10 +69,10 @@ warm_epoch = 0
 logging.info("checking for checkpoints")
 if Path(config.ckpt_path).exists():
     logging.info("loading checkpoints")
-    if not (Path(config.ckpt_path) / f"epoch-0.pth").exists():
+    if not (Path(config.ckpt_path) / "epoch-1.pth").exists():
         logging.info("none found")
     else:
-        for warm_epoch in range(100):
+        for warm_epoch in range(1, 100):
             p = Path(config.ckpt_path) / f"epoch-{warm_epoch}.pth"
             if not (Path(config.ckpt_path) / f"epoch-{warm_epoch+1}.pth").exists():
                 break
@@ -105,7 +105,7 @@ logging.info("datasets created")
 
 if warm_epoch > 0:
     g_step = warm_epoch * len(Pexels_train_loader)
-    for epoch in range(warm_epoch + 1):
+    for _ in range(warm_epoch):
         lr_scheduler.step()
 else:
     g_step = 0

@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: command-and-control-proxy
+spec:
+  selector:
+    matchLabels:
+      app: command-and-control-proxy
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: command-and-control-proxy
+    spec:
+      restartPolicy: "Always"
+      containers:
+        - name: command-and-control-proxy
+          image: redsmin/proxy:latest
+          imagePullPolicy: "Always"
+          env:
+            - name: REDSMIN_KEY
+              value: "5f8de16d7f7e5e0faa7a7587"
+            - name: REDIS_URI
+              value: "redis://command-and-control:6379"
+          resources:
+            limits:
+              cpu: "1"
+              memory: ".5Gi"
+            requests:
+              cpu: ".1"
+              memory: ".1Gi"
