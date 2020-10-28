@@ -1,14 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: test-nima
+  name: test-one-regr-kadid
 spec:
   template:
     spec:
       priorityClassName: research-low
       restartPolicy: "Never"
       containers:
-        - name: test-nima
+        - name: test-one-regr-kadid
           image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
@@ -17,12 +17,12 @@ spec:
           resources:
             limits:
               nvidia.com/gpu: "1"
-              cpu: "4"
-              memory: "64Gi"
+              cpu: "15"
+              memory: "100Gi"
             requests:
               nvidia.com/gpu: "1"
-              cpu: "4"
-              memory: "64Gi"
+              cpu: "5"
+              memory: "85Gi"
           volumeMounts:
             - mountPath: /workspace
               name: code
@@ -37,7 +37,19 @@ spec:
             # - --listen
             # - 0.0.0.0:4444
             # - --wait-for-client
-            - /workspace/relatedWorks/test_NIMA.py
+            - /workspace/IA/test_KADID10k.py
+            - --model_path
+            - /scratch/ckpts/IA/pexels/scores-one/change_regress/epoch-9.pth
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - osse
+                      - uinen
       volumes:
         - name: code
           cephfs:
