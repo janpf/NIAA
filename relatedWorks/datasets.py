@@ -7,10 +7,13 @@ import torchvision.transforms as transforms
 from imagenet_c import corrupt
 from PIL import Image
 import logging
+from typing import List
+
+import random
 
 
 class SSPexels(torch.utils.data.Dataset):
-    def __init__(self, file_list_path: str, mapping, normalize: bool = True, moveAxis: bool = True, orig_dir: str = "/scratch/pexels/images", edited_dir: str = "/scratch/pexels/edited_images"):
+    def __init__(self, file_list_path: str, mapping, normalize: bool = False, moveAxis: bool = True, orig_dir: str = "/scratch/pexels/images", edited_dir: str = "/scratch/pexels/edited_images"):
         self.file_list_path = file_list_path
         self.mapping = mapping
         self.normalize = normalize
@@ -133,3 +136,36 @@ class SSPexels(torch.utils.data.Dataset):
                 data[k] = data[k].float()
         data["file_name"] = self.file_list[idx]
         return data
+
+
+class FolderDataset(torch.utils.data.Dataset):
+    def __init__(self, image_dir: str, normalize: bool, accepted_extensions: List[str] = ["jpg", "bmp", "png"]):
+        self.image_dir = image_dir
+        self.normalize = normalize
+        self.files = [str(val) for val in Path(image_dir).glob("**/*") if val.name.split(".")[-1].lower() in accepted_extensions]
+        logging.info(f"found {len(self.files)} files")
+
+    def __len__(self) -> int:
+        return len(self.files)
+
+    def __getitem__(self, idx):
+        try:
+            return self._actualgetitem(idx)
+        except:
+            return self[random.randint(0, len(self))]
+
+    def _actualgetitem(self, idx: int):
+        path = self.files[idx]
+        img = Image.open(path).convert("RGB")
+        img = transforms.Resize(256)(img)
+        img = transforms.CenterCrop(224)(img)
+        img = transforms.ToTensor()(img)
+        if self.normalize:
+            img = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])(img)
+
+        return {"img": img, "file_name": path, "idx": idx}
+
+
+class AVA(FolderDataset):
+    def __init__(self, image_dir: str = "/scratch/AVA/images", normalize: bool = False):
+        super().__init__(image_dir=image_dir, normalize=normalize)
