@@ -1,6 +1,7 @@
 import logging
 import random
 from pathlib import Path
+from typing import List
 
 import numpy as np
 import torch
@@ -194,10 +195,9 @@ class SSPexelsDummy(torch.utils.data.Dataset):
 
 
 class FolderDataset(torch.utils.data.Dataset):
-    def __init__(self, image_dir: str, normalize: bool):
+    def __init__(self, image_dir: str, normalize: bool, accepted_extensions: List[str] = ["jpg", "bmp", "png"]):
         self.image_dir = image_dir
         self.normalize = normalize
-        accepted_extensions = ["jpg", "bmp"]
         self.files = [str(val) for val in Path(image_dir).glob("**/*") if val.name.split(".")[-1].lower() in accepted_extensions]
         logging.info(f"found {len(self.files)} files")
 
@@ -239,6 +239,14 @@ class AVA(FolderDataset):
 
 class TID2013(FolderDataset):
     def __init__(self, image_dir: str = "/scratch/tid2013", normalize: bool = True):
+        super().__init__(image_dir=image_dir, normalize=normalize)
+
+    def __getitem__(self, idx):
+        return self._actualgetitem(idx)
+
+
+class KADID10k(FolderDataset):
+    def __init__(self, image_dir: str = "/scratch/kadid10k/images", normalize: bool = True):
         super().__init__(image_dir=image_dir, normalize=normalize)
 
     def __getitem__(self, idx):
