@@ -6,7 +6,7 @@ import math
 sys.path.insert(0, ".")
 from IA.utils import mapping, parameter_range
 
-out_file = open("/workspace/analysis/IA/spearman.txt", "w")
+out_file = open("/workspace/analysis/IA/pearson.txt", "w")
 
 df = pd.read_csv("/workspace/analysis/not_uploaded/IA/.scratch.ckpts.IA.pexels.scores-one.change_regress.epoch-9.pth.txt")
 
@@ -14,7 +14,7 @@ df = pd.read_csv("/workspace/analysis/not_uploaded/IA/.scratch.ckpts.IA.pexels.s
 df = df[["img", "distortion", "level", "score"]]
 
 
-def calculate_spearman(distortion: str, polarity: str, img_names=df["img"].unique()):
+def calculate_pearson(distortion: str, polarity: str, img_names=df["img"].unique()):
     corr_l = []
     p_l = []
     original_df = df[df["distortion"] == "original"]
@@ -28,6 +28,7 @@ def calculate_spearman(distortion: str, polarity: str, img_names=df["img"].uniqu
         if i % 1000 == 0:
             print(i)
         corr_df_img = corr_df[corr_df["img"] == f]
+        corr_df_img["score"] = corr_df_img["score"].apply(lambda row: eval(row)[0])
 
         if distortion in parameter_range:
             default = parameter_range[distortion]["default"]
@@ -41,7 +42,7 @@ def calculate_spearman(distortion: str, polarity: str, img_names=df["img"].uniqu
 
         corr_df_img["level"] = corr_df_img["level"].apply(lambda x: abs((x) - (default)))
 
-        c, p = stats.spearmanr(corr_df_img["score"], corr_df_img["level"])
+        c, p = stats.pearsonr(corr_df_img["score"], corr_df_img["level"])
         if math.isnan(c) or math.isnan(p):
             continue
         corr_l.append(c)
@@ -52,12 +53,12 @@ def calculate_spearman(distortion: str, polarity: str, img_names=df["img"].uniqu
 for distortion in list(mapping["styles"].keys()) + list(mapping["technical"].keys()) + list(mapping["composition"].keys()):
     print(distortion)
     try:
-        out_file.write(f"{distortion},pos,{calculate_spearman(distortion=distortion, polarity='pos')}\n")
+        out_file.write(f"{distortion},pos,{calculate_pearson(distortion=distortion, polarity='pos')}\n")
     except:
         out_file.write(f"{distortion},pos, didnt work\n")
     out_file.flush()
     try:
-        out_file.write(f"{distortion},neg,{calculate_spearman(distortion=distortion, polarity='neg')}\n")
+        out_file.write(f"{distortion},neg,{calculate_pearson(distortion=distortion, polarity='neg')}\n")
     except:
         out_file.write(f"{distortion},neg, didnt work\n")
     out_file.flush()
