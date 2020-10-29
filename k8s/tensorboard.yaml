@@ -32,7 +32,7 @@ spec:
               name: scratch
           command:
             - tensorboard
-            - --logdir=/scratch/train_logs/IA
+            - --logdir=/scratch/train_logs/IA2NIMA
             - --bind_all
             - --reload_multifile=true
             - --reload_multifile_inactive_secs=50000

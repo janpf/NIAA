@@ -1,0 +1,196 @@
+import argparse
+import logging
+import sys
+from pathlib import Path
+from typing import Dict, List
+
+import numpy as np
+import torch
+from torch import cuda, optim
+from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
+
+sys.path[0] = "/workspace"
+from IA2NIMA.dataset import AVA
+from IA2NIMA.NIMA import NIMA, earth_movers_distance
+
+parser = argparse.ArgumentParser()
+
+# training parameters
+parser.add_argument("--conv_lr", type=float, default=3e-7)
+parser.add_argument("--dense_lr", type=float, default=3e-6)
+parser.add_argument("--lr_decay_rate", type=float, default=0.95)
+
+parser.add_argument("--load_path", type=str, default=None)
+
+# misc
+parser.add_argument("--log_dir", type=str, default="/scratch/train_logs/IA2NIMA/AVA/")
+parser.add_argument("--ckpt_path", type=str, default="/scratch/ckpts/IA2NIMA/AVA/")
+
+config = parser.parse_args()
+
+logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
+logging.getLogger("PIL.PngImagePlugin").setLevel(logging.INFO)
+
+settings: List[str] = []
+
+if config.load_path is not None:
+    if "score-None" in config.load_path:
+        settings.append(None)
+    elif "score-one" in config.load_path:
+        settings.append("one")
+    elif "score-three" in config.load_path:
+        settings.append("three")
+
+    if "change_regress" in config.load_path:
+        settings.append("change_regress")
+
+    if "change_class" in config.load_path:
+        settings.append("change_class")
+else:
+    settings.append("imagenet")
+
+for s in settings:
+    config.log_dir = str(Path(config.log_dir) / s)
+    config.ckpt_path = str(Path(config.ckpt_path) / s)
+
+logging.info(f"saving to {config.ckpt_path}")
+Path(config.log_dir).mkdir(parents=True, exist_ok=True)
+writer = SummaryWriter(log_dir=config.log_dir)
+
+device = torch.device("cuda" if cuda.is_available() else "cpu")
+
+logging.info("loading model")
+nima = NIMA(config.load_path).to(device)
+
+# fmt:off
+optimizer = optim.SGD([ # will be set later
+    {"params": nima.features.parameters(), "initial_lr": 0},
+    {"params": nima.classifier.parameters(), "initial_lr": 0}],
+    lr=0,
+    momentum=0.9,
+    weight_decay=0.00004)
+# fmt:on
+
+lr_scheduler: optim.lr_scheduler.MultiplicativeLR = optim.lr_scheduler.MultiplicativeLR(optimizer, lambda epoch: config.lr_decay_rate ** (epoch + 1))
+scaler = cuda.amp.GradScaler()
+
+epoch = 0
+g_step = 0
+
+# loading checkpoints, ... or not
+warm_epoch = 0
+logging.info("checking for checkpoints")
+if Path(config.ckpt_path).exists():
+    logging.info("loading checkpoints")
+    if not (Path(config.ckpt_path) / "epoch-0.pth").exists():
+        logging.info("none found")
+    else:
+        for warm_epoch in range(0, 100):
+            p = Path(config.ckpt_path) / f"epoch-{warm_epoch}.pth"
+            if not (Path(config.ckpt_path) / f"epoch-{warm_epoch+1}.pth").exists():
+                break
+        state = torch.load(str(p))
+
+        nima.load_state_dict(state["model_state"])
+        optimizer.load_state_dict(state["optimizer_state"])
+        lr_scheduler.load_state_dict(state["scheduler_state"])
+        scaler.load_state_dict(state["scaler_state"])
+
+        epoch = state["epoch"] + 1
+        g_step = state["g_step"]
+
+        logging.info(f"Successfully loaded model {p}")
+
+logging.info("setting learnrates")
+
+
+# counting parameters
+param_num = 0
+for param in nima.parameters():
+    param_num += int(np.prod(param.shape))
+logging.info(f"trainable params: {(param_num / 1e6):.2f} million")
+
+logging.info("creating datasets")
+train_loader = DataLoader(AVA(mode="train"), batch_size=500, shuffle=True, drop_last=True, num_workers=50, pin_memory=True)
+logging.info("datasets created")
+
+
+logging.info("start training")
+for epoch in range(epoch, 100):
+    if epoch < 2:
+        for param in nima.features.parameters():
+            param.requires_grad = False
+    else:
+        for param in nima.parameters():
+            param.requires_grad = True
+
+    if epoch < 2:
+        # fmt:off
+        optimizer = optim.SGD(
+        [
+            {"params": nima.features.parameters(), "initial_lr": 0},
+            {"params": nima.classifier.parameters(), "initial_lr": 0.001}
+        ],
+        lr=0,
+        momentum=0.9,
+        weight_decay=0.00004)
+        # fmt:on
+        lr_scheduler: optim.lr_scheduler.MultiplicativeLR = optim.lr_scheduler.MultiplicativeLR(optimizer, lr_lambda=lambda epoch: config.lr_decay_rate ** (epoch + 1))
+    elif epoch == 2:
+        # fmt:off
+        optimizer = optim.SGD(
+        [
+            {"params": nima.features.parameters(), "initial_lr": config.conv_lr},
+            {"params": nima.classifier.parameters(), "initial_lr": config.dense_lr}
+        ],
+        lr=0,
+        momentum=0.9,
+        weight_decay=0.00004)
+        # fmt:on
+        lr_scheduler: optim.lr_scheduler.MultiplicativeLR = optim.lr_scheduler.MultiplicativeLR(optimizer, lr_lambda=lambda epoch: config.lr_decay_rate ** (epoch + 1))
+
+    for i, data in enumerate(train_loader):
+        logging.info(f"batch loaded: step {i}")
+
+        optimizer.zero_grad()
+        # forward pass + loss calculation
+        with cuda.amp.autocast():
+            loss = earth_movers_distance(data["y_true"].to(device), nima(data["img"].to(device)))
+
+        logging.info(f"Epoch: {epoch} | Step: {i}/{len(train_loader)} | Training loss: {loss.item()}")
+
+        # optimizing
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
+
+        writer.add_scalar("loss/train", loss.item(), g_step)
+        writer.add_scalar("progress/epoch", epoch, g_step)
+        writer.add_scalar("progress/step", i, g_step)
+        writer.add_scalar("hparams/conv_lr", optimizer.param_groups[0]["lr"], g_step)
+        writer.add_scalar("hparams/dense_lr", optimizer.param_groups[1]["lr"], g_step)
+
+        g_step += 1
+        logging.info("waiting for new batch")
+
+    # learning rate decay:
+    if epoch >= 2:
+        lr_scheduler.step()
+
+    logging.info("saving!")
+    Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
+    # fmt:off
+    state = {
+        "model_state": nima.state_dict(),
+        "optimizer_state": optimizer.state_dict(),
+        "scheduler_state": lr_scheduler.state_dict(),
+        "scaler_state": scaler.state_dict(),
+        "epoch": epoch,
+        "g_step": g_step
+        }
+    # fmt:on
+    torch.save(state, str(Path(config.ckpt_path) / f"epoch-{epoch}.pth"))
+
+logging.info("Training complete!")
+writer.close()
