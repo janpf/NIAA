@@ -223,7 +223,6 @@ class FolderDataset(torch.utils.data.Dataset):
     def _actualgetitem(self, idx: int):
         path = self.files[idx]
         img = Image.open(path).convert("RGB")
-        img = transforms.Resize(224)(img)
         img = self.pad_square(img)
         img = transforms.ToTensor()(img)
         if self.normalize:
