@@ -37,9 +37,9 @@ settings: List[str] = []
 if config.load_path is not None:
     if "score-None" in config.load_path:
         settings.append(None)
-    elif "score-one" in config.load_path:
+    elif "scores-one" in config.load_path:
         settings.append("one")
-    elif "score-three" in config.load_path:
+    elif "scores-three" in config.load_path:
         settings.append("three")
 
     if "change_regress" in config.load_path:

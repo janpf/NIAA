@@ -18,9 +18,9 @@ class NIMA(nn.Module):
 
         if load_path is not None:
             score = None
-            if "score-one" in load_path:
+            if "scores-one" in load_path:
                 score = "one"
-            elif "score-three" in load_path:
+            elif "scores-three" in load_path:
                 score = "three"
 
             ia = IA(score, "change_regress" in load_path, "change_class" in load_path, mapping, None)
