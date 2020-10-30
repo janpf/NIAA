@@ -35,7 +35,7 @@ logging.getLogger("PIL.PngImagePlugin").setLevel(logging.INFO)
 settings: List[str] = []
 
 if config.load_path is not None:
-    if "score-None" in config.load_path:
+    if "scores-None" in config.load_path:
         settings.append(None)
     elif "scores-one" in config.load_path:
         settings.append("one")
@@ -55,6 +55,7 @@ for s in settings:
     config.ckpt_path = str(Path(config.ckpt_path) / s)
 
 logging.info(f"saving to {config.ckpt_path}")
+
 Path(config.log_dir).mkdir(parents=True, exist_ok=True)
 writer = SummaryWriter(log_dir=config.log_dir)
 
@@ -64,19 +65,27 @@ logging.info("loading model")
 nima = NIMA(config.load_path).to(device)
 
 # fmt:off
-optimizer = optim.SGD([ # will be set later
-    {"params": nima.features.parameters(), "initial_lr": 0},
-    {"params": nima.classifier.parameters(), "initial_lr": 0}],
-    lr=0,
-    momentum=0.9,
-    weight_decay=0.00004)
+optimizer = optim.Adam(
+[
+    {"params": nima.features.parameters(), "lr": 0, "initial_lr":0},
+    {"params": nima.classifier.parameters(), "lr": 0.001, "initial_lr":0.001}
+],
+lr=0,
+weight_decay=0.00004)
 # fmt:on
+lr_scheduler: optim.lr_scheduler.ReduceLROnPlateau = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=5)
 
-lr_scheduler: optim.lr_scheduler.MultiplicativeLR = optim.lr_scheduler.MultiplicativeLR(optimizer, lambda epoch: config.lr_decay_rate ** (epoch + 1))
+# if settings[0] is not None:
+#    config.dense_lr = 0.001
+#    config.conv_lr = 0.0001
+
 scaler = cuda.amp.GradScaler()
 
 epoch = 0
 g_step = 0
+
+conv_locked = True
+new_lr_init = True
 
 # loading checkpoints, ... or not
 warm_epoch = 0
@@ -100,6 +109,9 @@ if Path(config.ckpt_path).exists():
         epoch = state["epoch"] + 1
         g_step = state["g_step"]
 
+        conv_locked = state["conv_locked"]
+        new_lr_init = state["new_lr_init"]
+
         logging.info(f"Successfully loaded model {p}")
 
 logging.info("setting learnrates")
@@ -113,42 +125,30 @@ logging.info(f"trainable params: {(param_num / 1e6):.2f} million")
 
 logging.info("creating datasets")
 train_loader = DataLoader(AVA(mode="train"), batch_size=500, shuffle=True, drop_last=True, num_workers=50, pin_memory=True)
+val_loader = DataLoader(AVA(mode="val"), batch_size=500, shuffle=False, drop_last=True, num_workers=50, pin_memory=True)
 logging.info("datasets created")
 
-
 logging.info("start training")
-for epoch in range(epoch, 100):
-    if epoch < 2:
+for epoch in range(epoch, 150):
+    if conv_locked:
         for param in nima.features.parameters():
             param.requires_grad = False
     else:
         for param in nima.parameters():
             param.requires_grad = True
 
-    if epoch < 2:
+    if not conv_locked and new_lr_init:
         # fmt:off
-        optimizer = optim.SGD(
+        optimizer = optim.Adam(
         [
-            {"params": nima.features.parameters(), "initial_lr": 0},
-            {"params": nima.classifier.parameters(), "initial_lr": 0.001}
+            {"params": nima.features.parameters(), "lr": config.conv_lr, "initial_lr": config.conv_lr},
+            {"params": nima.classifier.parameters(), "lr": config.dense_lr, "initial_lr": config.dense_lr}
         ],
         lr=0,
-        momentum=0.9,
         weight_decay=0.00004)
         # fmt:on
-        lr_scheduler: optim.lr_scheduler.MultiplicativeLR = optim.lr_scheduler.MultiplicativeLR(optimizer, lr_lambda=lambda epoch: config.lr_decay_rate ** (epoch + 1))
-    elif epoch == 2:
-        # fmt:off
-        optimizer = optim.SGD(
-        [
-            {"params": nima.features.parameters(), "initial_lr": config.conv_lr},
-            {"params": nima.classifier.parameters(), "initial_lr": config.dense_lr}
-        ],
-        lr=0,
-        momentum=0.9,
-        weight_decay=0.00004)
-        # fmt:on
-        lr_scheduler: optim.lr_scheduler.MultiplicativeLR = optim.lr_scheduler.MultiplicativeLR(optimizer, lr_lambda=lambda epoch: config.lr_decay_rate ** (epoch + 1))
+        lr_scheduler: optim.lr_scheduler.ReduceLROnPlateau = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=5)
+        new_lr_init = False
 
     for i, data in enumerate(train_loader):
         logging.info(f"batch loaded: step {i}")
@@ -174,9 +174,24 @@ for epoch in range(epoch, 100):
         g_step += 1
         logging.info("waiting for new batch")
 
+    logging.info("validating")
+    val_loss = []
+    for i, data in enumerate(val_loader):
+        with cuda.amp.autocast():
+            with torch.no_grad():
+                loss = earth_movers_distance(data["y_true"].to(device), nima(data["img"].to(device)))
+        val_loss.append(loss)
+
+    val_loss = sum(val_loss) / len(val_loss)
+    writer.add_scalar("loss/val", val_loss.item(), g_step)
+
     # learning rate decay:
-    if epoch >= 2:
-        lr_scheduler.step()
+    lr_scheduler.step(val_loss.item())
+
+    if conv_locked and optimizer.param_groups[1]["lr"] != optimizer.param_groups[1]["initial_lr"]:  #  learn rate scheduled would have stepped, so activate everything
+        logging.info("unlocking cnn")
+        conv_locked = False
+        new_lr_init = True
 
     logging.info("saving!")
     Path(config.ckpt_path).mkdir(parents=True, exist_ok=True)
@@ -187,7 +202,9 @@ for epoch in range(epoch, 100):
         "scheduler_state": lr_scheduler.state_dict(),
         "scaler_state": scaler.state_dict(),
         "epoch": epoch,
-        "g_step": g_step
+        "g_step": g_step,
+        "conv_locked": conv_locked,
+        "new_lr_init": new_lr_init
         }
     # fmt:on
     torch.save(state, str(Path(config.ckpt_path) / f"epoch-{epoch}.pth"))
