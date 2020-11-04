@@ -17,8 +17,8 @@ from IA2NIMA.NIMA import NIMA, earth_movers_distance
 parser = argparse.ArgumentParser()
 
 # training parameters
-parser.add_argument("--conv_lr", type=float, default=3e-7)
-parser.add_argument("--dense_lr", type=float, default=3e-6)
+parser.add_argument("--conv_lr", type=float, default=0.0001)
+parser.add_argument("--dense_lr", type=float, default=0.001)
 parser.add_argument("--lr_decay_rate", type=float, default=0.95)
 
 parser.add_argument("--load_path", type=str, default=None)
@@ -124,8 +124,8 @@ for param in nima.parameters():
 logging.info(f"trainable params: {(param_num / 1e6):.2f} million")
 
 logging.info("creating datasets")
-train_loader = DataLoader(AVA(mode="train"), batch_size=500, shuffle=True, drop_last=True, num_workers=50, pin_memory=True)
-val_loader = DataLoader(AVA(mode="val"), batch_size=500, shuffle=False, drop_last=True, num_workers=50, pin_memory=True)
+train_loader = DataLoader(AVA(mode="train"), batch_size=450, shuffle=True, drop_last=True, num_workers=50, pin_memory=True)
+val_loader = DataLoader(AVA(mode="val"), batch_size=450, shuffle=False, drop_last=True, num_workers=50, pin_memory=True)
 logging.info("datasets created")
 
 logging.info("start training")

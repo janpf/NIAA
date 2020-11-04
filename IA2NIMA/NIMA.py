@@ -27,7 +27,7 @@ class NIMA(nn.Module):
             ia.load_state_dict(torch.load(str(load_path)))
             self.features = ia.features
         else:
-            self.features = torchvision.models.mobilenet.mobilenet_v2(pretrained=True).features
+            self.features = ia = IA(None, False, False, mapping, None).features
         # fmt: off
         self.classifier = nn.Sequential(
             nn.Dropout(p=0.75),
