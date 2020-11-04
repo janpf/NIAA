@@ -5,10 +5,10 @@ metadata:
 spec:
   template:
     spec:
-      priorityClassName: research-med
+      priorityClassName: research-low
       restartPolicy: "Never"
       containers:
-        - name: train-mobilenet-classifier
+        - name: benchmark-dataset
           image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
@@ -35,7 +35,7 @@ spec:
             #- --listen
             #- 0.0.0.0:4444
             #- --wait-for-client
-            - /workspace/IA/benchmark_dataset.py
+            - /workspace/IA2NIMA/benchmark_dataset.py
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

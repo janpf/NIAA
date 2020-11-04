@@ -3,7 +3,7 @@ kind: Job
 metadata:
   name: validate
 spec:
-  parallelism: 50
+  parallelism: 10
   template:
     spec:
       priorityClassName: research-low

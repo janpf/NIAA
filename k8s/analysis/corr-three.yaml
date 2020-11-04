@@ -1,14 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: test-one-regr
+  name: ia-corr-three
 spec:
   template:
     spec:
       priorityClassName: research-low
       restartPolicy: "Never"
       containers:
-        - name: test-one-regr
+        - name: ia-corr-three
           image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
@@ -16,13 +16,11 @@ spec:
               value: "/tmp"
           resources:
             limits:
-              nvidia.com/gpu: "1"
-              cpu: "15"
-              memory: "100Gi"
+              cpu: "1"
+              memory: "5Gi"
             requests:
-              nvidia.com/gpu: "1"
-              cpu: "5"
-              memory: "85Gi"
+              cpu: "1"
+              memory: "5Gi"
           volumeMounts:
             - mountPath: /workspace
               name: code
@@ -32,14 +30,14 @@ spec:
               name: dshm
           command:
             - python3
-            # - -m
-            # - debugpy
-            # - --listen
-            # - 0.0.0.0:4444
-            # - --wait-for-client
-            - /workspace/IA/test.py
-            - --model_path
-            - /scratch/ckpts/IA/pexels/scores-one/change_regress/epoch-17.pth
+            #- -m
+            #- debugpy
+            #- --listen
+            #- 0.0.0.0:4444
+            #- --wait-for-client
+            - /workspace/analysis_code/IA_corr.py
+            - --resultfile
+            - /workspace/analysis/not_uploaded/IA/.scratch.ckpts.IA.pexels.scores-three.epoch-1.pth.txt
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

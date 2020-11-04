@@ -1,14 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: test-one-regr
+  name: train-ia-score-three-regr
 spec:
   template:
     spec:
-      priorityClassName: research-low
+      priorityClassName: research-med
       restartPolicy: "Never"
       containers:
-        - name: test-one-regr
+        - name: train-ia-score-three-regr
           image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
@@ -32,14 +32,15 @@ spec:
               name: dshm
           command:
             - python3
-            # - -m
-            # - debugpy
-            # - --listen
-            # - 0.0.0.0:4444
-            # - --wait-for-client
-            - /workspace/IA/test.py
-            - --model_path
-            - /scratch/ckpts/IA/pexels/scores-one/change_regress/epoch-17.pth
+            #- -m
+            #- debugpy
+            #- --listen
+            #- 0.0.0.0:4444
+            #- --wait-for-client
+            - /workspace/IA/train.py
+            - --score
+            - three
+            - --change_regress
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
