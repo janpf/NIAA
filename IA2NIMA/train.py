@@ -36,7 +36,7 @@ settings: List[str] = []
 
 if config.load_path is not None:
     if "scores-None" in config.load_path:
-        settings.append(None)
+        settings.append(str(None))
     elif "scores-one" in config.load_path:
         settings.append("one")
     elif "scores-three" in config.load_path:
