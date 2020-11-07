@@ -17,11 +17,6 @@ from IA.utils import mapping
 logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
 # logging.getLogger("PIL.PngImagePlugin").setLevel(logging.INFO)
 
-margin = dict()
-margin["styles"] = 0.2
-margin["technical"] = 0.2
-margin["composition"] = 0.2
-
 test_file = "/workspace/dataset_processing/val_set.txt"
 models_path = "/scratch/ckpts/IA"
 out_file = "/workspace/analysis/IA/vals.csv"
@@ -77,6 +72,23 @@ for m in models_to_validate:
     if "change_class" in m:
         change_class = True
 
+    if "m-0.4" in m:
+        margin_f = 0.4
+    elif "m-0.6" in m:
+        margin_f = 0.6
+    else:
+        margin_f = 0.2
+
+    margin = dict()
+    margin["styles"] = margin_f
+    margin["technical"] = margin_f
+    margin["composition"] = margin_f
+
+    if margin_f > 0.3:
+        T = 100
+    else:
+        T = 50
+
     logging.info(f"score:{scores}, change_regress:{change_regress}, change_class:{change_class}")
     logging.info("loading model")
     ia = IA(scores=scores, change_regress=change_regress, change_class=change_class, mapping=mapping, margin=margin).to(device)
@@ -88,7 +100,7 @@ for m in models_to_validate:
         logging.info(f"{i}/{len(Pexels_test)}")
         with cuda.amp.autocast():
             with torch.no_grad():
-                losses = ia.calc_loss(data)
+                losses = ia.calc_loss(data, T)
         loss = sum([v for _, v in losses.items()])
         losses_list.append(loss)
     loss = (sum(losses_list) / len(losses_list)).item()

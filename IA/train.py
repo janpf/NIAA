@@ -1,6 +1,7 @@
 import argparse
 import logging
 import sys
+import math
 from pathlib import Path
 from typing import Dict, List
 
@@ -19,9 +20,7 @@ parser = argparse.ArgumentParser()
 
 # training parameters
 parser.add_argument("--lr", type=float, default=0.0001)
-parser.add_argument("--styles_margin", type=float, default=0.2)
-parser.add_argument("--technical_margin", type=float, default=0.2)
-parser.add_argument("--composition_margin", type=float, default=0.2)
+parser.add_argument("--margin", type=float, default=0.2)
 parser.add_argument("--lr_decay_rate", type=float, default=0.9)
 parser.add_argument("--train_batch_size", type=int, default=5)
 parser.add_argument("--num_workers", type=int, default=40)
@@ -44,14 +43,22 @@ if config.change_regress:
 if config.change_class:
     settings.append("change_class")
 
+if not math.isclose(config.margin, 0.2):
+    settings.append(f"m-{config.margin}")
+
 for s in settings:
     config.log_dir = str(Path(config.log_dir) / s)
     config.ckpt_path = str(Path(config.ckpt_path) / s)
 
 margin = dict()
-margin["styles"] = config.styles_margin
-margin["technical"] = config.technical_margin
-margin["composition"] = config.composition_margin
+margin["styles"] = config.margin
+margin["technical"] = config.margin
+margin["composition"] = config.margin
+
+if config.margin > 0.3:
+    T = 100
+else:
+    T = 50
 
 logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
 # logging.getLogger("PIL.PngImagePlugin").setLevel(logging.INFO)
@@ -114,12 +121,20 @@ else:
 logging.info("start training")
 for epoch in range(warm_epoch + 1, 100):
     for i, data in enumerate(Pexels_train_loader):
+
+        if g_step <= 200:
+            for param in ia.features.parameters():
+                param.requires_grad = False
+        elif g_step <= 300:
+            for param in ia.parameters():
+                param.requires_grad = True
+
         logging.info(f"batch loaded: step {i}")
 
         optimizer.zero_grad()
         # forward pass + loss calculation
         with cuda.amp.autocast():
-            losses = ia.calc_loss(data)
+            losses = ia.calc_loss(data, T)
 
         for k, loss in losses.items():
             writer.add_scalar(f"loss/train/balanced/{k}", loss.item(), g_step)
@@ -136,9 +151,9 @@ for epoch in range(warm_epoch + 1, 100):
         writer.add_scalar("progress/epoch", epoch, g_step)
         writer.add_scalar("progress/step", i, g_step)
         writer.add_scalar("hparams/lr", optimizer.param_groups[0]["lr"], g_step)
-        writer.add_scalar("hparams/margin/styles", float(config.styles_margin), g_step)
-        writer.add_scalar("hparams/margin/technical", float(config.technical_margin), g_step)
-        writer.add_scalar("hparams/margin/composition", float(config.composition_margin), g_step)
+        writer.add_scalar("hparams/margin/styles", float(margin["styles"]), g_step)
+        writer.add_scalar("hparams/margin/technical", float(margin["technical"]), g_step)
+        writer.add_scalar("hparams/margin/composition", float(margin["composition"]), g_step)
 
         g_step += 1
         logging.info("waiting for new batch")

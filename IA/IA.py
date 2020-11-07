@@ -133,7 +133,7 @@ class IA(nn.Module):
 
         return result_dict
 
-    def calc_loss(self, batch) -> Dict[str, torch.Tensor]:
+    def calc_loss(self, batch, T:int=50) -> Dict[str, torch.Tensor]:
         """at this point I have basically reinvented pytorch lightning"""
         mseloss = nn.MSELoss()
         celoss = nn.CrossEntropyLoss()
@@ -228,12 +228,12 @@ class IA(nn.Module):
         resulting_losses = dict()
 
         if self.scores is not None:
-            resulting_losses["ranking_loss"] = h(ranking_loss)
+            resulting_losses["ranking_loss"] = h(ranking_loss, T)
 
         if self.change_regress:
-            resulting_losses["change_regress_loss"] = h(change_regress_loss)
+            resulting_losses["change_regress_loss"] = h(change_regress_loss, T)
 
         if self.change_class:
-            resulting_losses["change_class_loss"] = h(change_class_loss)
+            resulting_losses["change_class_loss"] = h(change_class_loss, T)
 
         return resulting_losses
