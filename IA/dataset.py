@@ -214,7 +214,7 @@ class FolderDataset(torch.utils.data.Dataset):
     def __len__(self) -> int:
         return len(self.files)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int):
         try:
             return self._actualgetitem(idx)
         except:
@@ -240,7 +240,7 @@ class TID2013(FolderDataset):
     def __init__(self, image_dir: str = "/scratch/tid2013", normalize: bool = True):
         super().__init__(image_dir=image_dir, normalize=normalize)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int):
         return self._actualgetitem(idx)
 
 
@@ -248,7 +248,7 @@ class KADID10k(FolderDataset):
     def __init__(self, image_dir: str = "/scratch/kadid10k/images", normalize: bool = True):
         super().__init__(image_dir=image_dir, normalize=normalize)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int):
         return self._actualgetitem(idx)
 
 
@@ -256,5 +256,10 @@ class Unsplash(FolderDataset):
     def __init__(self, image_dir: str = "/scratch/unsplash/images", normalize: bool = True):
         super().__init__(image_dir=image_dir, normalize=normalize)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int):
         return self._actualgetitem(idx)
+
+
+class FIVEK(FolderDataset):
+    def __init__(self, image_dir: str = "/scratch/fivek", normalize: bool = True):
+        super().__init__(image_dir=image_dir, normalize=normalize, accepted_extensions=["tif"])
