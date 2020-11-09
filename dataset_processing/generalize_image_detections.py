@@ -1,7 +1,7 @@
 from collections import Counter
 from nltk.corpus import wordnet as wn
 
-with open("/home/stud/pfister/eclipse-workspace/NIAA/analysis/detected_in_images.csv") as f:
+with open("/home/janpf/projects/NIAA/analysis/not_uploaded/detected_in_images.csv") as f:
     content = f.readlines()
 
 content = [val.strip() for val in content]
@@ -10,16 +10,11 @@ content = [val for val in content if len(val) != 0]
 content = [[obj.split(":") for obj in val] for val in content]
 content = [[[obj[0], float(obj[1]), eval(obj[2])] for obj in val] for val in content]
 
-for f in content[:20]:
-    print(f)
-
-exit()
-
 print(f"number of images with objects: {len(content)}")
 # print(f"average number of objects per image: {}")
 
-topchoices = Counter([val[1].split(":")[0] for val in content])
-
+topchoices = Counter([obj[0][0] for obj in content])
+print(topchoices.most_common(5))
 
 # fmt: off
 imagenet_topclasses = [
@@ -75,4 +70,4 @@ for clazz in list(imagenet_topclasses_counter.keys()):
         del imagenet_topclasses_counter[clazz]
 
 print(imagenet_topclasses_counter)
-# {'plant': 3480, 'geological_formation': 13140, 'natural_object': 2470, 'artifact': 78429, 'fungus': 493, 'person': 2984, 'animal': 11435}
+# {'plant': 489, 'natural_object': 1208, 'artifact': 25656, 'person': 44308, 'animal': 8453}
