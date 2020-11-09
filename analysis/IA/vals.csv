@@ -117,3 +117,14 @@ path,loss
 /scratch/ckpts/IA/pexels/scores-three/epoch-8.pth,5.201038837432861
 /scratch/ckpts/IA/pexels/scores-three/epoch-9.pth,5.222064018249512
 /scratch/ckpts/IA/pexels/scores-three/change_regress/epoch-1.pth,9.758424758911133
+/scratch/ckpts/IA/pexels/scores-one/m-0.6/epoch-1.pth,18.852876663208008
+/scratch/ckpts/IA/pexels/scores-three/change_regress/m-0.4/epoch-1.pth,8.267097473144531
+/scratch/ckpts/IA/pexels/scores-three/change_regress/epoch-3.pth,11.701985359191895
+/scratch/ckpts/IA/pexels/scores-one/m-0.4/epoch-1.pth,6.494071960449219
+/scratch/ckpts/IA/pexels/scores-three/change_regress/m-0.6/epoch-1.pth,17.870521545410156
+/scratch/ckpts/IA/pexels/scores-three/m-0.4/epoch-1.pth,6.136929035186768
+/scratch/ckpts/IA/pexels/scores-three/change_regress/epoch-2.pth,12.166982650756836
+/scratch/ckpts/IA/pexels/scores-one/change_regress/m-0.6/epoch-1.pth,18.896835327148438
+/scratch/ckpts/IA/pexels/scores-one/change_regress/m-0.4/epoch-1.pth,7.797771453857422
+/scratch/ckpts/IA/pexels/scores-three/m-0.6/epoch-1.pth,17.90721893310547
+/scratch/ckpts/IA/pexels/scores-three/change_regress/epoch-4.pth,9.692337036132812
