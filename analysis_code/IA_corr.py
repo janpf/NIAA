@@ -16,15 +16,19 @@ logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logg
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--resultfile", type=str)
+parser.add_argument("--score", type=str, default="score")
 
 config = parser.parse_args()
 
 df = pd.read_csv(config.resultfile)
-
 out_file = dict()
-out_file["spearman"] = open(f"/workspace/analysis/IA/{Path(config.resultfile).stem}_spearman.txt", "w")
-out_file["pearson"] = open(f"/workspace/analysis/IA/{Path(config.resultfile).stem}_pearson.txt", "w")
 
+if config.score == "score":
+    out_file["spearman"] = open(f"/workspace/analysis/IA/{Path(config.resultfile).stem}_spearman.txt", "w")
+    out_file["pearson"] = open(f"/workspace/analysis/IA/{Path(config.resultfile).stem}_pearson.txt", "w")
+else:
+    out_file["spearman"] = open(f"/workspace/analysis/IA/{Path(config.resultfile).stem}_{config.score}_spearman.txt", "w")
+    out_file["pearson"] = open(f"/workspace/analysis/IA/{Path(config.resultfile).stem}_{config.score}_pearson.txt", "w")
 
 for col in ["score", "styles_score", "technical_score", "composition_score"]:
     try:
@@ -35,7 +39,10 @@ for col in ["score", "styles_score", "technical_score", "composition_score"]:
 if "styles_score" in df.columns:
     df["score"] = (df["styles_score"] + df["technical_score"] + df["composition_score"]) / 3
 
-df = df[["img", "distortion", "level", "score"]]
+try:
+    df = df[["img", "distortion", "level", "score", "styles_score", "technical_score", "composition_score"]]
+except:
+    df = df[["img", "distortion", "level", "score"]]
 
 
 def calculate_corr(distortion: str, polarity: str, corr: str, img_names=df["img"].unique()):
@@ -46,7 +53,7 @@ def calculate_corr(distortion: str, polarity: str, corr: str, img_names=df["img"
         original_df["level"] = parameter_range[distortion]["default"]
 
     parameter_df = df[df["distortion"] == distortion]
-    corr_df = pd.concat([parameter_df, original_df])[["img", "distortion", "level", "score"]]
+    corr_df = pd.concat([parameter_df, original_df])
 
     if distortion in parameter_range:
         default = parameter_range[distortion]["default"]
@@ -66,9 +73,9 @@ def calculate_corr(distortion: str, polarity: str, corr: str, img_names=df["img"
         corr_df_img = corr_df[corr_df["img"] == f]
 
         if corr == "spearman":
-            c, p = stats.spearmanr(corr_df_img["score"], corr_df_img["level"])
+            c, p = stats.spearmanr(corr_df_img[config.score], corr_df_img["level"])
         elif corr == "pearson":
-            c, p = stats.pearsonr(corr_df_img["score"], corr_df_img["level"])
+            c, p = stats.pearsonr(corr_df_img[config.score], corr_df_img["level"])
 
         if math.isnan(c) or math.isnan(p):
             continue

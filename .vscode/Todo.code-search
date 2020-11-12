@@ -3,7 +3,13 @@
 # Including: /home/stud/pfister/eclipse-workspace/NIAA, /home/stud/pfister/eclipse-workspace/Masterarbeit
 # Excluding: .gitignore
 
-2 results - 2 files
+4 results - 4 files
+
+NIAA • analysis_code_related/NIMA_test.ipynb:
+  245:     "def violin_distortion(distortion:str): # FIXME defaults for shadows, hightlights...\n",
+
+NIAA • analysis_code_related/RANKIQA_test.ipynb:
+  243:     "def violin_distortion(distortion:str): # FIXME defaults for shadows, hightlights...\n",
 
 NIAA • dataset_processing/generalize_image_classifications.py:
   38:     word = f"{word}.n.01"  # primary noun I guess? # TODO check

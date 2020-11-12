@@ -27,6 +27,5 @@
     ],
     "remoteAuthority": "ssh-remote+vingilot",
     "settings": {
-        "python.pythonPath": "venv/bin/python"
     }
 }

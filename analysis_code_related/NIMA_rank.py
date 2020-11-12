@@ -4,9 +4,9 @@ import sys
 import math
 
 sys.path.insert(0, ".")
-from SSMTIA.utils import mapping, parameter_range
+from IA.utils import mapping, parameter_range
 
-out_file = open("/workspace/analysis/NIMA/spearman.txt", "w")
+out_file = open("/workspace/analysis/NIMA/pearson.txt", "w")
 
 df = pd.read_csv("/workspace/analysis/not_uploaded/NIMA_test_dist.csv", sep=";")
 df["dist"] = df["dist"].apply(eval)
@@ -40,7 +40,7 @@ def calculate_spearman(distortion: str, polarity: str, img_names=df["img"].uniqu
 
         corr_df_img["change"] = corr_df_img["change"].apply(lambda x: abs((x) - (default)))
 
-        c, p = stats.spearmanr(corr_df_img["score"], corr_df_img["change"])
+        c, p = stats.pearsonr(corr_df_img["score"], corr_df_img["change"])
         if math.isnan(c) or math.isnan(p):
             continue
         corr_l.append(c)
