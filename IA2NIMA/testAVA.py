@@ -17,8 +17,29 @@ logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logg
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--model-path", type=str, default=None)
+parser.add_argument("--last-frozen", action="store_true")
+parser.add_argument("--first-unfrozen", action="store_true")
+
 config = parser.parse_args()
 
+if config.last_frozen and config.first_unfrozen:
+    exit("what")
+
+if config.last_frozen:
+    for p in sorted(Path(config.model_path).glob("*.pth"), key=lambda x: int(x.stem.split("epoch-")[1])):
+        if not torch.load(p)["conv_locked"] and torch.load(p)["new_lr_init"]:
+            config.model_path = p
+            break
+
+if config.first_unfrozen:
+    for p in sorted(Path(config.model_path).glob("*.pth"), key=lambda x: int(x.stem.split("epoch-")[1])):
+        if not torch.load(p)["conv_locked"] and not torch.load(p)["new_lr_init"]:
+            config.model_path = p
+            break
+
+config.model_path = str(config.model_path)
+
+logging.info(f"loading {config.model_path}")
 
 out_file = "/workspace/analysis/not_uploaded/IA2NIMA/AVA/" + config.model_path.replace("/", ".") + ".txt"
 

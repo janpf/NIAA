@@ -1,14 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: test-ia2nima-ava
+  name: test-ia2nima-ava-scores-one-regr-lastfrozen
 spec:
   template:
     spec:
       priorityClassName: research-med
       restartPolicy: "Never"
       containers:
-        - name: test-ia2nima-ava
+        - name: test-ia2nima-ava-scores-one-regr-lastfrozen
           image: janpf/niaa:pytorch-latest
           imagePullPolicy: "Always"
           env:
@@ -39,7 +39,8 @@ spec:
             # - --wait-for-client
             - /workspace/IA2NIMA/testAVA.py
             - --model-path
-            - /scratch/ckpts/IA2NIMA/AVA/imagenet/epoch-149.pth
+            - /scratch/ckpts/IA2NIMA/AVA/one/change_regress/
+            - --last-frozen
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
