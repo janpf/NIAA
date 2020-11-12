@@ -100,7 +100,7 @@ parameter_range["exposure"]["range"] = [-3.0, -2.4, -1.8, -1.2, -0.6, 0.0, 0.6, 
 parameter_range["vibrance"]["min"] = 0
 parameter_range["vibrance"]["default"] = 25
 parameter_range["vibrance"]["max"] = 100
-parameter_range["vibrance"]["range"] = [0, 20, 40, 60, 80, 100]
+parameter_range["vibrance"]["range"] = [0, 20, 25, 40, 60, 80, 100]
 
 parameter_range["temperature"]["min"] = 1000
 parameter_range["temperature"]["default"] = 6500
