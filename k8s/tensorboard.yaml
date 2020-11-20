@@ -46,6 +46,7 @@ spec:
                     values:
                       - osse
                       - uinen
+                      - ira
       volumes:
         - name: scratch
           cephfs:

@@ -47,6 +47,12 @@ if config.load_path is not None:
 
     if "change_class" in config.load_path:
         settings.append("change_class")
+
+    if "m-0.4" in config.load_path:
+        settings.append("m-0.4")
+    elif "m-0.6" in config.load_path:
+        settings.append("m-0.6")
+
 else:
     settings.append("imagenet")
 
