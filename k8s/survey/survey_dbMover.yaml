@@ -15,7 +15,7 @@ spec:
       restartPolicy: "Always"
       containers:
         - name: survey-dbmover
-          image: janpf/niaa:flask-latest
+          image: ghcr.io/janpf/niaa/general:latest
           imagePullPolicy: "Always"
           command: ["/bin/sh"]
           args: ["survey/dbMover.sh"]

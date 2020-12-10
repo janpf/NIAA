@@ -8,7 +8,7 @@ spec:
       restartPolicy: "Never"
       containers:
         - name: dataset-to-redis-train
-          image: janpf/niaa:flask-latest
+          image: ghcr.io/janpf/niaa/general:latest
           imagePullPolicy: "Always"
           env:
             - name: HOME

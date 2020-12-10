@@ -9,7 +9,7 @@ spec:
       restartPolicy: "Never"
       containers:
         - name: image-processor
-          image: janpf/niaa:flask-latest
+          image: ghcr.io/janpf/niaa/general:latest
           imagePullPolicy: "Always"
           env:
             - name: HOME

@@ -11,7 +11,7 @@ spec:
       restartPolicy: "Never"
       containers:
         - name: survey-replicator
-          image: janpf/niaa:pytorch-latest
+          image: ghcr.io/janpf/niaa/pytorch:latest
           imagePullPolicy: "Always"
           command:
             - python3

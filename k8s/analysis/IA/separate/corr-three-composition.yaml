@@ -9,7 +9,7 @@ spec:
       restartPolicy: "Never"
       containers:
         - name: ia-corr-three-composition
-          image: janpf/niaa:pytorch-latest
+          image: ghcr.io/janpf/niaa/pytorch:latest
           imagePullPolicy: "Always"
           env:
             - name: HOME

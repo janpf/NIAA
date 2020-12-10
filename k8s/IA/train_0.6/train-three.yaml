@@ -9,7 +9,7 @@ spec:
       restartPolicy: "Never"
       containers:
         - name: train-ia-score-three-m06
-          image: janpf/niaa:pytorch-latest
+          image: ghcr.io/janpf/niaa/pytorch:latest
           imagePullPolicy: "Always"
           env:
             - name: HOME

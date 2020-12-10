@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: tensorboard
-          image: janpf/niaa:flask-latest
+          image: ghcr.io/janpf/niaa/general:latest
           imagePullPolicy: "Always"
           ports:
             - containerPort: 6006
