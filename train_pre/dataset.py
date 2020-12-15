@@ -11,7 +11,7 @@ import torchvision.transforms as transforms
 from imagenet_c import corrupt
 from PIL import Image
 
-from IA.utils import filename2path, rotatedRectWithMaxArea
+from train_pre.utils import filename2path, rotatedRectWithMaxArea
 
 
 class SSPexelsSmall(torch.utils.data.Dataset):
