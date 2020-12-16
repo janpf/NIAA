@@ -5,6 +5,7 @@ numpy
 opencv-python-headless
 pandas
 Pillow
+pytorch-lightning
 redis
 scikit-image
 tensorboard
