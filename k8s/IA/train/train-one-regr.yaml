@@ -38,23 +38,23 @@ spec:
             #- 0.0.0.0:4444
             #- --wait-for-client
             - /workspace/train_pre/train.py
-            - --score
+            - --scores
             - one
             - --change_regress
-            - margin
+            - --margin
             - "0.2"
-            - auto_scale_batch_size
+            - --auto_scale_batch_size
             - "True"
-            - auto_lr_find
-            - "True"
-            - gpus
+            - --auto_lr_find
+            - "lr"
+            - --gpus
             - "-1"
-            - benchmark
+            - --benchmark
             - "True"
-            - precision
+            - --precision
             - "16"
-            - fast_dev_run
-            - "True"
+            - --fast_dev_run
+            - "7"
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

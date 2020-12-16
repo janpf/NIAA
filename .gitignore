@@ -134,3 +134,4 @@ dmypy.json
 # rest
 margins.csv
 not_uploaded
+lightning_logs
