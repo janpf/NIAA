@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple
 import pytorch_lightning as pl
 import torch
 import torchvision
-from torch import nn, optim
+from torch import float64, nn, optim
 from torch.utils.checkpoint import checkpoint_sequential
 from torch.utils.data import DataLoader
 
@@ -29,11 +29,9 @@ class IA(pl.LightningModule):
     @staticmethod
     def add_model_specific_args(parent_parser):
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
-        parser.add_argument("--lr", type=float, default=0.001)
-        parser.add_argument("--margin", type=float, default=0.2)
+        parser.add_argument("--margin", type=float64)
         parser.add_argument("--lr_decay_rate", type=float, default=0.5)
         parser.add_argument("--lr_patience", type=float, default=3)
-        parser.add_argument("--batch_size", type=int, default=5)
         parser.add_argument("--num_workers", type=int, default=40)
 
         parser.add_argument("--scores", type=str, default=None)  # "one", "three", None; None is a valid input
@@ -41,13 +39,23 @@ class IA(pl.LightningModule):
         parser.add_argument("--change_class", action="store_true")
         return parser
 
-    def __init__(self, scores: str, change_regress: bool, change_class: bool, mapping, margin, pretrained: bool = False, fix_features: bool = False):
+    def __init__(
+        self,
+        scores: str,
+        change_regress: bool,
+        change_class: bool,
+        margin: float,
+        lr_decay_rate: float,
+        lr_patience: int,
+        num_worksers: int,
+        mapping=mapping,
+        pretrained: bool = False,
+        fix_features: bool = False,
+    ):
         super().__init__()
         self.scores = scores
         self.change_regress = change_regress
         self.change_class = change_class
-
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         base_model = torchvision.models.mobilenet.mobilenet_v2(pretrained=pretrained)
         self.feature_count = 1280
@@ -56,13 +64,18 @@ class IA(pl.LightningModule):
             for param in base_model.features.parameters():
                 param.requires_grad = False
 
+        self.lr_decay_rate = lr_decay_rate
+        self.lr_patience = lr_patience
+        self.num_workers = num_worksers
+
         self.mapping = mapping
         self.margin = margin
         self.features = CheckpointModule(module=base_model.features, num_segments=len(base_model.features))
 
         self.mseloss = nn.MSELoss()
         self.celoss = nn.CrossEntropyLoss()
-        self.T = 50
+        self.T = 100
+
         self.save_hyperparameters()
 
         # a single score giving the aesthetics
@@ -169,9 +182,9 @@ class IA(pl.LightningModule):
             change_regress_losses_step[distortion] = []
             change_class_losses_step[distortion] = []
 
-        original: Dict[str, torch.Tensor] = self(batch["original"].to(self.device))
-        crop_orig: Dict[str, torch.Tensor] = self(batch["crop_original"].to(self.device))
-        rotate_orig: Dict[str, torch.Tensor] = self(batch["rotate_original"].to(self.device))
+        original: Dict[str, torch.Tensor] = self(batch["original"])
+        crop_orig: Dict[str, torch.Tensor] = self(batch["crop_original"])
+        rotate_orig: Dict[str, torch.Tensor] = self(batch["rotate_original"])
 
         for distortion in ["styles", "technical", "composition"]:
             erloss = EfficientRankingLoss(margin=self.margin[distortion])
@@ -179,7 +192,7 @@ class IA(pl.LightningModule):
                 for polarity in self.mapping[distortion][parameter]:
                     results = dict()
                     for change in self.mapping[distortion][parameter][polarity]:
-                        results[change] = self(batch[change].to(self.device))
+                        results[change] = self(batch[change])
                     logging.debug(polarity)
                     if self.scores == "one":
                         if "crop" in parameter:
@@ -216,7 +229,7 @@ class IA(pl.LightningModule):
                             correct_list = [0] * len(to_be_regressed_param_column)
                             correct_list = torch.Tensor(correct_list)
 
-                            change_regress_losses_step[distortion].append(self.mseloss(to_be_regressed_param_column, correct_list.to(self.device)))
+                            change_regress_losses_step[distortion].append(self.mseloss(to_be_regressed_param_column, correct_list))
 
                         for change in self.mapping[distortion][parameter][polarity]:
                             if polarity == "pos":
@@ -228,14 +241,14 @@ class IA(pl.LightningModule):
                             correct_list = [correct_value] * len(to_be_regressed_param_column)
                             correct_list = torch.Tensor(correct_list)
                             logging.debug(f"{distortion}\t{parameter}\t{list(self.mapping[distortion].keys()).index(parameter)}\t{polarity}\t{change}\t{correct_value}\tregress\t{distortion}_change_strength")
-                            change_regress_losses_step[distortion].append(self.mseloss(to_be_regressed_param_column, correct_list.to(self.device)))
+                            change_regress_losses_step[distortion].append(self.mseloss(to_be_regressed_param_column, correct_list))
 
                     if self.change_class:
                         for change in self.mapping[distortion][parameter][polarity]:
                             correct_list = [list(self.mapping[distortion].keys()).index(parameter)] * len(results[change][f"{distortion}_change_class"])
                             correct_list = torch.Tensor(correct_list).long()
                             logging.debug(f"{distortion}\t{parameter}\t{list(self.mapping[distortion].keys()).index(parameter)}\t{polarity}\t{change}\tclass\t{distortion}_change_class")
-                            change_class_losses_step[distortion].append(self.celoss(results[change][f"{distortion}_change_class"], correct_list.to(self.device)))
+                            change_class_losses_step[distortion].append(self.celoss(results[change][f"{distortion}_change_class"], correct_list))
 
         # balance losses
         ranking_loss: torch.Tensor = 0
@@ -267,16 +280,19 @@ class IA(pl.LightningModule):
             momentum=0.9,
             weight_decay=0.00004,
         )
-        return {"optimizer": optimizer, "lr_scheduler": optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=self.lr_decay_rate, patience=self.lr_patience), "monitor": "val"}
+        return {"optimizer": optimizer, "lr_scheduler": optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=self.lr_decay_rate, patience=self.lr_patience), "monitor": "val_loss"}
 
     def training_step(self, batch):
         loss = self._calc_loss(batch)
 
+        self.log("train loss", loss)
         tensorboard_logs = {"loss": {"train": loss}}
         return {"loss": loss, "log": tensorboard_logs}
 
     def training_epoch_end(self, outputs):
         avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
+
+        self.log("avg train loss", loss)
         tensorboard_logs = {"avg_train_loss": avg_loss}
         return {"avg_train_loss": avg_loss, "log": tensorboard_logs}
 
@@ -285,6 +301,8 @@ class IA(pl.LightningModule):
 
     def validation_epoch_end(self, outputs):
         avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
+
+        self.log("validation loss", avg_loss)
         tensorboard_logs = {"val_loss": avg_loss}
         return {"avg_val_loss": avg_loss, "log": tensorboard_logs}
 
