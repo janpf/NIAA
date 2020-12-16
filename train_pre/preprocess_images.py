@@ -9,7 +9,7 @@ from train_pre import utils
 mapping = dict()
 mapping["styles"] = dict()
 
-mapping["styles"]["brightness"]
+# mapping["styles"]["brightness"]
 
 mapping["technical"] = dict()
 mapping["technical"]["jpeg_compression"] = dict()

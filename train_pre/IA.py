@@ -29,7 +29,7 @@ class IA(pl.LightningModule):
     @staticmethod
     def add_model_specific_args(parent_parser):
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
-        parser.add_argument("--margin", type=float64)
+        parser.add_argument("--margin", type=float)
         parser.add_argument("--lr_decay_rate", type=float, default=0.5)
         parser.add_argument("--lr_patience", type=float, default=3)
         parser.add_argument("--num_workers", type=int, default=40)
@@ -39,19 +39,7 @@ class IA(pl.LightningModule):
         parser.add_argument("--change_class", action="store_true")
         return parser
 
-    def __init__(
-        self,
-        scores: str,
-        change_regress: bool,
-        change_class: bool,
-        margin: float,
-        lr_decay_rate: float,
-        lr_patience: int,
-        num_worksers: int,
-        mapping=mapping,
-        pretrained: bool = False,
-        fix_features: bool = False,
-    ):
+    def __init__(self, scores: str, change_regress: bool, change_class: bool, margin: float, lr_decay_rate: float, lr_patience: int, num_worksers: int, lr: float = 0, batch_size: int = 0, mapping=mapping, pretrained: bool = False, fix_features: bool = False):
         super().__init__()
         self.scores = scores
         self.change_regress = change_regress
@@ -64,6 +52,8 @@ class IA(pl.LightningModule):
             for param in base_model.features.parameters():
                 param.requires_grad = False
 
+        self.lr = lr
+        self.batch_size = batch_size
         self.lr_decay_rate = lr_decay_rate
         self.lr_patience = lr_patience
         self.num_workers = num_worksers
@@ -275,11 +265,7 @@ class IA(pl.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        optimizer = optim.RMSprop(
-            [{"params": self.parameters(), "lr": self.lr}],
-            momentum=0.9,
-            weight_decay=0.00004,
-        )
+        optimizer = optim.RMSprop([{"params": self.parameters(), "lr": self.lr}], momentum=0.9, weight_decay=0.00004,)
         return {"optimizer": optimizer, "lr_scheduler": optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=self.lr_decay_rate, patience=self.lr_patience), "monitor": "val_loss"}
 
     def training_step(self, batch):
