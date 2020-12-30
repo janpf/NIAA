@@ -37,24 +37,24 @@ spec:
             #- --listen
             #- 0.0.0.0:4444
             #- --wait-for-client
-            - /workspace/IA/train.py
-            - --score
+            - /workspace/train_pre/train.py
+            - --scores
             - one
             - --change_regress
-            - margin
-            - 0.2
-            - auto_scale_batch_size
-            - True
-            - auto_lr_find
-            - True
-            - gpus
-            - -1
-            - benchmark
-            - True
-            - precision
-            - 16
-            - fast_dev_run
-            - True
+            - --margin
+            - "0.2"
+            - --auto_scale_batch_size
+            - "True"
+            - --auto_lr_find
+            - "lr"
+            - --gpus
+            - "-1"
+            - --benchmark
+            - "True"
+            - --precision
+            - "16"
+            - --fast_dev_run
+            - "7"
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

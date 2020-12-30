@@ -5,11 +5,12 @@ numpy
 opencv-python-headless
 pandas
 Pillow
+pytorch-lightning
 redis
 scikit-image
 tensorboard
-torch<1.7.0
-torchvision<0.8.0
+torch
+torchvision
 
 # temporary:
 #imageai
