@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 from shutil import copyfile
-from tempfile import TemporaryFile
+from tempfile import NamedTemporaryFile
 from typing import Dict, List, Tuple
 
 import numpy as np
@@ -200,10 +200,10 @@ class ImageEditor:
     def _crop_right_diag(self, img: Image.Image, intensity: int) -> Image.Image:
         return self._crop(img, intensity_h=abs(intensity), intensity_v=intensity)
 
-    def distort_image(self, img: Image.Image, path: str, distortion: str, intensity: int):
-        return self.distort_list_image(img, path, [(distortion, intensity)]).pop()
+    def distort_image(self, distortion: str, intensity: int, img: Image.Image = None, path: str = None):
+        return list(self.distort_list_image(img=img, path=path, distortion_intens_tuple_list=[(distortion, intensity)]))[0]
 
-    def distort_list_image(self, img: Image.Image, path: str, distortion_intens_tuple_list: List[Tuple[str, int]]) -> Dict[str, Image.Image]:
+    def distort_list_image(self, distortion_intens_tuple_list: List[Tuple[str, int]], img: Image.Image = None, path: str = None) -> Dict[str, Image.Image]:
         suffix = Path(path).suffix
         if img is None:
             img = Image.open(path)
@@ -213,31 +213,30 @@ class ImageEditor:
         ptn = Gegl.Node()
         ptn.set_property("cache-policy", Gegl.CachePolicy.NEVER)
 
-        with TemporaryFile(suffix=suffix) as src_file:
+        with NamedTemporaryFile(suffix=suffix) as src_file:
             if path is not None:
                 copyfile(path, src_file.name)
             else:
-                img.save(src_file.name)
+                img.save(src_file.name)  # FIXME img.format
 
-                orig = ptn.create_child("gegl:load")
-                orig.set_property("path", src_file.name)
-                orig.set_property("cache-policy", Gegl.CachePolicy.ALWAYS)
+            orig = ptn.create_child("gegl:load")
+            orig.set_property("path", src_file.name)
+            orig.set_property("cache-policy", Gegl.CachePolicy.ALWAYS)
 
-                for distortion, intensity in distortion_intens_tuple_list:
-                    if hasattr(self, f"_{distortion}"):
-                        return_dict[f"{distortion}_{intensity}"] = getattr(self, f"_{distortion}")(img, intensity)
-                    else:
-                        edit = self._get_style_node(ptn, distortion, intensity)
-                        out = ptn.create_child("gegl:npy-save")
-                        out.set_property("path", "-")
+            for distortion, intensity in distortion_intens_tuple_list:
+                if hasattr(self, f"_{distortion}"):
+                    return_dict[f"{distortion}_{intensity}"] = getattr(self, f"_{distortion}")(img, intensity)
+                else:
+                    edit = self._get_style_node(ptn, distortion, intensity)
+                    out = ptn.create_child("gegl:save")
 
-                        orig.connect_to("output", edit, "input")
-                        edit.connect_to("output", out, "input")
+                    orig.connect_to("output", edit, "input")
+                    edit.connect_to("output", out, "input")
 
-                        with TemporaryFile(suffix=suffix) as out_file:
-                            out.set_property("path", out_file.name)
-                            out.process()
-                            return_dict[f"{distortion}_{intensity}"] = Image.open(out_file.name)
+                    with NamedTemporaryFile(suffix=suffix) as out_file:
+                        out.set_property("path", out_file.name)
+                        out.process()
+                        return_dict[f"{distortion}_{intensity}"] = Image.open(out_file.name)
         return return_dict
 
     def pad_square(self, img: Image.Image, min_size: int = 224, fill_color=(0, 0, 0)) -> Image.Image:
