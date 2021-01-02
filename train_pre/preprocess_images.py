@@ -17,7 +17,7 @@ gi.require_version("Gegl", "0.4")
 from gi.repository import Gegl
 
 Gegl.init()
-Gegl.Config().props.application_license = "GPL3"
+Gegl.config().props.application_license = "GPL3"  #  this is essential
 
 mapping = dict()
 mapping["styles"] = dict()
@@ -92,20 +92,33 @@ for _, v in mapping["composition"].items():
 class ImageEditor:
     def __init__(self):
         self.style_maps = {
-            "shadows": "shadhi",
-            "highlights": "shadhi",
             "brightness": "brightness-contrast",
             "contrast": "brightness-contrast",
+            "shadows": "shadows-highlights",
+            "highlights": "shadows-highlights",
+            "temperature": "color-temperature",
         }
         self.style_intensity_mapping = {
-            "brightness_pos": [float(x) for x in list(range(0, 6))],
-            "brightness_neg": [float(x) for x in list(range(0, -6, -1))],
+            "brightness_pos": [float(x) for x in np.linspace(0, 1, 6)],
+            "brightness_neg": [float(x) for x in np.linspace(0, -1, 6)],
+            "contrast_pos": [float(x) for x in np.linspace(1, 2, 6)],
+            "contrast_neg": [float(x) for x in np.linspace(1, 0, 6)],
+            "shadows_pos": [float(x) for x in np.linspace(1, 100, 6)],
+            "shadows_neg": [float(x) for x in np.linspace(1, -100, 6)],
+            "highlights_pos": [float(x) for x in np.linspace(1, 100, 6)],
+            "highlights_neg": [float(x) for x in np.linspace(1, -100, 6)],
+            "exposure_pos": [float(x) for x in np.linspace(0, 10, 6)],
+            "exposure_neg": [float(x) for x in np.linspace(1, -10, 6)],
+            "temperature_pos": [float(x) for x in np.linspace(6500, 12000, 6)],
+            "temperature_neg": [float(x) for x in np.linspace(6500, 1000, 6)],
+            "saturation_pos": [float(x) for x in np.linspace(1, 2, 6)],
+            "saturation_neg": [float(x) for x in np.linspace(1, 0, 6)],
         }
 
     # styles
     def _get_style_node(self, parent_node, distortion: str, intensity_level: int):
-        if intensity_level < 0:
-            intensity = self.style_intensity_mapping[f"{distortion}_neg"][intensity_level]
+        if intensity_level <= 0:
+            intensity = self.style_intensity_mapping[f"{distortion}_neg"][abs(intensity_level)]
         else:
             intensity = self.style_intensity_mapping[f"{distortion}_pos"][intensity_level]
 
@@ -118,6 +131,8 @@ class ImageEditor:
             gegl_distortion = distortion
 
         edit = parent_node.create_child(f"gegl:{gegl_distortion}")
+        if distortion == "temperature":
+            distortion = "intended-temperature"
         edit.set_property(distortion, intensity)
         return edit
 
@@ -201,7 +216,7 @@ class ImageEditor:
         return self._crop(img, intensity_h=abs(intensity), intensity_v=intensity)
 
     def distort_image(self, distortion: str, intensity: int, img: Image.Image = None, path: str = None):
-        return list(self.distort_list_image(img=img, path=path, distortion_intens_tuple_list=[(distortion, intensity)]))[0]
+        return list(self.distort_list_image(img=img, path=path, distortion_intens_tuple_list=[(distortion, intensity)]).values())[0]
 
     def distort_list_image(self, distortion_intens_tuple_list: List[Tuple[str, int]], img: Image.Image = None, path: str = None) -> Dict[str, Image.Image]:
         suffix = Path(path).suffix
@@ -221,11 +236,11 @@ class ImageEditor:
 
             orig = ptn.create_child("gegl:load")
             orig.set_property("path", src_file.name)
-            orig.set_property("cache-policy", Gegl.CachePolicy.ALWAYS)
+            orig.set_property("cache-policy", Gegl.CachePolicy.NEVER)
 
             for distortion, intensity in distortion_intens_tuple_list:
                 if hasattr(self, f"_{distortion}"):
-                    return_dict[f"{distortion}_{intensity}"] = getattr(self, f"_{distortion}")(img, intensity)
+                    return_dict[f"{distortion}_{intensity}"] = Image.fromarray(getattr(self, f"_{distortion}")(img, intensity))
                 else:
                     edit = self._get_style_node(ptn, distortion, intensity)
                     out = ptn.create_child("gegl:save")
