@@ -1,3 +1,4 @@
+wheel
 captum
 debugpy
 imagenet-c
