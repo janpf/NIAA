@@ -5,6 +5,7 @@ numpy
 opencv-python-headless
 pandas
 Pillow
+PyGObject
 pytorch-lightning
 redis
 scikit-image
