@@ -20,73 +20,42 @@ Gegl.init()
 Gegl.config().props.application_license = "GPL3"  #  this is essential
 
 mapping = dict()
-mapping["styles"] = dict()
 
-# mapping["styles"]["brightness"]
+mapping["styles"] = dict()
+mapping["styles"]["brightness"] = ["pos", "neg"]
+mapping["styles"]["contrast"] = ["pos", "neg"]
+mapping["styles"]["saturation"] = ["pos", "neg"]
+mapping["styles"]["exposure"] = ["pos", "neg"]
+mapping["styles"]["shadows"] = ["pos", "neg"]
+mapping["styles"]["highlights"] = ["pos", "neg"]
+mapping["styles"]["temperature"] = ["pos", "neg"]
 
 mapping["technical"] = dict()
-mapping["technical"]["jpeg_compression"] = dict()
-mapping["technical"]["jpeg_compression"]["pos"] = [f"jpeg_compression;{i}" for i in range(1, 6)]
-mapping["technical"]["defocus_blur"] = dict()
-mapping["technical"]["defocus_blur"]["pos"] = [f"defocus_blur;{i}" for i in range(1, 6)]
-mapping["technical"]["motion_blur"] = dict()
-mapping["technical"]["motion_blur"]["pos"] = [f"motion_blur;{i}" for i in range(1, 6)]
-mapping["technical"]["pixelate"] = dict()
-mapping["technical"]["pixelate"]["pos"] = [f"pixelate;{i}" for i in range(1, 6)]
-mapping["technical"]["gaussian_noise"] = dict()
-mapping["technical"]["gaussian_noise"]["pos"] = [f"gaussian_noise;{i}" for i in range(1, 6)]
-mapping["technical"]["impulse_noise"] = dict()
-mapping["technical"]["impulse_noise"]["pos"] = [f"impulse_noise;{i}" for i in range(1, 6)]
+mapping["technical"]["jpeg_compression"] = ["pos"]
+mapping["technical"]["defocus_blur"] = ["pos"]
+mapping["technical"]["motion_blur"] = ["pos"]
+mapping["technical"]["pixelate"] = ["pos"]
+mapping["technical"]["gaussian_noise"] = ["pos"]
+mapping["technical"]["impulse_noise"] = ["pos"]
 
 mapping["composition"] = dict()
-mapping["composition"]["rotate"] = dict()
-mapping["composition"]["rotate"]["neg"] = [f"rotate;{i}" for i in range(-10, 0, 2)]
-mapping["composition"]["rotate"]["pos"] = [f"rotate;{i}" for i in range(0, 11, 2) if i != 0]
-mapping["composition"]["hcrop"] = dict()
-mapping["composition"]["hcrop"]["neg"] = [f"hcrop;{i}" for i in range(-5, 0)]
-mapping["composition"]["hcrop"]["pos"] = [f"hcrop;{i}" for i in range(0, 6) if i != 0]
-mapping["composition"]["vcrop"] = dict()
-mapping["composition"]["vcrop"]["neg"] = [f"vcrop;{i}" for i in range(-5, 0)]
-mapping["composition"]["vcrop"]["pos"] = [f"vcrop;{i}" for i in range(0, 6) if i != 0]
-mapping["composition"]["leftcornerscrop"] = dict()
-mapping["composition"]["leftcornerscrop"]["neg"] = [f"leftcornerscrop;{i}" for i in range(-5, 0)]
-mapping["composition"]["leftcornerscrop"]["pos"] = [f"leftcornerscrop;{i}" for i in range(0, 6) if i != 0]
-mapping["composition"]["rightcornerscrop"] = dict()
-mapping["composition"]["rightcornerscrop"]["neg"] = [f"rightcornerscrop;{i}" for i in range(-5, 0)]
-mapping["composition"]["rightcornerscrop"]["pos"] = [f"rightcornerscrop;{i}" for i in range(0, 6) if i != 0]
-mapping["composition"]["ratio"] = dict()
-mapping["composition"]["ratio"]["neg"] = [f"ratio;{i}" for i in range(-5, 0)]
-mapping["composition"]["ratio"]["pos"] = [f"ratio;{i}" for i in range(0, 6) if i != 0]
+mapping["composition"]["rotate"] = ["pos", "neg"]
+mapping["composition"]["crop_h"] = ["pos", "neg"]
+mapping["composition"]["crop_v"] = ["pos", "neg"]
+mapping["composition"]["crop_leftcorners"] = ["pos", "neg"]  # TODO diagcrops useful?
+mapping["composition"]["crop_rightcorners"] = ["pos", "neg"]
+mapping["composition"]["ratio"] = ["pos", "neg"]
 
-mapping["change_steps"] = dict()
-for distortion in ["styles", "technical", "composition"]:
-    mapping["change_steps"][distortion] = dict()
-    for parameter in mapping[distortion]:
-        mapping["change_steps"][distortion][parameter] = dict()
-        for polarity in mapping[distortion][parameter]:
-            if len(mapping[distortion][parameter][polarity]) > 0:
-                mapping["change_steps"][distortion][parameter][polarity] = 1 / len(mapping[distortion][parameter][polarity])
+mapping["all_changes"] = [("original", 0)]
 
-mapping["all_changes"] = ["original"]
-
-mapping["styles_changes"] = []
-mapping["technical_changes"] = []
-mapping["composition_changes"] = []
-
-for _, v in mapping["styles"].items():
-    for _, polarity in v.items():
-        mapping["all_changes"].extend(polarity)
-        mapping["styles_changes"].extend(polarity)
-
-for _, v in mapping["technical"].items():
-    for _, polarity in v.items():
-        mapping["all_changes"].extend(polarity)
-        mapping["technical_changes"].extend(polarity)
-
-for _, v in mapping["composition"].items():
-    for _, polarity in v.items():
-        mapping["all_changes"].extend(polarity)
-        mapping["composition_changes"].extend(polarity)
+for type_change in ["styles", "technical", "composition"]:
+    mapping[f"{type_change}_changes"] = []
+    for k, v in mapping[type_change].items():
+        if "pos" in v:
+            mapping[f"{type_change}_changes"].extend([(k, i) for i in range(1, 6)])
+        if "neg" in v:
+            mapping[f"{type_change}_changes"].extend([(k, i) for i in range(-1, -6, -1)])
+    mapping["all_changes"].extend(mapping[f"{type_change}_changes"])
 
 
 class ImageEditor:
@@ -133,18 +102,20 @@ class ImageEditor:
         edit = parent_node.create_child(f"gegl:{gegl_distortion}")
         if distortion == "temperature":
             distortion = "intended-temperature"
+        elif distortion == "saturation":
+            distortion = "scale"
         edit.set_property(distortion, intensity)
         return edit
 
     # technical
-    def _jpeg(self, img: Image.Image, intensity: int) -> Image.Image:
-        return corrupt(np.array(img), corruption_name="jpeg_compression", severity=intensity)
+    def _jpeg_compression(self, img: Image.Image, intensity: int) -> Image.Image:
+        return Image.fromarray(corrupt(np.array(img), corruption_name="jpeg_compression", severity=intensity))
 
     def _defocus_blur(self, img: Image.Image, intensity: int) -> Image.Image:
-        return corrupt(np.array(img), corruption_name="defocus_blur", severity=intensity)
+        return Image.fromarray(corrupt(np.array(img), corruption_name="defocus_blur", severity=intensity))
 
-    def _motion_blur(self, img: Image.Image, intensity: int) -> Image.Image:
-        return corrupt(np.array(img), corruption_name="motion_blur", severity=intensity)
+    def _motion_blur(self, img: Image.Image, intensity: int) -> Image.Image:  # TODO same angle?
+        return Image.fromarray(corrupt(np.array(img), corruption_name="motion_blur", severity=intensity))
 
     def _pixelate(self, img: Image.Image, severity: int) -> Image.Image:
         previous = img.size
@@ -154,16 +125,16 @@ class ImageEditor:
         return img
 
     def _gaussian_noise(self, img: Image.Image, intensity: int) -> Image.Image:
-        return corrupt(np.array(img), corruption_name="gaussian_noise", severity=intensity)
+        return Image.fromarray(corrupt(np.array(img), corruption_name="gaussian_noise", severity=intensity))
 
     def _shot_noise(self, img: Image.Image, intensity: int) -> Image.Image:
-        return corrupt(np.array(img), corruption_name="shot_noise", severity=intensity)
+        return Image.fromarray(corrupt(np.array(img), corruption_name="shot_noise", severity=intensity))
 
     def _impulse_noise(self, img: Image.Image, intensity: int) -> Image.Image:
-        return corrupt(np.array(img), corruption_name="impulse_noise", severity=intensity)
+        return Image.fromarray(corrupt(np.array(img), corruption_name="impulse_noise", severity=intensity))
 
     def _speckle_noise(self, img: Image.Image, intensity: int) -> Image.Image:
-        return corrupt(np.array(img), corruption_name="speckle_noise", severity=intensity)
+        return Image.fromarray(corrupt(np.array(img), corruption_name="speckle_noise", severity=intensity))
 
     # composition
     def _ratio(self, img: Image.Image, intensity: int, max_ratio: int = 5) -> Image.Image:
@@ -176,7 +147,9 @@ class ImageEditor:
         img = transforms.Resize(img_resize)(img)
         return transforms.CenterCrop(img_size)(img)
 
-    def _rotate(self, img: Image.Image, intensity: int, max_rotate: int = 10) -> Image.Image:
+    def _rotate(self, img: Image.Image, intensity: int, max_rotate: int = 5) -> Image.Image:
+        intensity = intensity * 2
+        max_rotate = max_rotate * 2
         rotated = img.rotate(intensity, Image.BICUBIC, True)
 
         w, h = utils.rotatedRectWithMaxArea(img.size[0], img.size[1], max_rotate)
@@ -209,10 +182,10 @@ class ImageEditor:
     def _crop_v(self, img: Image.Image, intensity: int) -> Image.Image:
         return self._crop(img, intensity_v=intensity)
 
-    def _crop_left_diag(self, img: Image.Image, intensity: int) -> Image.Image:
+    def _crop_leftcorners(self, img: Image.Image, intensity: int) -> Image.Image:
         return self._crop(img, intensity_h=-abs(intensity), intensity_v=intensity)
 
-    def _crop_right_diag(self, img: Image.Image, intensity: int) -> Image.Image:
+    def _crop_rightcorners(self, img: Image.Image, intensity: int) -> Image.Image:
         return self._crop(img, intensity_h=abs(intensity), intensity_v=intensity)
 
     def distort_image(self, distortion: str, intensity: int, img: Image.Image = None, path: str = None):
@@ -223,7 +196,7 @@ class ImageEditor:
         if img is None:
             img = Image.open(path)
 
-        return_dict = dict()
+        return_dict: Dict[str, Image.Image] = dict()
 
         ptn = Gegl.Node()
         ptn.set_property("cache-policy", Gegl.CachePolicy.NEVER)
@@ -239,8 +212,10 @@ class ImageEditor:
             orig.set_property("cache-policy", Gegl.CachePolicy.NEVER)
 
             for distortion, intensity in distortion_intens_tuple_list:
-                if hasattr(self, f"_{distortion}"):
-                    return_dict[f"{distortion}_{intensity}"] = Image.fromarray(getattr(self, f"_{distortion}")(img, intensity))
+                if distortion == "original":
+                    return_dict[distortion] = img
+                elif hasattr(self, f"_{distortion}"):
+                    return_dict[f"{distortion}_{intensity}"] = getattr(self, f"_{distortion}")(img, intensity)
                 else:
                     edit = self._get_style_node(ptn, distortion, intensity)
                     out = ptn.create_child("gegl:save")
