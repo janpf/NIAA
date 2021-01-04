@@ -9,7 +9,7 @@ from torch import float64, nn, optim
 from torch.utils.checkpoint import checkpoint_sequential
 from torch.utils.data import DataLoader
 
-from train_pre.dataset import SSPexelsSmall as SSPexels
+from train_pre.dataset import SSPexelsDummy as SSPexels
 from train_pre.losses import EfficientRankingLoss, h
 from train_pre.preprocess_images import mapping
 
@@ -32,18 +32,20 @@ class IA(pl.LightningModule):
         parser.add_argument("--margin", type=float)
         parser.add_argument("--lr_decay_rate", type=float, default=0.5)
         parser.add_argument("--lr_patience", type=float, default=3)
-        parser.add_argument("--num_workers", type=int, default=40)
+        parser.add_argument("--num_workers", type=int, default=10)
 
         parser.add_argument("--scores", type=str, default=None)  # "one", "three", None; None is a valid input
         parser.add_argument("--change_regress", action="store_true")
         parser.add_argument("--change_class", action="store_true")
         return parser
 
-    def __init__(self, scores: str, change_regress: bool, change_class: bool, margin: float, lr_decay_rate: float, lr_patience: int, num_worksers: int, lr: float = 0, batch_size: int = 0, mapping=mapping, pretrained: bool = False, fix_features: bool = False):
+    def __init__(self, scores: str, change_regress: bool, change_class: bool, margin: float, lr_decay_rate: float, lr_patience: int, num_workers: int, lr: float = 0, batch_size: int = 32, mapping=mapping, pretrained: bool = False, fix_features: bool = False):
         super().__init__()
         self.scores = scores
         self.change_regress = change_regress
         self.change_class = change_class
+
+        self.dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         base_model = torchvision.models.mobilenet.mobilenet_v2(pretrained=pretrained)
         self.feature_count = 1280
@@ -56,7 +58,7 @@ class IA(pl.LightningModule):
         self.batch_size = batch_size
         self.lr_decay_rate = lr_decay_rate
         self.lr_patience = lr_patience
-        self.num_workers = num_worksers
+        self.num_workers = num_workers
 
         self.mapping = mapping
         self.margin = margin
@@ -172,17 +174,17 @@ class IA(pl.LightningModule):
             change_regress_losses_step[distortion] = []
             change_class_losses_step[distortion] = []
 
-        original: Dict[str, torch.Tensor] = self(batch["original"])
-        crop_orig: Dict[str, torch.Tensor] = self(batch["crop_original"])
-        rotate_orig: Dict[str, torch.Tensor] = self(batch["rotate_original"])
+        original: Dict[str, torch.Tensor] = self(batch["original"].to(self.dev))
+        crop_orig: Dict[str, torch.Tensor] = self(batch["crop_original"].to(self.dev))
+        rotate_orig: Dict[str, torch.Tensor] = self(batch["rotate_original"].to(self.dev))
 
         for distortion in ["styles", "technical", "composition"]:
-            erloss = EfficientRankingLoss(margin=self.margin[distortion])
+            erloss = EfficientRankingLoss(margin=self.margin)
             for parameter in self.mapping[distortion]:
                 for polarity in self.mapping[distortion][parameter]:
                     results = dict()
                     for change in self.mapping[distortion][parameter][polarity]:
-                        results[change] = self(batch[change])
+                        results[change] = self(batch[change].to(self.dev))
                     logging.debug(polarity)
                     if self.scores == "one":
                         if "crop" in parameter:
@@ -219,7 +221,7 @@ class IA(pl.LightningModule):
                             correct_list = [0] * len(to_be_regressed_param_column)
                             correct_list = torch.Tensor(correct_list)
 
-                            change_regress_losses_step[distortion].append(self.mseloss(to_be_regressed_param_column, correct_list))
+                            change_regress_losses_step[distortion].append(self.mseloss(to_be_regressed_param_column, correct_list.to(self.dev)))
 
                         for change in self.mapping[distortion][parameter][polarity]:
                             if polarity == "pos":
@@ -231,14 +233,14 @@ class IA(pl.LightningModule):
                             correct_list = [correct_value] * len(to_be_regressed_param_column)
                             correct_list = torch.Tensor(correct_list)
                             logging.debug(f"{distortion}\t{parameter}\t{list(self.mapping[distortion].keys()).index(parameter)}\t{polarity}\t{change}\t{correct_value}\tregress\t{distortion}_change_strength")
-                            change_regress_losses_step[distortion].append(self.mseloss(to_be_regressed_param_column, correct_list))
+                            change_regress_losses_step[distortion].append(self.mseloss(to_be_regressed_param_column, correct_list.to(self.dev)))
 
                     if self.change_class:
                         for change in self.mapping[distortion][parameter][polarity]:
                             correct_list = [list(self.mapping[distortion].keys()).index(parameter)] * len(results[change][f"{distortion}_change_class"])
                             correct_list = torch.Tensor(correct_list).long()
                             logging.debug(f"{distortion}\t{parameter}\t{list(self.mapping[distortion].keys()).index(parameter)}\t{polarity}\t{change}\tclass\t{distortion}_change_class")
-                            change_class_losses_step[distortion].append(self.celoss(results[change][f"{distortion}_change_class"], correct_list))
+                            change_class_losses_step[distortion].append(self.celoss(results[change][f"{distortion}_change_class"], correct_list.to(self.dev)))
 
         # balance losses
         ranking_loss: torch.Tensor = 0
@@ -261,43 +263,42 @@ class IA(pl.LightningModule):
         if self.change_class:
             resulting_losses["change_class_loss"] = h(change_class_loss, self.T)
 
-        loss = sum(resulting_losses)
+        loss = sum(resulting_losses.values())
         return loss
 
     def configure_optimizers(self):
         optimizer = optim.RMSprop([{"params": self.parameters(), "lr": self.lr}], momentum=0.9, weight_decay=0.00004,)
-        return {"optimizer": optimizer, "lr_scheduler": optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=self.lr_decay_rate, patience=self.lr_patience), "monitor": "val_loss"}
+        return {"optimizer": optimizer, "lr_scheduler": optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=self.lr_decay_rate, patience=self.lr_patience), "monitor": "avg_val_loss"}
 
-    def training_step(self, batch):
+    def training_step(self, batch, batch_idx):
         loss = self._calc_loss(batch)
 
-        self.log("train loss", loss)
+        self.log("loss", loss)
         tensorboard_logs = {"loss": {"train": loss}}
         return {"loss": loss, "log": tensorboard_logs}
 
     def training_epoch_end(self, outputs):
         avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
 
-        self.log("avg train loss", loss)
+        self.log("avg_train_loss", avg_loss)
         tensorboard_logs = {"avg_train_loss": avg_loss}
         return {"avg_train_loss": avg_loss, "log": tensorboard_logs}
 
-    def validation_step(self, batch):
-        return {"val_loss": self._calc_loss(batch)}
+    def validation_step(self, batch, batch_idx):
+        return {"loss": self._calc_loss(batch)}
 
     def validation_epoch_end(self, outputs):
-        avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
+        avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
 
-        self.log("validation loss", avg_loss)
-        tensorboard_logs = {"val_loss": avg_loss}
+        self.log("avg_val_loss", avg_loss)
+        tensorboard_logs = {"avg_val_loss": avg_loss}
         return {"avg_val_loss": avg_loss, "log": tensorboard_logs}
 
-    def prepare_data(self):
-        self.train_ds = SSPexels(file_list_path="/workspace/dataset_processing/train_set.txt", mapping=mapping)
-        self.val_ds = SSPexels(file_list_path="/workspace/dataset_processing/val_set.txt", mapping=mapping)
-
     def train_dataloader(self):
-        return DataLoader(self.train_ds, batch_size=self.batch_size, shuffle=True, drop_last=True, num_workers=40)
+        return DataLoader(SSPexels(file_list_path="/workspace/dataset_processing/train_set.txt", mapping=mapping), batch_size=self.batch_size, shuffle=True, drop_last=True, num_workers=self.num_workers, pin_memory=True)
 
     def val_dataloader(self):
-        return DataLoader(self.val_ds, batch_size=self.batch_size, shuffle=True, drop_last=True, num_workers=40)
+        return DataLoader(SSPexels(file_list_path="/workspace/dataset_processing/val_set.txt", mapping=mapping), batch_size=self.batch_size, shuffle=False, drop_last=True, num_workers=self.num_workers, pin_memory=True)
+
+    def test_dataloader(self):
+        return DataLoader(SSPexels(file_list_path="/workspace/dataset_processing/test_set.txt", mapping=mapping), batch_size=self.batch_size, shuffle=False, drop_last=True, num_workers=self.num_workers, pin_memory=True)

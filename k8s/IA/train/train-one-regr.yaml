@@ -43,18 +43,16 @@ spec:
             - --change_regress
             - --margin
             - "0.2"
-            - --auto_scale_batch_size
-            - "True"
+            #- --auto_scale_batch_size
+            #- "True"
             - --auto_lr_find
-            - "lr"
+            - "True"
             - --gpus
             - "-1"
             - --benchmark
             - "True"
             - --precision
             - "16"
-            - --fast_dev_run
-            - "7"
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

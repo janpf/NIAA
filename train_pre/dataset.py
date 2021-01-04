@@ -177,7 +177,7 @@ class SSPexelsDummy(torch.utils.data.Dataset):
         return len(self.file_list)
 
     def __getitem__(self, idx):
-        items = ["original"]
+        items = ["original", "crop_original", "rotate_original"]
         for style_change in self.mapping["styles_changes"]:
             items.append(style_change)
 
@@ -190,6 +190,7 @@ class SSPexelsDummy(torch.utils.data.Dataset):
         data = dict()
         for item in items:
             data[item] = torch.rand(3, 224, 224)
+            data[item] = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])(data[item])
 
         return data
 
