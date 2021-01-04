@@ -35,7 +35,7 @@ hierarchies = []
 for word in topchoices.most_common():
     word_hierarchy = []
     word = word[0]
-    word = f"{word}.n.01"  # primary noun I guess? # TODO check
+    word = f"{word}.n.01"
     word_hierarchy.append(word)
     while True:
         try:
