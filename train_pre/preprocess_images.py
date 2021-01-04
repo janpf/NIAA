@@ -99,7 +99,7 @@ class ImageEditor:
         else:
             gegl_distortion = distortion
 
-        edit = parent_node.create_child(f"gegl:{gegl_distortion}")
+        edit = parent_node.create_child(f"gegl:{gegl_distortion}")  #  FIXME RGB
         if distortion == "temperature":
             distortion = "intended-temperature"
         elif distortion == "saturation":
@@ -189,12 +189,16 @@ class ImageEditor:
         return self._crop(img, intensity_h=abs(intensity), intensity_v=intensity)
 
     def distort_image(self, distortion: str, intensity: int, img: Image.Image = None, path: str = None):
-        return list(self.distort_list_image(img=img, path=path, distortion_intens_tuple_list=[(distortion, intensity)]).values())[0]
+        return list(
+            self.distort_list_image(img=img, path=path, distortion_intens_tuple_list=[(distortion, intensity)]).values()
+        )[0]
 
-    def distort_list_image(self, distortion_intens_tuple_list: List[Tuple[str, int]], img: Image.Image = None, path: str = None) -> Dict[str, Image.Image]:
+    def distort_list_image(
+        self, distortion_intens_tuple_list: List[Tuple[str, int]], img: Image.Image = None, path: str = None
+    ) -> Dict[str, Image.Image]:  # TODO crop orig, rotate orig
         suffix = Path(path).suffix
         if img is None:
-            img = Image.open(path)
+            img = Image.open(path)  #  FIXME RGB
 
         return_dict: Dict[str, Image.Image] = dict()
 

@@ -37,10 +37,26 @@ for s in settings:
     config.default_root_dir = str(Path(config.dirpath) / s)
 
 logging.info("init trainer")
-trainer = pl.Trainer(default_root_dir=config.default_root_dir, auto_scale_batch_size=config.auto_scale_batch_size, auto_lr_find=config.auto_lr_find, gpus=config.gpus, benchmark=config.benchmark, precision=config.precision, fast_dev_run=config.fast_dev_run)
+trainer = pl.Trainer(
+    default_root_dir=config.default_root_dir,
+    auto_scale_batch_size=config.auto_scale_batch_size,
+    auto_lr_find=config.auto_lr_find,
+    gpus=config.gpus,
+    benchmark=config.benchmark,
+    precision=config.precision,
+    fast_dev_run=config.fast_dev_run,
+)
 
 logging.info("loading model")
-model = IA(scores=config.scores, change_regress=config.change_regress, change_class=config.change_class, margin=config.margin, lr_decay_rate=config.lr_decay_rate, lr_patience=config.lr_patience, num_workers=config.num_workers)
+model = IA(
+    scores=config.scores,
+    change_regress=config.change_regress,
+    change_class=config.change_class,
+    margin=config.margin,
+    lr_decay_rate=config.lr_decay_rate,
+    lr_patience=config.lr_patience,
+    num_workers=config.num_workers,
+)
 
 
 trainer.tuner.lr_find(model, max_lr=1).plot(suggest=True).savefig("lr.png")
