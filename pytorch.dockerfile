@@ -7,3 +7,4 @@ RUN apt-get install -y python3-gi python3-gi-cairo libgirepository1.0-dev libmag
 COPY ./requirements-pytorch.txt /workspace/
 WORKDIR /workspace
 RUN pip install -r ./requirements-pytorch.txt
+RUN pip install PyGobject
