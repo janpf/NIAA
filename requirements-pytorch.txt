@@ -6,7 +6,6 @@ opencv-python-headless
 pandas
 Pillow
 pycairo
-PyGObject
 pytorch-lightning
 redis
 scikit-image
