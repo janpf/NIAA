@@ -42,6 +42,17 @@ spec:
             - /workspace/train_pre/train.py
             - --score
             - one
+            - --margin
+            - "0.2"
+            - --auto_lr_find
+            - "True"
+            - --gpus
+            - "-1"
+            - --benchmark
+            - "True"
+            - --precision
+            - "16"
+
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
