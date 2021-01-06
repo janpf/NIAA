@@ -3,7 +3,7 @@
 # Including: /home/stud/pfister/eclipse-workspace/NIAA, /home/stud/pfister/eclipse-workspace/Masterarbeit
 # Excluding: .gitignore
 
-7 results - 3 files
+9 results - 4 files
 
 NIAA • analysis_code_related/NIMA_test.ipynb:
   415:     "def violin_distortion(distortion:str): # FIXME defaults for shadows, hightlights...\n",
@@ -11,9 +11,13 @@ NIAA • analysis_code_related/NIMA_test.ipynb:
 NIAA • analysis_code_related/RANKIQA_test.ipynb:
   243:     "def violin_distortion(distortion:str): # FIXME defaults for shadows, hightlights...\n",
 
+NIAA • train_pre/IA.py:
+  17: class CheckpointModule(nn.Module):  #  TODO no more checkpointing?
+
 NIAA • train_pre/preprocess_images.py:
-   45: mapping["composition"]["crop_leftcorners"] = ["pos", "neg"]  # TODO diagcrops useful?
-  102:         edit = parent_node.create_child(f"gegl:{gegl_distortion}")  #  FIXME RGB
-  117:     def _motion_blur(self, img: Image.Image, intensity: int) -> Image.Image:  # TODO same angle?
-  197:             img = Image.open(path) #  FIXME RGB
-  208:                 img.save(src_file.name)  # FIXME img.format
+   37: mapping["composition"]["crop_leftcorners"] = ["pos", "neg"]  # TODO diagcrops useful?
+   94:         edit = parent_node.create_child(f"gegl:{gegl_distortion}")  #  FIXME RGB
+  109:     def _motion_blur(self, img: Image.Image, intensity: int) -> Image.Image:  # TODO same angle?
+  190:     ) -> Dict[str, Image.Image]:  # TODO crop orig, rotate orig
+  202:             img = Image.open(path)  #  FIXME RGB
+  213:                 img.save(src_file.name)  # FIXME img.format

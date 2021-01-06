@@ -42,7 +42,10 @@ class SSPexelsSmall(torch.utils.data.Dataset):
         return len(self.file_list)
 
     def __getitem__(self, idx):
+        # logging.debug(f"getting datapoint {idx}")
+        # return self._actualgetitem(idx)
         try:
+            logging.debug(f"getting datapoint {idx}")
             return self._actualgetitem(idx)
         except:
             return self[random.randint(0, len(self))]

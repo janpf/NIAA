@@ -14,7 +14,7 @@ from train_pre.losses import EfficientRankingLoss, h
 from train_pre.preprocess_images import mapping
 
 
-class CheckpointModule(nn.Module):
+class CheckpointModule(nn.Module):  #  TODO no more checkpointing?
     def __init__(self, module, num_segments=1):
         super(CheckpointModule, self).__init__()
         assert num_segments == 1 or isinstance(module, nn.Sequential)
@@ -29,7 +29,7 @@ class IA(pl.LightningModule):
     @staticmethod
     def add_model_specific_args(parent_parser):
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
-        parser.add_argument("--margin", type=float)
+        parser.add_argument("--margin", default=0.2, type=float)
         parser.add_argument("--lr_decay_rate", type=float, default=0.5)
         parser.add_argument("--lr_patience", type=float, default=3)
         parser.add_argument("--num_workers", type=int, default=10)
