@@ -1,4 +1,4 @@
-import sys
+import logging
 from pathlib import Path
 from shutil import copyfile
 from tempfile import NamedTemporaryFile
@@ -10,14 +10,6 @@ from imagenet_c import corrupt
 from PIL import Image
 
 from train_pre import utils
-
-import gi
-
-gi.require_version("Gegl", "0.4")
-from gi.repository import Gegl
-
-Gegl.init()
-Gegl.config().props.application_license = "GPL3"  #  this is essential
 
 mapping = dict()
 
@@ -196,6 +188,15 @@ class ImageEditor:
     def distort_list_image(
         self, distortion_intens_tuple_list: List[Tuple[str, int]], img: Image.Image = None, path: str = None
     ) -> Dict[str, Image.Image]:  # TODO crop orig, rotate orig
+
+        import gi
+
+        gi.require_version("Gegl", "0.4")
+        from gi.repository import Gegl
+
+        Gegl.init()
+        Gegl.config().props.application_license = "GPL3"  #  this is essential
+
         suffix = Path(path).suffix
         if img is None:
             img = Image.open(path)  #  FIXME RGB
@@ -213,9 +214,9 @@ class ImageEditor:
 
             orig = ptn.create_child("gegl:load")
             orig.set_property("path", src_file.name)
-            orig.set_property("cache-policy", Gegl.CachePolicy.NEVER)
 
             for distortion, intensity in distortion_intens_tuple_list:
+                logging.debug(f"{distortion}, {intensity}")
                 if distortion == "original":
                     return_dict[distortion] = img
                 elif hasattr(self, f"_{distortion}"):
