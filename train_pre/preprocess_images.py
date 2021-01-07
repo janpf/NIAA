@@ -38,7 +38,7 @@ mapping["composition"]["crop_leftcorners"] = ["pos", "neg"]  # TODO diagcrops us
 mapping["composition"]["crop_rightcorners"] = ["pos", "neg"]
 mapping["composition"]["ratio"] = ["pos", "neg"]
 
-mapping["all_changes"] = [("original", 0)]
+mapping["all_changes"] = [("original", 0), ("crop", 0), ("rotate", 0)]
 
 for type_change in ["styles", "technical", "composition"]:
     mapping[f"{type_change}_changes"] = []
@@ -48,6 +48,16 @@ for type_change in ["styles", "technical", "composition"]:
         if "neg" in v:
             mapping[f"{type_change}_changes"].extend([(k, i) for i in range(-1, -6, -1)])
     mapping["all_changes"].extend(mapping[f"{type_change}_changes"])
+
+for type_change in ["styles", "technical", "composition"]:
+    for k, v in mapping[type_change].items():
+        polarities = mapping[type_change][k]
+        mapping[type_change][k] = dict()
+        for polarity in polarities:
+            if polarity == "pos":
+                mapping[type_change][k][polarity] = list(range(1, 6))
+            else:
+                mapping[type_change][k][polarity] = [-i for i in list(range(1, 6))]
 
 
 class ImageEditor:
@@ -199,7 +209,7 @@ class ImageEditor:
 
         suffix = Path(path).suffix
         if img is None:
-            img = Image.open(path)  #  FIXME RGB
+            img = Image.open(path).convert("RGB")
 
         return_dict: Dict[str, Image.Image] = dict()
 
@@ -231,7 +241,7 @@ class ImageEditor:
                     with NamedTemporaryFile(suffix=suffix) as out_file:
                         out.set_property("path", out_file.name)
                         out.process()
-                        return_dict[f"{distortion}_{intensity}"] = Image.open(out_file.name)
+                        return_dict[f"{distortion}_{intensity}"] = Image.open(out_file.name).convert("RGB")
         return return_dict
 
     def pad_square(self, img: Image.Image, min_size: int = 224, fill_color=(0, 0, 0)) -> Image.Image:

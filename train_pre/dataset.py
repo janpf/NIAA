@@ -42,13 +42,13 @@ class SSPexelsSmall(torch.utils.data.Dataset):
         return len(self.file_list)
 
     def __getitem__(self, idx):
-        # logging.debug(f"getting datapoint {idx}")
-        # return self._actualgetitem(idx)
-        try:
-            logging.debug(f"getting datapoint {idx}")
-            return self._actualgetitem(idx)
-        except:
-            return self[random.randint(0, len(self))]
+        logging.debug(f"getting datapoint {idx}")
+        return self._actualgetitem(idx)
+        # try:
+        #    logging.debug(f"getting datapoint {idx}")
+        #    return self._actualgetitem(idx)
+        # except:
+        #    return self[random.randint(0, len(self))]
 
     def _actualgetitem(self, idx):
         data = self.ed.distort_list_image(
@@ -60,6 +60,7 @@ class SSPexelsSmall(torch.utils.data.Dataset):
             data[k] = transforms.Resize(224)(data[k])
             data[k] = data[k].convert("RGB")
             data[k] = self.ed.pad_square(data[k])
+            data[k] = transforms.Resize(224)(data[k])
             data[k] = transforms.ToTensor()(data[k])
             if self.normalize:
                 data[k] = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])(data[k])
@@ -83,7 +84,7 @@ class SSPexelsDummy(torch.utils.data.Dataset):
         return len(self.file_list)
 
     def __getitem__(self, idx):
-        items = ["original", "crop_original", "rotate_original"]
+        items = ["original", "crop_0", "rotate_0"]
         for style_change in self.mapping["styles_changes"]:
             items.append(style_change)
 
