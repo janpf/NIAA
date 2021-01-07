@@ -8,8 +8,8 @@ import pytorch_lightning as pl
 sys.path[0] = "/workspace"
 from train_pre.IA import IA
 
-logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logging.DEBUG, datefmt="%Y-%m-%d %H:%M:%S")
-logging.getLogger("lightning").setLevel(logging.DEBUG)
+logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
+logging.getLogger("lightning").setLevel(logging.WARN)
 logging.getLogger("PIL.PngImagePlugin").setLevel(logging.INFO)
 
 parser = ArgumentParser()
@@ -56,10 +56,11 @@ model = IA(
     lr_decay_rate=config.lr_decay_rate,
     lr_patience=config.lr_patience,
     num_workers=config.num_workers,
+    batch_size=config.batch_size,
 )
 
-#logging.info("fitting model")
-#trainer.fit(model)
+# logging.info("fitting model")
+# trainer.fit(model)
 
 logging.info("lr tuner")
 trainer.tuner.lr_find(model).plot(suggest=True).savefig("lr.png")

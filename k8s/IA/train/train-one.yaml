@@ -52,6 +52,10 @@ spec:
             - "True"
             - --precision
             - "16"
+            - --num_workers
+            - "5"
+            - --batch_size
+            - "8"
 
       affinity:
         nodeAffinity:
