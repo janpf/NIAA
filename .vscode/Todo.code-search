@@ -3,7 +3,7 @@
 # Including: /home/stud/pfister/eclipse-workspace/NIAA, /home/stud/pfister/eclipse-workspace/Masterarbeit
 # Excluding: .gitignore
 
-8 results - 4 files
+7 results - 4 files
 
 NIAA • analysis_code_related/NIMA_test.ipynb:
   415:     "def violin_distortion(distortion:str): # FIXME defaults for shadows, hightlights...\n",
@@ -16,7 +16,6 @@ NIAA • train_pre/IA.py:
 
 NIAA • train_pre/preprocess_images.py:
    37: mapping["composition"]["crop_leftcorners"] = ["pos", "neg"]  # TODO diagcrops useful?
-  104:         edit = parent_node.create_child(f"gegl:{gegl_distortion}")  #  FIXME RGB
   119:     def _motion_blur(self, img: Image.Image, intensity: int) -> Image.Image:  # TODO same angle?
   200:     ) -> Dict[str, Image.Image]:  # TODO crop orig, rotate orig
   223:                 img.save(src_file.name)  # FIXME img.format
