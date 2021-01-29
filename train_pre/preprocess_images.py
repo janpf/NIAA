@@ -101,7 +101,7 @@ class ImageEditor:
         else:
             gegl_distortion = distortion
 
-        edit = parent_node.create_child(f"gegl:{gegl_distortion}")  #  FIXME RGB
+        edit = parent_node.create_child(f"gegl:{gegl_distortion}")
         if distortion == "temperature":
             distortion = "intended-temperature"
         elif distortion == "saturation":
@@ -225,6 +225,11 @@ class ImageEditor:
             orig = ptn.create_child("gegl:load")
             orig.set_property("path", src_file.name)
 
+            orig_rgb = ptn.create_child("gegl:convert-format")
+            orig_rgb.set_property("format", "RGB")
+
+            orig.connect_to("output", orig_rgb, "input")
+
             for distortion, intensity in distortion_intens_tuple_list:
                 logging.debug(f"{distortion}, {intensity}")
                 if distortion == "original":
@@ -235,7 +240,7 @@ class ImageEditor:
                     edit = self._get_style_node(ptn, distortion, intensity)
                     out = ptn.create_child("gegl:save")
 
-                    orig.connect_to("output", edit, "input")
+                    orig_rgb.connect_to("output", edit, "input")
                     edit.connect_to("output", out, "input")
 
                     with NamedTemporaryFile(suffix=suffix) as out_file:
