@@ -116,7 +116,7 @@ class ImageEditor:
     def _defocus_blur(self, img: Image.Image, intensity: int) -> Image.Image:
         return Image.fromarray(corrupt(np.array(img), corruption_name="defocus_blur", severity=intensity))
 
-    def _motion_blur(self, img: Image.Image, intensity: int) -> Image.Image:  # TODO same angle?
+    def _motion_blur(self, img: Image.Image, intensity: int) -> Image.Image:
         return Image.fromarray(corrupt(np.array(img), corruption_name="motion_blur", severity=intensity))
 
     def _pixelate(self, img: Image.Image, severity: int) -> Image.Image:
@@ -197,7 +197,7 @@ class ImageEditor:
 
     def distort_list_image(
         self, distortion_intens_tuple_list: List[Tuple[str, int]], img: Image.Image = None, path: str = None
-    ) -> Dict[str, Image.Image]:  # TODO crop orig, rotate orig
+    ) -> Dict[str, Image.Image]:  # TODO check all output images
 
         import gi
 
@@ -220,7 +220,7 @@ class ImageEditor:
             if path is not None:
                 copyfile(path, src_file.name)
             else:
-                img.save(src_file.name)  # FIXME img.format
+                img.save(src_file.name)
 
             orig = ptn.create_child("gegl:load")
             orig.set_property("path", src_file.name)
